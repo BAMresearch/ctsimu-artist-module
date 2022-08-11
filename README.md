@@ -1,6 +1,6 @@
 # CTSimU JSON Loader, Ver. 0.8.12
 
-This is an aRTist module to read and set up the scenario from a CTSimU JSON description. With the module, it is also possible to simulate the complete CT scan as described in the JSON scenario.
+This is a module for the radiographic simulator [aRTist](http://artist.bam.de/) which reads and sets up the scenario from a [CTSimU JSON description](https://bamresearch.github.io/ctsimu-scenarios/). With the module, it is also possible to simulate the complete CT scan as described in the JSON scenario.
 
 
 ## Installation

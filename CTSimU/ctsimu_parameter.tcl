@@ -23,7 +23,7 @@ namespace eval ::ctsimu {
 			set drifts         [list]
 		}
 
-		destructor { } {
+		destructor {
 			# Delete all existing drifts:
 			foreach drift $drifts {
 				$drift destroy
@@ -105,4 +105,5 @@ namespace eval ::ctsimu {
 	
 			return $success
 		}
+	}
 }

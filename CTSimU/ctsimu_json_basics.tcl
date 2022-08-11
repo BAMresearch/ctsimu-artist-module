@@ -172,8 +172,9 @@ namespace eval ::ctsimu {
 		return $value
 	}
 
-	proc convert_to_native_unit { givenUnit nativeUnit value }
-		# Check what native unit is, convert JSON value accordingly.
+	proc convert_to_native_unit { givenUnit nativeUnit value } {
+		# Check which native unit is requested,
+		# convert JSON value accordingly.
 		if { $nativeUnit == "" } {
 			return $value
 		} else {
@@ -191,7 +192,7 @@ namespace eval ::ctsimu {
 				# internal currents are always in mA
 				return [::ctsimu::in_mA $value $unit]
 			} elseif { $nativeUnit == "kV" } {
-				# internal currents are always in mA
+				# internal voltages are always in kV
 				return [::ctsimu::in_kV $value $unit]
 			} elseif { $nativeUnit == "g/cm^3" } {
 				# internal mass densities are always in g/cm^3

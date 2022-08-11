@@ -161,8 +161,8 @@ namespace eval ::ctsimu {
 
 			if {$angleInRad != 0} {
 				set R [::ctsimu::rotationMatrix $u $angleInRad]
-				$v rotate_by_matrix $R
-				$w rotate_by_matrix $R
+				$v transform_by_matrix $R
+				$w transform_by_matrix $R
 				$R destroy
 			}
 		}
@@ -173,8 +173,8 @@ namespace eval ::ctsimu {
 
 			if {$angleInRad != 0} {
 				set R [::ctsimu::rotationMatrix $v $angleInRad]
-				$u rotate_by_matrix $R
-				$w rotate_by_matrix $R
+				$u transform_by_matrix $R
+				$w transform_by_matrix $R
 				$R destroy
 			}
 		}
@@ -185,8 +185,8 @@ namespace eval ::ctsimu {
 
 			if {$angleInRad != 0} {
 				set R [::ctsimu::rotationMatrix $w $angleInRad]
-				$u rotate_by_matrix $R
-				$v rotate_by_matrix $R
+				$u transform_by_matrix $R
+				$v transform_by_matrix $R
 				$R destroy
 			}
 		}
@@ -197,9 +197,9 @@ namespace eval ::ctsimu {
 
 			if {$angleInRad != 0} {
 				set R [::ctsimu::rotationMatrix $axis $angleInRad]
-				$u rotate_by_matrix $R
-				$v rotate_by_matrix $R
-				$w rotate_by_matrix $R
+				$u transform_by_matrix $R
+				$v transform_by_matrix $R
+				$w transform_by_matrix $R
 				$R destroy
 			}
 		}
@@ -284,9 +284,9 @@ namespace eval ::ctsimu {
 
 			# Rotate basis vectors into csTo:
 			set R [::ctsimu::basisTransformMatrix $csFrom $csTo]; # rotation matrix
-			$u rotate_by_matrix $R
-			$v rotate_by_matrix $R
-			$w rotate_by_matrix $R
+			$u transform_by_matrix $R
+			$v transform_by_matrix $R
+			$w transform_by_matrix $R
 
 			# Move center to csTo:
 			# Calculate translation vector that moves the 'to' center to the origin of 'from':

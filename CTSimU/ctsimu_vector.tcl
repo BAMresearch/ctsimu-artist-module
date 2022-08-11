@@ -2,7 +2,7 @@ package require TclOO
 
 namespace eval ::ctsimu {
 	::oo::class create vector {
-		constructor { { valueList [list] } } {
+		constructor { { valueList {} } } {
 			my variable values
 			set values $valueList
 		}
@@ -12,6 +12,7 @@ namespace eval ::ctsimu {
 		}
 
 		method print { } {
+			# Return a printable string for this vector.
 			my variable values
 
 			set s "("
@@ -27,13 +28,13 @@ namespace eval ::ctsimu {
 
 		# Getters
 		method nElements { } {
-			# Number of vector elements
+			# Return number of vector elements.
 			my variable values
 			return [llength $values]
 		}
 
 		method element { i } {
-			# Get vector element nr. i
+			# Return vector element at position i.
 			my variable values
 			if {[my nElements] > $i} {
 				return [expr double([lindex $values $i])]
@@ -43,6 +44,7 @@ namespace eval ::ctsimu {
 		}
 
 		method getValues { } {
+			# Return list of all vector elements.
 			my variable values
 			return $values
 		}
@@ -76,7 +78,7 @@ namespace eval ::ctsimu {
 		}
 
 		method setValues { l } {
-			# Set this vector to a complete value list
+			# Set vector elements to given value list.
 			my variable values
 			set values $l
 		}
@@ -88,7 +90,7 @@ namespace eval ::ctsimu {
 		}
 
 		method setElement { i value } {
-			# Set vector element i to the value.
+			# Set vector element at index i to the given value.
 			my variable values
 			if {[my nElements] > $i} {
 				lset values $i $value
@@ -96,17 +98,17 @@ namespace eval ::ctsimu {
 		}
 
 		method setx { value } {
-			# Shortcut to set element 0
+			# Shortcut to set element 0 to given value.
 			my setElement 0 $value
 		}
 
 		method sety { value } {
-			# Shortcut to set element 1
+			# Shortcut to set element 1 to given value.
 			my setElement 1 $value
 		}
 
 		method setz { value } {
-			# Shortcut to set element 2
+			# Shortcut to set element 2 to given value.
 			my setElement 2 $value
 		}
 
@@ -117,8 +119,7 @@ namespace eval ::ctsimu {
 			return $newVector
 		}
 
-		# Operations
-		method match { other } {
+		method matchDimensions { other } {
 			# Do vector dimensions match?
 			return [expr [my nElements] == [$other nElements]]
 		}
@@ -128,9 +129,12 @@ namespace eval ::ctsimu {
 			my setValues [$other getValues]
 		}
 
+		# Vector Operations
+		# -------------------------
+
 		method add { other } {
 			# Add other vector to this vector.
-			if {[my match $other]} {
+			if {[my matchDimensions $other]} {
 				for { set i 0 } { $i < [my nElements]} { incr i } {
 					my setElement $i [expr [my element $i] + [$other element $i]]
 				}
@@ -141,7 +145,7 @@ namespace eval ::ctsimu {
 
 		method subtract { other } {
 			# Subtract other vector from this vector.
-			if {[my match $other]} {
+			if {[my matchDimensions $other]} {
 				for { set i 0 } { $i < [my nElements]} { incr i } {
 					my setElement $i [expr [my element $i] - [$other element $i]]
 				}
@@ -152,8 +156,7 @@ namespace eval ::ctsimu {
 
 		method multiply { other } {
 			# Multiply other vector to this vector.
-			# Add other vector to this vector.
-			if {[my match $other]} {
+			if {[my matchDimensions $other]} {
 				for { set i 0 } { $i < [my nElements]} { incr i } {
 					my setElement $i [expr [my element $i] * [$other element $i]]
 				}
@@ -164,8 +167,7 @@ namespace eval ::ctsimu {
 
 		method divide { other } {
 			# Divide this vector by other vector.
-			# Add other vector to this vector.
-			if {[my match $other]} {
+			if {[my matchDimensions $other]} {
 				for { set i 0 } { $i < [my nElements]} { incr i } {
 					my setElement $i [expr [my element $i] / [$other element $i]]
 				}
@@ -175,7 +177,7 @@ namespace eval ::ctsimu {
 		}
 
 		method scale { factor } {
-			# Scale vector's length by a factor.
+			# Scale this vector's length by the given factor.
 			for { set i 0 } { $i < [my nElements]} { incr i } {
 				my setElement $i [expr [my element $i] * $factor]
 			}
@@ -243,7 +245,7 @@ namespace eval ::ctsimu {
 
 		method distance { other } {
 			# Distance between the points where this vector and the other vector point.
-			if {[my match $other]} {
+			if {[my matchDimensions $other]} {
 				set diff [my getCopy]
 				$diff subtract $other
 				return [$diff length]
@@ -254,7 +256,7 @@ namespace eval ::ctsimu {
 
 		method dot { other } {
 			# Return dot product with other vector.
-			if {[my match $other]} {
+			if {[my matchDimensions $other]} {
 				set dotprod 0.0
 				for { set i 0 } { $i < [my nElements]} { incr i } {
 					set dotprod [expr $dotprod + [my element $i] * [$other element $i]]
@@ -266,7 +268,7 @@ namespace eval ::ctsimu {
 
 		method cross { other } {
 			# Return cross product with other vector.
-			if {[my match $other]} {
+			if {[my matchDimensions $other]} {
 				if {[my nElements] > 2} {
 					set cx [expr [my y]*[$other z] - [my z]*[$other y]]
 					set cy [expr [my z]*[$other x] - [my x]*[$other z]]
@@ -283,7 +285,7 @@ namespace eval ::ctsimu {
 		}
 
 		method angle { other } {
-			# Calculate angle between this vector and other vector, using the dot product definition.	
+			# Calculate angle between this vector and other vector, using the dot product definition.
 			set dotprod [my dot $other]
 			set n1 [my length]
 			set n2 [$other length]
@@ -309,15 +311,18 @@ namespace eval ::ctsimu {
 		}
 
 		method rotate { axis angleInRad } {
+			# Rotate this vector around given axis vector by given angle (in rad).
 			if {$angleInRad != 0} {
-				set m [::ctsimu::rotationMatrix $axis $angleInRad]
-				my rotate_by_matrix $m
-				$m destroy
+				set rotation_matrix [::ctsimu::rotationMatrix $axis $angleInRad]
+				my transform_by_matrix $rotation_matrix
+				$rotation_matrix destroy
 			}
 		}
 
-		method rotate_by_matrix { m } {
-			set r [$m multiplyVector [self]]		
+		method transform_by_matrix { M } {
+			# Multiply matrix M to this vector v: r=Mv,
+			# and set this vector to the result r of this transformation.
+			set r [$M multiplyVector [self]]		
 			my setValues [$r getValues]
 			$r destroy
 		}

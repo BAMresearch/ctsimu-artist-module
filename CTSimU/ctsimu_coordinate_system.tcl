@@ -529,8 +529,8 @@ namespace eval ::ctsimu {
 
 		# Make a 4x4 matrix if necessary:
 		if {$m4x4 != 0} {
-			$T addRowVector [::ctsimu::vector new [list 0 0 0]]
-			$T addColVector [::ctsimu::vector new [list 0 0 0 1]]
+			$T addRow [::ctsimu::vector new [list 0 0 0]]
+			$T addCol [::ctsimu::vector new [list 0 0 0 1]]
 		}
 
 		return $T

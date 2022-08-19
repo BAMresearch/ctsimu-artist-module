@@ -5,7 +5,7 @@ variable BasePath [file dirname [info script]]
 source -encoding utf-8 [file join $BasePath ctsimu_coordinate_system.tcl]
 
 # Parts are objects in the scene: detector, source, stage and samples.
-# Each part has its own coordinate system, a parallel "ghost" coordinate system
+# Each part has its own coordinate system, and a parallel "ghost" coordinate system
 # for calculating projection matrices for the reconstruction.
 # This is necessary because the user is free not to pass any deviations to the
 # reconstruction.

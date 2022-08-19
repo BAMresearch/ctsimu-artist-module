@@ -4,7 +4,7 @@ namespace eval ::ctsimu {
 	::oo::class create vector {
 		constructor { { valueList {} } } {
 			my variable values
-			set values $valueList
+			my setValues $valueList
 		}
 
 		destructor {
@@ -26,20 +26,36 @@ namespace eval ::ctsimu {
 			return $s
 		}
 
-		# Getters
 		method nElements { } {
 			# Return number of vector elements.
 			my variable values
 			return [llength $values]
 		}
+		
+		method getCopy { } {
+			# Return a copy of this vector
+			set newVector [::ctsimu::vector new [list 0]]
+			$newVector setValues [my getValues]
+			return $newVector
+		}
 
+		method matchDimensions { other } {
+			# Do vector dimensions match?
+			return [expr [my nElements] == [$other nElements]]
+		}
+
+		# Getters
+		# -------------------------
+		# Getters currently perform no checks for valid vector indices
+		# to improve speeds during calculations. Maybe add later...?
 		method element { i } {
 			# Return vector element at position i.
 			my variable values
 			if {[my nElements] > $i} {
-				return [expr double([lindex $values $i])]
+				return [lindex $values $i]
 			} else {
-				return 0
+				error "Vector element index $i does not exist in vector of [my nElements] elements."
+				# return 0
 			}
 		}
 
@@ -63,67 +79,79 @@ namespace eval ::ctsimu {
 			# Shortcut for vector element 2
 			return [my element 2]
 		}
+		
+		method w { } {
+			# Shortcut for vector element 3
+			return [my element 3]
+		}
 
 		# Setters
-		method set { _x _y _z } {
-			# Make a vector with three components (x, y, z).
-			my variable values
-			set values [list $_x $_y $_z]
-		}
-
-		method set4vec { _x _y _z _w } {
-			# Make a vector with four components (x, y, z, w).
-			my variable values
-			set values [list $_x $_y $_z $_w]
-		}
-
+		# -------------------------
+		# All setters take care that numbers are converted to double
+		# when stored in the vector.
 		method setValues { l } {
 			# Set vector elements to given value list.
 			my variable values
 			set values $l
+			
+			# Convert all elements to double to avoid problems:
+			for {set i 0} {$i < [my nElements]} {incr i} {
+				lset values $i [expr double([my element $i])]
+			}
+		}
+		
+		method set { _x {_y "none"} {_z "none"} {_w "none"} } {
+			# Make a vector with three components (x, y, z).
+			my variable values
+			
+			set values [list [expr double($_x)]]
+			if {$_y != "none"} {
+				my addElement $_y
+				
+				if {$_z != "none"} {
+					my addElement $_z
+					
+					if {$_w != "none"} {
+						my addElement $_w
+					}
+				}
+			}
 		}
 
 		method addElement { value } {
 			# Append another element (i.e. dimension) to the vector with the given value.
 			my variable values
-			lappend values $value
+			lappend values [expr double($value)]
 		}
 
 		method setElement { i value } {
 			# Set vector element at index i to the given value.
 			my variable values
 			if {[my nElements] > $i} {
-				lset values $i $value
+				lset values $i [expr double($value)]
 			}
 		}
 
 		method setx { value } {
 			# Shortcut to set element 0 to given value.
-			my setElement 0 $value
+			my setElement 0 [expr double($value)]
 		}
 
 		method sety { value } {
 			# Shortcut to set element 1 to given value.
-			my setElement 1 $value
+			my setElement 1 [expr double($value)]
 		}
 
 		method setz { value } {
 			# Shortcut to set element 2 to given value.
-			my setElement 2 $value
+			my setElement 2 [expr double($value)]
 		}
-
-		method getCopy { } {
-			# Return a copy of this vector
-			set newVector [::ctsimu::vector new [list 0]]
-			$newVector setValues [my getValues]
-			return $newVector
+		
+		method setw { value } {
+			# Shortcut to set element 3 to given value.
+			my setElement 3 [expr double($value)]
 		}
-
-		method matchDimensions { other } {
-			# Do vector dimensions match?
-			return [expr [my nElements] == [$other nElements]]
-		}
-
+		
 		method copy { other } {
 			# Copy other vector to this vector.
 			my setValues [$other getValues]
@@ -261,6 +289,7 @@ namespace eval ::ctsimu {
 				for { set i 0 } { $i < [my nElements]} { incr i } {
 					set dotprod [expr $dotprod + [my element $i] * [$other element $i]]
 				}
+				return $dotprod
 			} else {
 				error "::ctsimu::vector::dot: Cannot calculate dot product of vectors of different dimensions."
 			}
@@ -274,8 +303,7 @@ namespace eval ::ctsimu {
 					set cy [expr [my z]*[$other x] - [my x]*[$other z]]
 					set cz [expr [my x]*[$other y] - [my y]*[$other x]]
 
-					set v [::ctsimu::vector new [list 0]]
-					$v setValues [list $cx $cy $cz] 
+					set v [::ctsimu::vector new [list $cx $cy $cz]]
 
 					return $v
 				}
@@ -323,7 +351,7 @@ namespace eval ::ctsimu {
 			# Multiply matrix M to this vector v: r=Mv,
 			# and set this vector to the result r of this transformation.
 			set r [$M multiplyVector [self]]		
-			my setValues [$r getValues]
+			my copy $r
 			$r destroy
 		}
 	}

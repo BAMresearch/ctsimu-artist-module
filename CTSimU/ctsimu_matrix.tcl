@@ -12,20 +12,43 @@ namespace eval ::ctsimu {
 			set nRows $_nRows
 
 			for { set r 0 } { $r < $nRows} { incr r } {
-				set row [list ]
+				set row [::ctsimu::vector new]
 				for { set c 0 } { $c < $nCols} { incr c } {
-					lappend row 0
+					# insert $nCols zeros into the row
+					$row addElement 0
 				}
 
 				# append row vector to matrix:
-				lappend rows [::ctsimu::vector new $row]
+				lappend rows $row
 			}
 		}
 
 		destructor {
+			# Destroy stored row vectors that contain the matrix data.
+			my variable rows			
 			foreach vec $rows {
 				$vec destroy
 			}
+		}
+		
+		method print { } {
+			# Return a printable string for this matrix.
+			my variable rows nCols nRows
+
+			set s "\["
+			set row 0
+			for { set row 0 } { $row < $nRows} { incr row } {
+				if { $row > 0 } {
+					# Add line break before each new printed row.
+					append s "\n"
+				}
+				for { set col 0 } { $col < $nCols} { incr col } {
+					append s "\t"
+					append s [[my getRowVector $row] element $col]
+				}
+			}
+			append s "\]"
+			return $s
 		}
 
 		method nRows { } {
@@ -39,68 +62,119 @@ namespace eval ::ctsimu {
 			my variable nCols
 			return $nCols
 		}
+		
+		method nElements { } {
+			my variable nRows nCols
+			return [expr $nRows*$nCols]
+		}
+		
+		# Getters
+		# -------------------------
+		# Getters currently perform no checks for valid row and col numbers
+		# to improve speeds during calculations. Maybe add later...?
+		
+		method element { col row } {
+			# Return the matrix element at the requested column and row.
+			return [[my getRowVector $row] element $col]
+		}
+		
+		method getRowVector { row } {
+			# Return the vector of the requested row.
+			my variable rows nRows
+			return [lindex $rows $row]
+		}
+		
+		method getColVector { col } {
+			# Return a new vector object for the requested column.
+			my variable rows
+			set column_vector [::ctsimu::vector new]
+			foreach row $rows {
+				$column_vector addElement [$row element $col]
+			}
+			
+			return $column_vector
+		}
 
+		# Setters
+		# -------------------------
 		method setElement { col row value } {
+			# Set matrix element in given column and row to value.
 			my variable nCols nRows rows
 
 			if { $nRows > $row } {
 				if { $nCols > $col } {
 					[lindex $rows $row] setElement $col $value
 				} else {
-					error "::ctsimu::matrix::setElement: Cannot set element at row $row for a matrix that only has $nRows rows."
+					error "::ctsimu::matrix::setElement: Cannot set element at column index $col for a matrix that only has $nCols columns."
 				}
 			} else {
-				error "::ctsimu::matrix::setElement: Cannot set element at column $col for a matrix that only has $nCols columns."
+				error "::ctsimu::matrix::setElement: Cannot set element at row index $row for a matrix that only has $nRows rows."
 			}
 		}
 
-		method setRowVector { i row } {
-			# Set row i to another vector
+		method setRow { index rowVector } {
+			# Set row at index to another rowVector.
 			my variable nCols nRows rows
-			if {[my nRows] > $i} {
-				if {[$row nElements] == $nCols} {
-					[lindex $rows $row] destroy
-					lset rows $i $row
+			if {$nRows > $index} {
+				if {[$rowVector nElements] == $nCols} {
+					[lindex $rows $index] destroy
+					lset rows $index $rowVector
 				} else {
-					error "::ctsimu::matrix::setRow: Cannot set row vector with [$row nElements] elements for a matrix that has $nCols columns."
+					error "::ctsimu::matrix::setRow: Cannot set row vector with [$rowVector nElements] elements for a matrix that has $nCols columns."
 				}
 			} else {
-				error "::ctsimu::matrix::setRow: Cannot set row at index $i for a matrix that only has $nRows rows."
+				error "::ctsimu::matrix::setRow: Cannot set row at index $index for a matrix that only has $nRows rows."
+			}
+		}
+		
+		method setCol { index colVector } {
+			# Set column at index to another colVector.
+			my variable nCols nRows rows
+			if {$nCols > $index} {
+				if {[$colVector nElements] == $nRows} {
+					for {set row 0} {$row < $nRows} {incr row} {
+						my setElement $index $row [$colVector element $row]
+					}
+				} else {
+					error "::ctsimu::matrix::setCol: Cannot set column vector with [$colVector nElements] elements for a matrix that has $nRows rows."
+				}
+			} else {
+				error "::ctsimu::matrix::setCol: Cannot set column at index $index for a matrix that only has $nCols columns."
 			}
 		}
 
-		method addRowVector { row } {
+		method addRow { rowVector } {
 			# Add another row (must be a vector with nCols elements)
 			my variable nRows nCols rows
-			if {[$row nElements] == $nCols} {
-				lappend rows $row
+			if {[$rowVector nElements] == $nCols} {
+				lappend rows $rowVector
 				set nRows [expr $nRows + 1]
 			} else {
-				error "::ctsimu::matrix::setRow: Cannot add row vector with [$row nElements] elements to a matrix that has $nCols columns."
+				error "::ctsimu::matrix::addRow: Cannot add row vector with [$rowVector nElements] elements to a matrix that has $nCols columns."
 			}
 		}
 
-		method addColVector { col } {
+		method addCol { colVector } {
 			# Add another column (must be a vector with nRows elements)
 			my variable nRows nCols rows
-			if {[$row nElements] == $nRows} {
+			if {[$colVector nElements] == $nRows} {
 				for { set r 0 } { $r < $nRows} { incr r } {
-					[lindex $rows $r] addElement [$col element $r]
+					[lindex $rows $r] addElement [$colVector element $r]
 				}
 				set nCols [expr $nCols + 1]
 			} else {
-				error "::ctsimu::matrix::addColVector: Cannot add column vector with [$col nElements] elements to a matrix that has $nRows rows."
+				error "::ctsimu::matrix::addCol: Cannot add column vector with [$colVector nElements] elements to a matrix that has $nRows rows."
 			}
 		}
 
-		method multiplyVector { vec } {
+		method multiplyVector { colVector } {
 			# Return the result of Matrix*Vector
-			my variable nCols nRows
-			set vecNElements [$vec nElements]
+			my variable nCols nRows rows
+			set vecNElements [$colVector nElements]
 			if {$nCols == $vecNElements} {
-				set result [::ctsimu::vector new [list ]]
+				set result [::ctsimu::vector new]
 				foreach row $rows {
-					$result addElement [$row dot $vec]
+					$result addElement [$row dot $colVector]
 				}
 				return $result
 			} else {

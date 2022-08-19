@@ -15,8 +15,9 @@ $e3 addElement 0
 $e3 addElement 0
 $e3 addElement 1
 
+$e3 rotate $e1 0.1
+
 puts "My hand-made basis:"
 puts "e1: [$e1 print]"
 puts "e2: [$e2 print]"
 puts "e3: [$e3 print]"
-

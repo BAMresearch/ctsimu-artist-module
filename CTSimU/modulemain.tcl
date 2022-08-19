@@ -17,7 +17,7 @@ package require rl_json
 package require csv
 package require fileutil
 
-source [file join $BasePath ctsimu_scenario.tcl]
+source [file join $BasePath ctsimu_main.tcl]
 variable ctsimu_scenario;  # currently loaded CTSimU scenario
 set ctsimu_scenario [::ctsimu::scenario new]
 

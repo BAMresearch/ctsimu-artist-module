@@ -1,5 +1,5 @@
-# ::ctsimu::json_basics
-Helper functions when handling CTSimU JSON objects via the rl_json extension.
+# ::ctsimu::helpers
+Helper functions for handling CTSimU JSON objects via the rl_json extension, as well as unit conversions and other types of conversions. These functions are available directly under the ::ctsimu namespace.
 
 CTSimU defines a [JSON-based file format](https://bamresearch.github.io/ctsimu-scenarios) for scenario descriptions. Its parameters typically have a structure like in the following example:
 
@@ -22,7 +22,7 @@ CTSimU defines a [JSON-based file format](https://bamresearch.github.io/ctsimu-s
 
 ## Functions
 
-### Checkers for valid data
+### Checkers for valid JSON data
 
 * `isNull_value { value }` — Checks if a specific value is set to `null`.
 * `isNullOrZero_value { value }` — Checks if a specific value is set to `null` or zero.
@@ -48,6 +48,7 @@ Unit conversion functions take a JSON object that must contain a `value` and a `
 * `in_kV { value unit }` — Converts a voltage to kV.
 * `in_g_per_cm3 { value unit }` — Converts a mass density to g/cm³.
 * `from_bool { value }` — Converts `true` to `1` and `false` to `0`.
+* `convertSNR_FWHM { snrOrFWHM intensity }` — Converts between SNR and Gaussian FWHM for a given intensity (i.e., more generally, the given distribution's mean value).
 * `convert_to_native_unit { givenUnit nativeUnit value }` — Checks which native unit is requested, converts JSON `value` accordingly. Possible native units are `"mm"`, `"rad"`, `"deg"`, `"s"`, `"mA"`, `"kV"`, `"g/cm^3"` and `"bool"`.
 * `json_convert_to_native_unit { nativeUnit valueAndUnit }` — Like the previous function `convert_to_native_unit`, but takes a JSON object `valueAndUnit` that must contain a `value` and an associated `unit` (the "given unit"). Checks which native unit is requested, converts JSON `value` accordingly.
 * `json_get { nativeUnit sceneDict keys }` — Takes a sequence of JSON `keys` from the given dictionary where a JSON object with a value/unit pair must be located. Returns the value of this JSON object in the requested `nativeUnit`.

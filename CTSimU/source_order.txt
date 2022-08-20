@@ -2,12 +2,12 @@ Order in which files are 'sourced' starting from modulemain.tcl,
 to avoid double-sourcing.
 
 modulemain.tcl
+ctsimu_main.tcl
 ctsimu_scenario.tcl
 ctsimu_part.tcl
 ctsimu_coordinate_system.tcl
 ctsimu_parameter.tcl
 ctsimu_drift.tcl
 ctsimu_helpers.tcl
-ctsimu_json_basics.tcl
 ctsimu_matrix.tcl
 ctsimu_vector.tcl

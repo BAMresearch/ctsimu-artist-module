@@ -10,213 +10,214 @@ namespace eval ::ctsimu {
 	::oo::class create coordinate_system {
 		constructor { } {
 			# Define center and direction vectors u, v, w and initialize to world coordinate system.
-			my variable center u v w attachedToStage
+			my variable _center _u _v _w _attachedToStage
 
-			set center [::ctsimu::vector new]
-			set u      [::ctsimu::vector new]
-			set v      [::ctsimu::vector new]
-			set w      [::ctsimu::vector new]
+			set _center [::ctsimu::vector new]
+			set _u      [::ctsimu::vector new]
+			set _v      [::ctsimu::vector new]
+			set _w      [::ctsimu::vector new]
 		}
 
 		destructor {
-			$center destroy
-			$u destroy
-			$v destroy
-			$w destroy
+			$_center destroy
+			$_u destroy
+			$_v destroy
+			$_w destroy
 		}
 
 		method reset { } {
-			my variable center u v w attachedToStage
+			my variable _center _u _v _w _attachedToStage
 
-			$center setValues [list 0 0 0]
-			$u      setValues [list 1 0 0]
-			$v      setValues [list 0 1 0]
-			$w      setValues [list 0 0 1]
+			$_center set_values [list 0 0 0]
+			$_u      set_values [list 1 0 0]
+			$_v      set_values [list 0 1 0]
+			$_w      set_values [list 0 0 1]
 
-			set attachedToStage 0; # for now, this is not a sub-coordinate system of the sample stage.
+			set _attachedToStage 0; # for now, this is not a sub-coordinate system of the sample stage.
 		}
 
 		method print { } {
-			my variable center u v w
+			my variable _center _u _v _w
 
 			set s "Center: "
-			append s [$center print]
+			append s [$_center print]
 
 			append s "\nu: "
-			append s [$u print]
+			append s [$_u print]
 
 			append s "\nv: "
-			append s [$v print]
+			append s [$_v print]
 
 			append s "\nw: "
-			append s [$w print]
+			append s [$_w print]
 
 			return $s
 		}
 
-		method getCopy { } {
+		method get_copy { } {
 			# Return a copy of this coordinate system.
-			my variable center u v w
+			my variable _center _u _v _w
 			set C [::ctsimu::coordinate_system new]
 
-			$C setCenter [$center getCopy]
-			$C setu      [$u getCopy]
-			$C setv      [$v getCopy]
-			$C setw      [$w getCopy]
+			$C setCenter [$_center get_copy]
+			$C setu      [$_u get_copy]
+			$C setv      [$_v get_copy]
+			$C set_w     [$_w get_copy]
 
 			return $C
 		}
 
 		method center { } {
-			my variable center
-			return $center
+			my variable _center
+			return $_center
 		}
 
 		method setCenter { c } {
-			my variable center
-			$center destroy
-			set $center $c
+			my variable _center
+			$_center destroy
+			set _center $c
 		}
 
 		method u { } {
-			my variable u
-			return $u
+			my variable _u
+			return $_u
 		}
 
-		method setu { _u } {
-			my variable u
-			$u destroy
-			set $u $_u
+		method setu { u } {
+			my variable _u
+			$_u destroy
+			set _u $u
 		}
 
 		method v { } {
-			my variable v
-			return $v
+			my variable _v
+			return $_v
 		}
 
-		method setv { _v } {
-			my variable v
-			$v destroy
-			set $v $_v
+		method setv { v } {
+			my variable _v
+			$_v destroy
+			set _v $v
 		}
 
 		method w { } {
-			my variable w
-			return $w
+			my variable _w
+			return $_w
 		}
 
-		method setw { _w } {
-			my variable w
-			$w destroy
-			set $w $_w
+		method set_w { w } {
+			my variable _w
+			$_w destroy
+			set _w $w
 		}
 
-		method isAttachedToStage { } {
+		method is_attached_to_stage { } {
 			# Return the 'attached to stage' property.
-			my variable attachedToStage
-			return $attachedToStage
+			my variable _attachedToStage
+			return $_attachedToStage
 		}
 
-		method attachToStage { attached } {
+		method attach_to_stage { attached } {
 			# 0: not attached, 1: attached to stage.
-			my variable attachedToStage
-			set attachedToStage $attached
+			my variable _attachedToStage
+			set _attachedToStage $attached
 		}
 
-		method makeUnitCoordinateSystem { } {
+		method make_unit_coordinate_system { } {
 			# Make coordinate system base unit vectors.
-			my variable u v w
-			$u toUnitVector
-			$v toUnitVector
-			$w toUnitVector
+			my variable _u _v _w
+			$_u to_unit_vector
+			$_v to_unit_vector
+			$_w to_unit_vector
 		}
 
 		method translate { vec } {
 			# Shift center by vector.
-			my variable center
-			$center add $vec
+			my variable _center
+			$_center add $vec
 		}
 
-		method translateX { dx } {
+		method translate_x { dx } {
 			# Translate coordinate system in x direction by amount dx.
 			set t [::ctsimu::vector new [list $dx 0 0]]; # new translation vector
 			my translate $t
 		}
 
-		method translateY { dy } {
-			# Translate coordinate system in x direction by amount dy.
+		method translate_y { dy } {
+			# Translate coordinate system in y direction by amount dy.
 			set t [::ctsimu::vector new [list 0 $dy 0]]; # new translation vector
 			my translate $t
 		}
 
-		method translateZ { dz } {
-			# Translate coordinate system in x direction by amount dz.
+		method translate_z { dz } {
+			# Translate coordinate system in z direction by amount dz.
 			set t [::ctsimu::vector new [list 0 0 $dz]]; # new translation vector
 			my translate $t
 		}
 
-		method rotateAroundU { angleInRad } {
+		method rotate_around_u { angle_in_rad } {
 			# Rotate coordinate system around u axis by angle.
-			my variable u v w
+			my variable _u _v _w
 
-			if {$angleInRad != 0} {
-				set R [::ctsimu::rotationMatrix $u $angleInRad]
-				$v transform_by_matrix $R
-				$w transform_by_matrix $R
+			if {$angle_in_rad != 0} {
+				set R [::ctsimu::rotation_matrix $_u $angle_in_rad]
+				$_v transform_by_matrix $R
+				$_w transform_by_matrix $R
 				$R destroy
 			}
 		}
 
-		method rotateAroundV { angleInRad } {
+		method rotate_around_v { angle_in_rad } {
 			# Rotate coordinate system around v axis by angle.
-			my variable u v w
+			my variable _u _v _w
 
-			if {$angleInRad != 0} {
-				set R [::ctsimu::rotationMatrix $v $angleInRad]
-				$u transform_by_matrix $R
-				$w transform_by_matrix $R
+			if {$angle_in_rad != 0} {
+				set R [::ctsimu::rotation_matrix $_v $angle_in_rad]
+				$_u transform_by_matrix $R
+				$_w transform_by_matrix $R
 				$R destroy
 			}
 		}
 
-		method rotateAroundW { angleInRad } {
+		method rotate_around_w { angle_in_rad } {
 			# Rotate coordinate system around w axis by angle.
-			my variable u v w
+			my variable _u _v _w
 
-			if {$angleInRad != 0} {
-				set R [::ctsimu::rotationMatrix $w $angleInRad]
-				$u transform_by_matrix $R
-				$v transform_by_matrix $R
+			if {$angle_in_rad != 0} {
+				set R [::ctsimu::rotation_matrix $_w $angle_in_rad]
+				$_u transform_by_matrix $R
+				$_v transform_by_matrix $R
 				$R destroy
 			}
 		}
 
-		method rotate { axis angleInRad } {
+		method rotate { axis angle_in_rad } {
 			# Rotate coordinate system around axis by angle.
-			my variable u v w
+			my variable _u _v _w
 
-			if {$angleInRad != 0} {
-				set R [::ctsimu::rotationMatrix $axis $angleInRad]
-				$u transform_by_matrix $R
-				$v transform_by_matrix $R
-				$w transform_by_matrix $R
+			if {$angle_in_rad != 0} {
+				set R [::ctsimu::rotation_matrix $axis $angle_in_rad]
+				$_u transform_by_matrix $R
+				$_v transform_by_matrix $R
+				$_w transform_by_matrix $R
 				$R destroy
 			}
 		}
 
-		method rotateAroundPivotPoint { axis angleInRad pivotPoint } {
-			# Rotate coordinate system around a pivot point. This will result in a different center position.
-			my variable center
+		method rotate_around_pivot_point { axis angle_in_rad pivot_point } {
+			# Rotate coordinate system around a pivot point.
+			# Generally, this will result in a different center position.
+			my variable _center
 
 			# Move coordinate system such that pivot point is at world origin:
-			$center subtract $pivotPoint
+			$_center subtract $pivot_point
 
 			# Rotate center point and transform back into world coordinate system:
-			$center rotate $axis $angleInRad
-			$center add $pivotPoint
+			$_center rotate $axis $angle_in_rad
+			$_center add $pivot_point
 
 			# Rotate the coordinate system itself:
-			my rotate $axis $angleInRad
+			my rotate $axis $angle_in_rad
 		}
 
 		method transform { csFrom csTo } {
@@ -237,7 +238,7 @@ namespace eval ::ctsimu {
 				if { [$wTo dot $wFrom] < 0 } {
 					# 180° flip; vectors point in opposite direction. Rotation axis is another CS basis vector.
 					$rotationAxis destroy
-					set rotationAxis [[$csFrom u] getCopy]
+					set rotationAxis [[$csFrom u] get_copy]
 				} else {
 					# wFrom already points in direction of wTo.
 				}
@@ -246,7 +247,7 @@ namespace eval ::ctsimu {
 			if { [$rotationAxis length] > 0 } {
 				set rotationAngle [$wFrom angle $wTo]
 				if { $rotationAngle != 0 } {
-					my rotateAroundPivotPoint $rotationAxis $rotationAngle [$csTo center]
+					my rotate_around_pivot_point $rotationAxis $rotationAngle [$csTo center]
 
 					# Also rotate the csFrom to make calculation of rotation around u axis possible (next step):
 					$csFrom rotate $rotationAxis $rotationAngle
@@ -262,7 +263,7 @@ namespace eval ::ctsimu {
 				if { [$uTo dot $uFrom] < 0 } {
 					# 180° flip; vectors point in opposite direction. Rotation axis is another CS basis vector.
 					$rotationAxis destroy
-					set rotationAxis [[$csFrom w] getCopy]
+					set rotationAxis [[$csFrom w] get_copy]
 				} else {
 					# uFrom already points in direction of uTo.
 				}
@@ -271,22 +272,22 @@ namespace eval ::ctsimu {
 			if { [$rotationAxis length] > 0 } {
 				set rotationAngle [$uFrom angle $uTo]
 				if { $rotationAngle != 0 } {
-					my rotateAroundPivotPoint $rotationAxis $rotationAngle [$csTo center]
+					my rotate_around_pivot_point $rotationAxis $rotationAngle [$csTo center]
 				}
 			}
 		}
 
-		method changeReferenceFrame { csFrom csTo } {
+		method change_reference_frame { csFrom csTo } {
 			# Transform a coordinate system from the csFrom reference frame
 			# to the csTo reference frame. Result will be in terms of csTo.
 
-			my variable center u v w
+			my variable _center _u _v _w
 
 			# Rotate basis vectors into csTo:
-			set R [::ctsimu::basisTransformMatrix $csFrom $csTo]; # rotation matrix
-			$u transform_by_matrix $R
-			$v transform_by_matrix $R
-			$w transform_by_matrix $R
+			set R [::ctsimu::basis_transform_matrix $csFrom $csTo]; # rotation matrix
+			$_u transform_by_matrix $R
+			$_v transform_by_matrix $R
+			$_w transform_by_matrix $R
 
 			# Move center to csTo:
 			# Calculate translation vector that moves the 'to' center to the origin of 'from':
@@ -296,32 +297,32 @@ namespace eval ::ctsimu {
 			set new_center_in_from [[my center] to $translation_centerTo_to_centerFrom]
 
 			# Rotate 'my' center into csTo and thus make it 'my' new center:
-			set center   [$R multiplyVector $new_center_in_from]
+			set _center   [$R multiply_vector $new_center_in_from]
 
 			$R destroy
 			$translation_centerTo_to_centerFrom destroy
 			$new_center_in_from destroy
 		}
 
-		method make_from_vectors { _c _u _w _attached } {
-			my setCenter $_c
-			my setu      $_u
-			my setw      $_w
-			my setv      [$_w cross $_u]
+		method make_from_vectors { center u w attached } {
+			my setCenter $center
+			my setu      $u
+			my set_w     $w
+			my setv      [$w cross $u]
 
-			my attachToStage $_attached
+			my attach_to_stage $attached
 		}
 
-		method make { cx cy cz ux uy uz wx wy wz _attached } {
-			set _c [::ctsimu::vector new [list $cx $cy $cz]]
-			set _u [::ctsimu::vector new [list $ux $uy $uz]]
-			set _w [::ctsimu::vector new [list $wx $wy $wz]]
+		method make { cx cy cz ux uy uz wx wy wz attached } {
+			set c [::ctsimu::vector new [list $cx $cy $cz]]
+			set u [::ctsimu::vector new [list $ux $uy $uz]]
+			set w [::ctsimu::vector new [list $wx $wy $wz]]
 
-			my make_from_vectors $_c $_u $_w $_attached
+			my make_from_vectors $c $u $w $attached
 		}
 
-		method setupFromJSONgeometry { geometry world stage { obeyKnownToReconstruction 0 } } {
-			my variable center u v w
+		method set_up_from_json_geometry { geometry world stage { obeyKnownToReconstruction 0 } } {
+			my variable _center _u _v _w
 			my reset
 
 			set known_to_recon 0
@@ -329,28 +330,28 @@ namespace eval ::ctsimu {
 			# If object is placed in world coordinate system:
 			if {[json exists $geometry centre x] && [json exists $geometry centre y] && [json exists $geometry centre z]} {
 				# Object is in world coordinate system:
-				my attachToStage 0
+				my attach_to_stage 0
 
 				# Position
-				$center setx [::ctsimu::in_mm [json extract $geometry centre x]]
-				$center sety [::ctsimu::in_mm [json extract $geometry centre y]]
-				$center setz [::ctsimu::in_mm [json extract $geometry centre z]]
+				$_center set_x [::ctsimu::in_mm [json extract $geometry centre x]]
+				$_center set_y [::ctsimu::in_mm [json extract $geometry centre y]]
+				$_center set_z [::ctsimu::in_mm [json extract $geometry centre z]]
 
 				# Orientation
 				if {[json exists $geometry vector_u x] && [json exists $geometry vector_u y] && [json exists $geometry vector_u z] && [json exists $geometry vector_w x] && [json exists $geometry vector_w y] && [json exists $geometry vector_w z]} {
-					$u setx [json get $geometry vector_u x]
-					$u sety [json get $geometry vector_u y]
-					$u setz [json get $geometry vector_u z]
-					$w setx [json get $geometry vector_w x]
-					$w sety [json get $geometry vector_w y]
-					$w setz [json get $geometry vector_w z]
+					$_u set_x [json get $geometry vector_u x]
+					$_u set_y [json get $geometry vector_u y]
+					$_u set_z [json get $geometry vector_u z]
+					$_w set_x [json get $geometry vector_w x]
+					$_w set_y [json get $geometry vector_w y]
+					$_w set_z [json get $geometry vector_w z]
 				} elseif {[json exists $geometry vector_r x] && [json exists $geometry vector_r y] && [json exists $geometry vector_r z] && [json exists $geometry vector_t x] && [json exists $geometry vector_t y] && [json exists $geometry vector_t z]} {
-					$u setx [json get $geometry vector_r x]
-					$u sety [json get $geometry vector_r y]
-					$u setz [json get $geometry vector_r z]
-					$w setx [json get $geometry vector_t x]
-					$w sety [json get $geometry vector_t y]
-					$w setz [json get $geometry vector_t z]
+					$_u set_x [json get $geometry vector_r x]
+					$_u set_y [json get $geometry vector_r y]
+					$_u set_z [json get $geometry vector_r z]
+					$_w set_x [json get $geometry vector_t x]
+					$_w set_y [json get $geometry vector_t y]
+					$_w set_z [json get $geometry vector_t z]
 				} else {
 					fail "Object $object is put in world coordinate system, but the vectors u and w (or r and t, for samples) are not properly defined (each with an x, y and z component)."
 					return
@@ -372,21 +373,21 @@ namespace eval ::ctsimu {
 				}
 			} elseif {[json exists $geometry centre u] && [json exists $geometry centre v] && [json exists $geometry centre w]} {
 				# Object is in stage coordinate system:
-				my attachToStage 1
+				my attach_to_stage 1
 
 				# Position
-				$center setx [::ctsimu::in_mm [json extract $geometry centre u]]
-				$center sety [::ctsimu::in_mm [json extract $geometry centre v]]
-				$center setz [::ctsimu::in_mm [json extract $geometry centre w]]
+				$_center set_x [::ctsimu::in_mm [json extract $geometry centre u]]
+				$_center set_y [::ctsimu::in_mm [json extract $geometry centre v]]
+				$_center set_z [::ctsimu::in_mm [json extract $geometry centre w]]
 
 				# Orientation
 				if {[json exists $geometry vector_r u] && [json exists $geometry vector_r v] && [json exists $geometry vector_r w] && [json exists $geometry vector_t u] && [json exists $geometry vector_t v] && [json exists $geometry vector_t w]} {
-					$u setx [json get $geometry vector_r u]
-					$u sety [json get $geometry vector_r v]
-					$u setz [json get $geometry vector_r w]
-					$w setx [json get $geometry vector_t u]
-					$w sety [json get $geometry vector_t v]
-					$w setz [json get $geometry vector_t w]
+					$_u set_x [json get $geometry vector_r u]
+					$_u set_y [json get $geometry vector_r v]
+					$_u set_z [json get $geometry vector_r w]
+					$_w set_x [json get $geometry vector_t u]
+					$_w set_y [json get $geometry vector_t v]
+					$_w set_z [json get $geometry vector_t w]
 				} else {
 					fail "Object $object is placed in stage coordinate system, but the vectors r and t are not properly defined (each with an u, v and w component)."
 					return
@@ -408,11 +409,11 @@ namespace eval ::ctsimu {
 				}
 			}
 
-			$u toUnitVector
-			$w toUnitVector
-			$v destroy
-			set v [$w cross $u]
-			$v toUnitVector
+			$_u to_unit_vector
+			$_w to_unit_vector
+			$_v destroy
+			set _v [$_w cross $_u]
+			$_v to_unit_vector
 
 			# Prior to file format 0.9:
 			if {[json exists $geometry deviation known_to_reconstruction]} {
@@ -426,12 +427,12 @@ namespace eval ::ctsimu {
 
 			# Apply deviations in position:
 			if { ($obeyKnownToReconstruction==0) || ($known_to_recon==1) } {
-				$center setx [expr [$center x] + $devPosX]
-				$center sety [expr [$center y] + $devPosY]
-				$center setz [expr [$center z] + $devPosZ]
+				$_center set_x [expr [$_center x] + $devPosX]
+				$_center set_y [expr [$_center y] + $devPosY]
+				$_center set_z [expr [$_center z] + $devPosZ]
 			}
 
-			if { [my isAttachedToStage] == 1 } {
+			if { [my is_attached_to_stage] == 1 } {
 				# Move object to stage coordinate system:
 				my transform $world $stage
 			}
@@ -483,21 +484,23 @@ namespace eval ::ctsimu {
 				# Apply rotations:
 
 				# Rotations around w (or sample t) axis:
-				$u rotate $w $devRotW
-				$v rotate $w $devRotW
+				$_u rotate $_w $devRotW
+				$_v rotate $_w $devRotW
 
 				# Rotations around v (or sample s) axis:
-				$u rotate $v $devRotV
-				$w rotate $v $devRotV
+				$_u rotate $_v $devRotV
+				$_w rotate $_v $devRotV
 				
 				# Rotations around u (or sample r) axis:
-				$v rotate $u $devRotU
-				$w rotate $u $devRotU
+				$_v rotate $_u $devRotU
+				$_w rotate $_u $devRotU
 			}
 		}
 	}
 
-	proc basisTransformMatrix { csFrom csTo {m4x4 0} } {
+
+
+	proc basis_transform_matrix { csFrom csTo {m4x4 0} } {
 		# Transformation matrix to transform point coordinates from csFrom to csTo.
 		# If m4x4 is set to 1, a 4x4 matrix will be returned instead of a 3x3 matrix.
 
@@ -513,34 +516,34 @@ namespace eval ::ctsimu {
 		set T [::ctsimu::matrix 3 3]
 
 		# Row 0:
-		$T setElement 0 0 [$to_u dot $from_u]
-		$T setElement 1 0 [$to_u dot $from_v]
-		$T setElement 2 0 [$to_u dot $from_w]
+		$T set_element 0 0 [$to_u dot $from_u]
+		$T set_element 1 0 [$to_u dot $from_v]
+		$T set_element 2 0 [$to_u dot $from_w]
 
 		# Row 1:
-		$T setElement 0 1 [$to_v dot $from_u]
-		$T setElement 1 1 [$to_v dot $from_v]
-		$T setElement 2 1 [$to_v dot $from_w]
+		$T set_element 0 1 [$to_v dot $from_u]
+		$T set_element 1 1 [$to_v dot $from_v]
+		$T set_element 2 1 [$to_v dot $from_w]
 
 		# Row 2:
-		$T setElement 0 2 [$to_w dot $from_u]
-		$T setElement 1 2 [$to_w dot $from_v]
-		$T setElement 2 2 [$to_w dot $from_w]
+		$T set_element 0 2 [$to_w dot $from_u]
+		$T set_element 1 2 [$to_w dot $from_v]
+		$T set_element 2 2 [$to_w dot $from_w]
 
 		# Make a 4x4 matrix if necessary:
 		if {$m4x4 != 0} {
-			$T addRow [::ctsimu::vector new [list 0 0 0]]
-			$T addCol [::ctsimu::vector new [list 0 0 0 1]]
+			$T add_row [::ctsimu::vector new [list 0 0 0]]
+			$T add_col [::ctsimu::vector new [list 0 0 0 1]]
 		}
 
 		return $T
 	}
 
-	proc pointChangeReferenceFrame { point csFrom csTo } {
+	proc change_reference_frame_of_point { point csFrom csTo } {
 		# Return point's coordinates, given in csFrom, in terms of csTo.
 
 		# Rotation matrix to rotate base vectors into csTo:
-		set R [basisTransformMatrix $csFrom $csTo]
+		set R [basis_transform_matrix $csFrom $csTo]
 
 		# Move center to csTo:
 		# Calculate translation vector that moves the 'to' center to the origin of 'from':
@@ -550,7 +553,7 @@ namespace eval ::ctsimu {
 		set new_center_in_from [[$point center] to $translation_centerTo_to_centerFrom]
 
 		# Rotate 'my' center into csTo and thus make it 'my' new center:
-		set pointInTo [$R multiplyVector $new_center_in_from]
+		set pointInTo [$R multiply_vector $new_center_in_from]
 
 		return $pointInTo
 	}

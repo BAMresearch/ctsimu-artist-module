@@ -45,12 +45,12 @@ proc Init {} {
 
 	set prefs [Preferences::GetWithDefault CTSimU Settings {}]
 
-	if {[dict exists $prefs fileFormat]} {
-		$ctsimu_scenario setFileFormat [dict get $prefs fileFormat]
+	if {[dict exists $prefs file_format]} {
+		$ctsimu_scenario setFileFormat [dict get $prefs file_format]
 	}
 
-	if {[dict exists $prefs dataType]} {
-		$ctsimu_scenario setDataType [dict get $prefs dataType]
+	if {[dict exists $prefs data_type]} {
+		$ctsimu_scenario setDataType [dict get $prefs data_type]
 	}
 
 	if {[dict exists $prefs cfgFileCERA]} {
@@ -81,11 +81,11 @@ proc Running {} {
 
 proc CanClose {} {
 	variable ctsimu_scenario
-	if {[$ctsimu_scenario batchIsRunning] == 1} {
+	if {[$ctsimu_scenario batch_is_running] == 1} {
 		return false
 	}
 
-	if {[$ctsimu_scenario isRunning] == 1} {
+	if {[$ctsimu_scenario is_running] == 1} {
 		return false
 	}
 
@@ -350,11 +350,11 @@ proc InitGUI { parent } {
 
 	set CTScan  [FoldFrame $model.frmCTScan -text "Simulation"     -padding $pad]
 	dataform $CTScan {
-		{Output Folder}          outputFolder    folder   {}
+		{Output Folder}          output_folder    folder   {}
 		{Projection Base Name}   outputBaseName  string   {}
 		{Start at Projection Nr.}        startProjNr     integer  {}
-		{File Format}            fileFormat      choice   { "TIFF" "tiff" "RAW" "raw" }
-		{Data Type}              dataType        choice   { "uint16" "16bit" "float32" "32bit" }
+		{File Format}            file_format      choice   { "TIFF" "tiff" "RAW" "raw" }
+		{Data Type}              data_type        choice   { "uint16" "16bit" "float32" "32bit" }
 		{Save ideal dark field}  takeDarkField   bool     {}
 		{Flat field images}      nFlatFrames     integer  {}
 		{Flat frames to average} nFlatAvg        integer  {}
@@ -499,7 +499,7 @@ proc fail { message } {
 proc loadedSuccessfully { } {
 	variable ctsimu_scenario
 
-	if [$ctsimu_scenario jsonLoadedSuccessfully] {
+	if [$ctsimu_scenario json_loaded_successfully] {
 		return 1
 	}
 
@@ -525,9 +525,9 @@ proc fillCurrentParameters {} {
 	set GUISettings(nProjections)      [$ctsimu_scenario nProjections]
 	set GUISettings(projNr)            [$ctsimu_scenario projNr]
 	set GUISettings(outputBaseName)    [$ctsimu_scenario basename]
-	set GUISettings(outputFolder)      [$ctsimu_scenario outputFolder]
-	set GUISettings(fileFormat)        [$ctsimu_scenario fileFormat]
-	set GUISettings(dataType)          [$ctsimu_scenario dataType]
+	set GUISettings(output_folder)      [$ctsimu_scenario output_folder]
+	set GUISettings(file_format)        [$ctsimu_scenario file_format]
+	set GUISettings(data_type)          [$ctsimu_scenario data_type]
 	set GUISettings(includeFinalAngle) [$ctsimu_scenario includeFinalAngle]
 	set GUISettings(startProjNr)       [$ctsimu_scenario startProjNr]
 
@@ -537,8 +537,8 @@ proc fillCurrentParameters {} {
 	set GUISettings(ffIdeal)           [$ctsimu_scenario ffIdeal]
 
 	# Recon settings
-	set GUISettings(cfgFileCERA)       [$ctsimu_scenario createCERAconfigFile]
-	set GUISettings(cfgFileCLFDK)      [$ctsimu_scenario createCLFDKconfigFile]
+	set GUISettings(cfgFileCERA)       [$ctsimu_scenario create_cera_config_file]
+	set GUISettings(cfgFileCLFDK)      [$ctsimu_scenario create_clfdk_config_file]
 }
 
 proc applyCurrentSettings {} {
@@ -549,10 +549,10 @@ proc applyCurrentSettings {} {
 	$ctsimu_scenario setCreateCERAconfigFile  $GUISettings(cfgFileCERA)
 	$ctsimu_scenario setCreateCLFDKconfigFile $GUISettings(cfgFileCLFDK)
 
-	dict set storeSettings fileFormat   [$ctsimu_scenario fileFormat]
-	dict set storeSettings dataType     [$ctsimu_scenario dataType]
-	dict set storeSettings cfgFileCERA  [$ctsimu_scenario createCERAconfigFile]
-	dict set storeSettings cfgFileCLFDK [$ctsimu_scenario createCLFDKconfigFile]
+	dict set storeSettings file_format   [$ctsimu_scenario file_format]
+	dict set storeSettings data_type     [$ctsimu_scenario data_type]
+	dict set storeSettings cfgFileCERA  [$ctsimu_scenario create_cera_config_file]
+	dict set storeSettings cfgFileCLFDK [$ctsimu_scenario create_clfdk_config_file]
 
 	Preferences::Set CTSimU Settings $storeSettings
 }
@@ -576,31 +576,31 @@ proc applyCurrentParameters {} {
 	$ctsimu_scenario setFlatAvg           $GUISettings(nFlatAvg)
 	$ctsimu_scenario setFFideal           $GUISettings(ffIdeal)
 	
-	$ctsimu_scenario setFileFormat        $GUISettings(fileFormat)
-	$ctsimu_scenario setDataType          $GUISettings(dataType)
+	$ctsimu_scenario setFileFormat        $GUISettings(file_format)
+	$ctsimu_scenario setDataType          $GUISettings(data_type)
 
 	applyCurrentSettings
 }
 
-proc setOutputParameters { fileFormat dataType outputFolder projectionBasename run } {
+proc setOutputParameters { file_format data_type output_folder projectionBasename run } {
 	variable ctsimu_scenario
-	# fileFormat: "raw" or "tiff". Standard: "raw".
-	# dataType: "16bit" or "32bit". Standard: "16bit"
+	# file_format: "raw" or "tiff". Standard: "raw".
+	# data_type: "16bit" or "32bit". Standard: "16bit"
 
-	if { [string match -nocase "tiff" $fileFormat] } {
+	if { [string match -nocase "tiff" $file_format] } {
 		$ctsimu_scenario setFileFormat "tiff"
 	} else {
 		$ctsimu_scenario setFileFormat "raw"
 	}
 
-	if { [string match -nocase "32bit" $dataType] } {
+	if { [string match -nocase "32bit" $data_type] } {
 		$ctsimu_scenario setDataType "32bit"
 	} else {
 		$ctsimu_scenario setDataType "16bit"
 	}
 
-	if { [string length $outputFolder] > 0 } {
-		$ctsimu_scenario setOutputFolder $outputFolder $run
+	if { [string length $output_folder] > 0 } {
+		$ctsimu_scenario setOutputFolder $output_folder $run
 	}
 
 	if { [string length $projectionBasename] > 0 } {
@@ -639,14 +639,14 @@ proc saveBatchJobs { csvFilename } {
 			if { [catch {
 				set jsonFilename       [$batchList cellcget $index,JSONFile  -text]
 				set outputFormat       [$batchList cellcget $index,OutputFormat  -text]
-				set outputFolder       [$batchList cellcget $index,OutputFolder  -text]
+				set output_folder       [$batchList cellcget $index,OutputFolder  -text]
 				set projectionBasename [$batchList cellcget $index,ProjectionBaseName  -text]
 				set nRuns              [$batchList cellcget $index,Runs  -text]
 				set startRun           [$batchList cellcget $index,StartRun  -text]
 				set startProjNr        [$batchList cellcget $index,StartProjNr  -text]
 				set status             [$batchList cellcget $index,Status  -text]
 
-				set csvLine [::csv::join [list $jsonFilename $outputFormat $outputFolder $projectionBasename $nRuns $startRun $startProjNr $status ]]
+				set csvLine [::csv::join [list $jsonFilename $outputFormat $output_folder $projectionBasename $nRuns $startRun $startProjNr $status ]]
 
 				puts $fileId $csvLine
 
@@ -690,7 +690,7 @@ proc importBatchJobs { csvFilename } {
 		if {[llength $entries] >= 4} {
 			set jsonFilename       ""
 			set outputFormat       ""
-			set outputFolder       ""
+			set output_folder       ""
 			set projectionBasename ""
 			set nRuns              "1"
 			set startRun           "1"
@@ -701,7 +701,7 @@ proc importBatchJobs { csvFilename } {
 			foreach entry $entries {
 				if {$i == 0} {set jsonFilename $entry}
 				if {$i == 1} {set outputFormat $entry}
-				if {$i == 2} {set outputFolder $entry}
+				if {$i == 2} {set output_folder $entry}
 				if {$i == 3} {set projectionBasename $entry}
 				if {$i == 4} {set nRuns $entry}
 				if {$i == 5} {set startRun $entry}
@@ -717,7 +717,7 @@ proc importBatchJobs { csvFilename } {
 				incr id
 			}
 
-			set colEntries [list $id $status $nRuns $startRun $startProjNr $jsonFilename $outputFormat $outputFolder $projectionBasename ]
+			set colEntries [list $id $status $nRuns $startRun $startProjNr $jsonFilename $outputFormat $output_folder $projectionBasename ]
 			$batchList insert end $colEntries
 		}
 	}
@@ -733,11 +733,11 @@ proc addBatchJob { } {
 	foreach jsonFileName $jsonFileNames {
 		if { $jsonFileName != "" } {
 			set formatString "RAW "
-			if { $GUISettings(fileFormat) == "tiff" } {
+			if { $GUISettings(file_format) == "tiff" } {
 				set formatString "TIFF "
 			}
 
-			if { $GUISettings(dataType) == "32bit" } {
+			if { $GUISettings(data_type) == "32bit" } {
 				append formatString "float32"
 			} else {
 				append formatString "uint16"
@@ -781,15 +781,15 @@ proc deleteBatchJob { } {
 
 proc stopBatch { } {
 	variable ctsimu_scenario
-	$ctsimu_scenario setBatchIsRunning 0
+	$ctsimu_scenario set_batch_run_status 0
 	CTSimU_stopScan
 }
 
 proc runBatch { } {
 	variable ctsimu_scenario
 
-	if {[$ctsimu_scenario batchIsRunning] == 0} {
-		$ctsimu_scenario setBatchIsRunning 1
+	if {[$ctsimu_scenario batch_is_running] == 0} {
+		$ctsimu_scenario set_batch_run_status 1
 		applyCurrentSettings
 
 		set nJobsDone 0
@@ -803,7 +803,7 @@ proc runBatch { } {
 				set startProjNr        [$batchList cellcget $index,StartProjNr  -text]
 				set jsonFilename       [$batchList cellcget $index,JSONFile  -text]
 				set outputFormat       [$batchList cellcget $index,OutputFormat  -text]
-				set outputFolder       [$batchList cellcget $index,OutputFolder  -text]
+				set output_folder       [$batchList cellcget $index,OutputFolder  -text]
 				set projectionBasename [$batchList cellcget $index,ProjectionBaseName  -text]
 			} err] } {
 				continue
@@ -811,16 +811,16 @@ proc runBatch { } {
 
 			if {$status == "Pending"} {
 				if {$nRuns > 0} {
-					set fileFormat "raw"
-					set dataType "16bit"
+					set file_format "raw"
+					set data_type "16bit"
 
 					if { $outputFormat == "RAW float32" } {
-						set dataType "32bit"
+						set data_type "32bit"
 					} elseif { $outputFormat == "TIFF float32" } {
-						set dataType "32bit"
-						set fileFormat "tiff"
+						set data_type "32bit"
+						set file_format "tiff"
 					} elseif { $outputFormat == "TIFF uint16" } {
-						set fileFormat "tiff"
+						set file_format "tiff"
 					}
 
 					$batchList cellconfigure $index,Status -text "Running $startRun/$nRuns"
@@ -836,7 +836,7 @@ proc runBatch { } {
 
 					for {set run $startRun} {$run <= $nRuns } {incr run} {
 						$batchList cellconfigure $index,Status -text "Stopped"
-						if {[$ctsimu_scenario batchIsRunning] == 0} {
+						if {[$ctsimu_scenario batch_is_running] == 0} {
 							return
 						}
 
@@ -854,7 +854,7 @@ proc runBatch { } {
 						}
 
 						if { [catch {
-							setOutputParameters $fileFormat $dataType $outputFolder $runBasename $runName
+							setOutputParameters $file_format $data_type $output_folder $runBasename $runName
 							CTSimU::startScan
 							$batchList cellconfigure $index,Status -text "Stopped"
 							incr nJobsDone
@@ -864,7 +864,7 @@ proc runBatch { } {
 							break
 						}
 
-						if {[$ctsimu_scenario batchIsRunning] == 0} {
+						if {[$ctsimu_scenario batch_is_running] == 0} {
 							return
 						}
 
@@ -924,15 +924,15 @@ proc loadFullScenario { jsonFile } {
 	loadCTSimUScene
 }
 
-proc runScenario { jsonFile fileFormat dataType outputFolder projectionBasename } {
+proc runScenario { jsonFile file_format data_type output_folder projectionBasename } {
 	# Run a full CT scan simulation using the provided JSON file.
-	# fileFormat: "raw" or "tiff". Standard: "raw".
-	# dataType: "16bit" or "32bit". Standard: "16bit"
-	# Give empty strings for outputFolder and projectionBasename to auto-generate them.
+	# file_format: "raw" or "tiff". Standard: "raw".
+	# data_type: "16bit" or "32bit". Standard: "16bit"
+	# Give empty strings for output_folder and projectionBasename to auto-generate them.
 
 	loadFullScenario $jsonFile
 	applyCurrentParameters
-	setOutputParameters $fileFormat $dataType $outputFolder $projectionBasename	""
+	setOutputParameters $file_format $data_type $output_folder $projectionBasename	""
 	CTSimU_startScan
 }
 
@@ -995,7 +995,7 @@ proc CTSimU_startScan {} {
 
 	applyCurrentParameters
 	
-	$ctsimu_scenario setOutputFolder $GUISettings(outputFolder) ""
+	$ctsimu_scenario setOutputFolder $GUISettings(output_folder) ""
 	$ctsimu_scenario setBasename $GUISettings(outputBaseName)
 	startScan
 }
@@ -1063,7 +1063,7 @@ proc setReconFolder { folder run } {
 
 proc setOutputFolder { folder run } {
 	variable ctsimuSettings
-	dict set ctsimuSettings outputFolder $folder
+	dict set ctsimuSettings output_folder $folder
 
 	setProjectionFolder $folder $run
 	setReconFolder $folder $run
@@ -1604,7 +1604,7 @@ proc generateDetector { name detectorType pixelSizeX pixelSizeY pixelCountX pixe
 
 			if { ($SNR==0) || ($SNR=="0") || ($SNR=="0.0") || ($SNR=="null") } {
 				if { !(($FWHM==0) || ($FWHM=="0") || ($FWHM=="0.0") || ($FWHM=="null")) } {
-					set SNR [convertSNR_FWHM $FWHM $GVatMaxInput]
+					set SNR [convert_SNR_FWHM $FWHM $GVatMaxInput]
 					aRTist::Info { "Converted FWHM $FWHM to SNR $SNR" }
 				}
 			}
@@ -2140,7 +2140,7 @@ proc load_json { jsonfilename } {
 					set rfoc [vec3Diff $S $O]
 
 					# New centre of source in stage CS (which is world CS as far as the projection matrix is concerned):
-					set m_worldToStage [basisTransformMatrix $csWorld $csStage]
+					set m_worldToStage [basis_transform_matrix $csWorld $csStage]
 
 					set rfoc_in_stageCS [::math::linearalgebra::matmul $m_worldToStage $rfoc]
 
@@ -2186,8 +2186,8 @@ proc load_json { jsonfilename } {
 
 					# Save a source CS as seen from the detector CS. This is convenient to
 					# later get the SDD, ufoc and vfoc:
-					set sourceFromDetector [changeReferenceFrame $csSource $csWorld $csDetector]
-					set stageFromDetector [changeReferenceFrame $csStage $csWorld $csDetector]
+					set sourceFromDetector [change_reference_frame $csSource $csWorld $csDetector]
+					set stageFromDetector [change_reference_frame $csStage $csWorld $csDetector]
 
 					# Focus point on detector: principal, perpendicular ray.
 					# In the detector coordinate system, ufoc and vfoc are the u and v coordinates
@@ -2400,7 +2400,7 @@ proc load_json { jsonfilename } {
 					}
 
 					if [json exists $scene source target thickness] {
-						if {[isNullOrZero_jsonObject [json extract $scene source target thickness]] == 0} {
+						if {[object_value_is_null_or_zero [json extract $scene source target thickness]] == 0} {
 							set ::Xsource(TargetThickness) [in_mm [json extract $scene source target thickness]]
 						}
 					}
@@ -2570,16 +2570,16 @@ proc load_json { jsonfilename } {
 
 					# If a finite spot size is provided, but no Gaussian sigmas,
 					# the spot size is assumed to be the Gaussian width.
-					if { [isNullOrZero_value $sigmaX] } {
+					if { [value_is_null_or_zero $sigmaX] } {
 						aRTist::Info { "sigmaX is null or 0, retreating to spotSizeX." }
 						set sigmaX $spotSizeX
 					}
-					if { [isNullOrZero_value $sigmaY] } {
+					if { [value_is_null_or_zero $sigmaY] } {
 						aRTist::Info { "sigmaY is null or 0, retreating to spotSizeY." }
 						set sigmaY $spotSizeY
 					}
 
-					if { [isNullOrZero_value $sigmaX] || [isNullOrZero_value $sigmaY] } {
+					if { [value_is_null_or_zero $sigmaX] || [value_is_null_or_zero $sigmaY] } {
 						# Point source
 						aRTist::Info { "sigmaX=0 or sigmaY=0. Setting point source." }
 						
@@ -2742,7 +2742,7 @@ proc load_json { jsonfilename } {
 					# Generate filter list:
 					set frontPanelFilters {}
 					if [json exists $scene detector filters front] {
-						if {[isNullOrZero_value [json extract $scene detector filters front]] == 0} {
+						if {[value_is_null_or_zero [json extract $scene detector filters front]] == 0} {
 							json foreach mat [json extract $scene detector filters front] {
 								if {$mat != "null"} {
 									lappend frontPanelFilters [getMaterialID [json get $mat material_id]]
@@ -2801,12 +2801,12 @@ proc load_json { jsonfilename } {
 
 					# Set frame averaging:
 					set nFramesToAverage [getValue $scene {acquisition frame_average}]
-					if {![isNullOrZero_value $nFramesToAverage]} {
+					if {![value_is_null_or_zero $nFramesToAverage]} {
 						set ::Xdetector(NrOfFrames) $nFramesToAverage
 					}
 
 					set nDarkFields [getValue $scene {acquisition dark_field number} ]
-					if {![isNullOrZero_value $nDarkFields]} {
+					if {![value_is_null_or_zero $nDarkFields]} {
 						set dfIdeal [from_bool [getValue $scene {acquisition dark_field ideal} ]]
 						if { $dfIdeal == 1 } {
 							dict set ctsimuSettings takeDarkField 1
@@ -2816,11 +2816,11 @@ proc load_json { jsonfilename } {
 					}
 
 					set nFlatFields [getValue $scene {acquisition flat_field number} ]
-					if {![isNullOrZero_value $nFlatFields]} {
+					if {![value_is_null_or_zero $nFlatFields]} {
 						dict set ctsimuSettings nFlatFrames $nFlatFields
 
 						set nFlatAvg [getValue $scene {acquisition flat_field frame_average} ]
-						if {![isNullOrZero_value $nFlatAvg]} {
+						if {![value_is_null_or_zero $nFlatAvg]} {
 							if {$nFlatAvg > 0} {
 								dict set ctsimuSettings nFlatAvg $nFlatAvg 
 							} else {
@@ -2831,7 +2831,7 @@ proc load_json { jsonfilename } {
 						}
 
 						set ffIdeal [from_bool [getValue $scene {acquisition flat_field ideal} ]]
-						if {![isNullOrZero_value $ffIdeal]} {
+						if {![value_is_null_or_zero $ffIdeal]} {
 							dict set ctsimuSettings ffIdeal $ffIdeal
 						} else {
 							dict set ctsimuSettings ffIdeal 0
@@ -2867,7 +2867,7 @@ proc load_json { jsonfilename } {
 					}
 
 					createCERA_RDabcuv
-					$ctsimu_scenario setJSONloadStatus 1; # loaded successfully
+					$ctsimu_scenario set_json_load_status 1; # loaded successfully
 					
 					return 1
 
@@ -2932,12 +2932,12 @@ proc projectionMatrix { csSource csStage csDetector mode {psu 0} {psv 0} {nu 0} 
 
 	# Save a source CS as seen from the detector CS. This is convenient to
 	# later get the SDD, ufoc and vfoc:
-	set sourceFromDetector [changeReferenceFrame $csSource $csWorld $csDetector]
+	set sourceFromDetector [change_reference_frame $csSource $csWorld $csDetector]
 
 	# Make the stage CS the new world CS:
-	set csSource [changeReferenceFrame $csSource $csWorld $csStage]
-	set csDetector [changeReferenceFrame $csDetector $csWorld $csStage]
-	set csStage [changeReferenceFrame $csStage $csWorld $csStage]
+	set csSource [change_reference_frame $csSource $csWorld $csStage]
+	set csDetector [change_reference_frame $csDetector $csWorld $csStage]
+	set csStage [change_reference_frame $csStage $csWorld $csStage]
 
 
 	# Centre points in a stage-centric projection coordinate system:
@@ -2973,7 +2973,7 @@ proc projectionMatrix { csSource csStage csDetector mode {psu 0} {psv 0} {nu 0} 
 	set F [makeMatrix_4x3 1 0 0 $xfoc 0 1 0 $yfoc 0 0 1 $zfoc]
 
 	# Rotations:
-	set R [basisTransformMatrix $csStage $csDetector]
+	set R [basis_transform_matrix $csStage $csDetector]
 
 	# Projection onto detector:
 	set D [makeMatrix_3x3 [expr -$SDD*$scale_u] 0 0 0 [expr -$SDD*$scale_v] 0 0 0 $scale_w ]
@@ -3106,7 +3106,7 @@ proc setupProjection { projNr renderPreview } {
 
 proc stopScan { {withInfo 1} } {
 	variable ctsimu_scenario
-	$ctsimu_scenario setRunning 0
+	$ctsimu_scenario set_run_status 0
 	if {$withInfo == 1} {
 		showInfo "Scan stopped."
 	}
@@ -3136,7 +3136,7 @@ proc takeProjection { projNr fileNameSuffix } {
 	# Write TIFF or RAW:
 	set currFile "$projectionFolder/$outputBaseName"
 	append currFile "_$fileNameSuffix"
-	if {[dict get $ctsimuSettings fileFormat] == "raw"} {
+	if {[dict get $ctsimuSettings file_format] == "raw"} {
 		append currFile ".raw"
 	} else {
 		append currFile ".tif"
@@ -3148,13 +3148,13 @@ proc takeProjection { projNr fileNameSuffix } {
 		$Scale Update
 		$tmp ShallowCopy [$Scale GetOutput]
 		$tmp SetMetaData [$img GetMetaData]
-		if {[dict get $ctsimuSettings dataType] == "32bit"} {
+		if {[dict get $ctsimuSettings data_type] == "32bit"} {
 			set convtmp [::Image::ConvertToFloat $tmp]
 		} else {
 			set convtmp [::Image::ConvertTo16bit $tmp]
 		}
 
-		if {[dict get $ctsimuSettings fileFormat] == "raw"} {
+		if {[dict get $ctsimuSettings file_format] == "raw"} {
 			::Image::SaveRawFile $convtmp $currFile true . "" 0
 		} else {
 			::Image::SaveTIFF $convtmp $currFile true . NoCompression
@@ -3204,20 +3204,20 @@ proc createMetadataFile { } {
 	set modulename [dict get $moduleInfo Description]
 	set moduleversion [dict get $moduleInfo Version]
 
-	set dataType "uint16"
-	if {[dict get $ctsimuSettings dataType] == "32bit"} {
-		set dataType "float32"
+	set data_type "uint16"
+	if {[dict get $ctsimuSettings data_type] == "32bit"} {
+		set data_type "float32"
 	}
 
 	set fileExtension ".tif"
 	set headerSizeValid 0
-	if {[dict get $ctsimuSettings fileFormat] == "raw"} {
+	if {[dict get $ctsimuSettings file_format] == "raw"} {
 		set fileExtension ".raw"
 		set headerSizeValid 1
 	}
 	set projFilename "$outputBaseName"
 	append projFilename "_"
-	append projFilename [$ctsimu_scenario projectionCounterFormat]
+	append projFilename [$ctsimu_scenario projection_counter_format]
 	append projFilename $fileExtension
 
 	set metadataFilename "$projectionFolder/$outputBaseName"
@@ -3244,7 +3244,7 @@ proc createMetadataFile { } {
 	puts $fileId "		\"projections\":"
 	puts $fileId "		\{"
 	puts $fileId "			\"filename\":   \"$projFilename\","
-	puts $fileId "			\"datatype\":   \"$dataType\","
+	puts $fileId "			\"datatype\":   \"$data_type\","
 	puts $fileId "			\"byteorder\":  \"little\","
 
 	if {$headerSizeValid == 1} {
@@ -3295,7 +3295,7 @@ proc createMetadataFile { } {
 		append ffFilename "_flat"
 		if {$nFlatFrames > 1} {
 			append ffFilename "_"
-			append ffFilename [$ctsimu_scenario projectionCounterFormat]
+			append ffFilename [$ctsimu_scenario projection_counter_format]
 		}
 		append ffFilename "$fileExtension\""
 	}
@@ -3424,9 +3424,9 @@ proc createCERA_RDabcuv { } {
 
 	set csCERA [makeCoordinateSystemFromVectors $S $cera_x $cera_z 0]
 
-	set stageInCERA [changeReferenceFrame $csStage $csWorld $csCERA]
-	set detectorInCERA [changeReferenceFrame $csDetector $csWorld $csCERA]
-	set sourceInCERA [changeReferenceFrame $csSource $csWorld $csCERA]
+	set stageInCERA [change_reference_frame $csStage $csWorld $csCERA]
+	set detectorInCERA [change_reference_frame $csDetector $csWorld $csCERA]
+	set sourceInCERA [change_reference_frame $csSource $csWorld $csCERA]
 
 	set S [dict get $sourceInCERA centre]
 	set O [dict get $stageInCERA centre]
@@ -3467,7 +3467,7 @@ proc createCERA_RDabcuv { } {
 	puts "CERA volume midpoint:"
 	printVector $ceraVolumeMidpoint
 
-	set worldVolumeMidpoint [pointChangeReferenceFrame $ceraVolumeMidpoint $csCERA $csWorld ]
+	set worldVolumeMidpoint [change_reference_frame_of_point $ceraVolumeMidpoint $csCERA $csWorld ]
 
 	puts "World volume midpoint:"
 	printVector $worldVolumeMidpoint
@@ -3687,8 +3687,8 @@ GlobalI0Value = $globalI0
 
 	set projFilename "$outputBaseName"
 	append projFilename "_"
-	append projFilename [$ctsimu_scenario projectionCounterFormat]
-	if {[dict get $ctsimuSettings fileFormat] == "raw"} {
+	append projFilename [$ctsimu_scenario projection_counter_format]
+	if {[dict get $ctsimuSettings file_format] == "raw"} {
 		set ftype "raw_uint16"
 		append projFilename ".raw"
 	} else {
@@ -3798,13 +3798,13 @@ proc saveCLFDKconfigFile { projectionFilenames projectionMatrices csStage } {
 	saveVGI $CLFDKvginame $CLFDKvgifile $reconVolumeFilename 0 $vsu $vsv
 
 	set fileType "TIFF"
-	if {[dict get $ctsimuSettings fileFormat] == "raw"} {
+	if {[dict get $ctsimuSettings file_format] == "raw"} {
 		set fileType "RAW"
 	}
 
-	set dataType "UInt16"
-	if {[dict get $ctsimuSettings dataType] == "32bit"} {
-		set dataType "Float32"
+	set data_type "UInt16"
+	if {[dict get $ctsimuSettings data_type] == "32bit"} {
+		set data_type "Float32"
 	}
 
 	set nProjections [llength $projectionFilenames]
@@ -3822,7 +3822,7 @@ proc saveCLFDKconfigFile { projectionFilenames projectionMatrices csStage } {
 				"intensityDomain": true,
 				"images": {
 					"directory": "",
-					"dataType": "",
+					"data_type": "",
 					"fileType": "",
 					"files": []},
 				"matrices": []
@@ -3840,20 +3840,20 @@ proc saveCLFDKconfigFile { projectionFilenames projectionMatrices csStage } {
 			 "corrections":{
 				"brightImages":{
 				  "directory": "",
-				  "dataType":"",
+				  "data_type":"",
 				  "fileType":"",
 				  "files":[]
 				},
 
 				"darkImage":{
 				  "file":"",
-				  "dataType":"",
+				  "data_type":"",
 				  "fileType":""
 				},
 
 				"badPixelMask":{
 				  "file":"",
-				  "dataType":"",
+				  "data_type":"",
 				  "fileType":""
 				},
 
@@ -3867,7 +3867,7 @@ proc saveCLFDKconfigFile { projectionFilenames projectionMatrices csStage } {
 
 	json set geomjson projections images directory [json new string "."]
 	json set geomjson projections images fileType [json new string $fileType]
-	json set geomjson projections images dataType [json new string $dataType]
+	json set geomjson projections images data_type [json new string $data_type]
 
 	foreach projectionFile $projectionFilenames {
 		json set geomjson projections images files end+1 [json new string "../$ffProjShortPath/$projectionFile"]
@@ -3897,7 +3897,7 @@ proc saveCLFDKconfigFile { projectionFilenames projectionMatrices csStage } {
 	set S [makeMatrix_4x4 $bbSizeXY 0 0 0  0 $bbSizeXY 0 0  0 0 $bbSizeZ 0  0 0 0 1]
 
 	# Rotate the bounding box to the stage CS:
-	set R [basisTransformMatrix $csWorld $csStage 1]
+	set R [basis_transform_matrix $csWorld $csStage 1]
 
 	set RS [::math::linearalgebra::matmul $R $S]
 	json set geomjson geometry objectBoundingBox [Tclmatrix2json $RS]
@@ -4021,7 +4021,7 @@ proc preparePostprocessingConfigs { } {
 	# Flat field correction Python file, config files for various reconstruction softwares.
 	variable ctsimu_scenario
 
-	set projCtrFmt [$ctsimu_scenario projectionCounterFormat]
+	set projCtrFmt [$ctsimu_scenario projection_counter_format]
 
 	if {[loadedSuccessfully] == 1} {
 		if {[dict exists $ctsimuSettings running] == 0} {
@@ -4097,7 +4097,7 @@ proc preparePostprocessingConfigs { } {
 						set fileNameSuffix [format $projCtrFmt $projNr]
 						set currFile "$outputBaseName"
 						append currFile "_$fileNameSuffix"
-						if {[dict get $ctsimuSettings fileFormat] == "raw"} {
+						if {[dict get $ctsimuSettings file_format] == "raw"} {
 							append currFile ".raw"
 						} else {
 							append currFile ".tif"
@@ -4128,7 +4128,7 @@ proc preparePostprocessingConfigs { } {
 proc startScan { } {
 	variable ctsimu_scenario
 
-	set projCtrFmt [$ctsimu_scenario projectionCounterFormat]
+	set projCtrFmt [$ctsimu_scenario projection_counter_format]
 
 	if {[loadedSuccessfully] == 1} {
 		if {[dict exists $ctsimuSettings running] == 0} {

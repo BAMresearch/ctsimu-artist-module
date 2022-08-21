@@ -11,3 +11,7 @@ ctsimu_drift.tcl
 ctsimu_helpers.tcl
 ctsimu_matrix.tcl
 ctsimu_vector.tcl
+
+Naming conventions:
+* Member variables (attributes): _snake_case (start with underscore, use camel case).
+* Public functions: snake_case.

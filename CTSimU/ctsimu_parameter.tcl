@@ -11,85 +11,86 @@ namespace eval ::ctsimu {
 	namespace import ::rl_json::*
 
 	::oo::class create parameter {
-		constructor { _unit { _standard 0 } } {
-			my variable standard_value
-			my variable unit
-			my variable drifts
+		constructor { unit { standard 0 } } {
+			my variable _standard_value
+			my variable _unit
+			my variable _drifts
 
-			my variable current_value
+			my variable _current_value
 
-			my setStandardValue $_standard
-			my setUnit          $_unit
-			set drifts         [list]
+			my set_standard_value $standard
+			my set_unit           $unit
+			set _drifts           [list]
 		}
 
 		destructor {
 			# Delete all existing drifts:
-			foreach drift $drifts {
+			my variable _drifts
+			foreach drift $_drifts {
 				$drift destroy
 			}
 		}
 
 		method reset { } {
-			my variable current_value standard_value
+			my variable _current_value _standard_value _drifts
 
 			# Delete all existing drifts:
-			foreach drift $drifts {
+			foreach drift $_drifts {
 				$drift destroy
 			}
 
-			set current_value $standard_value
+			set _current_value $_standard_value
 		}
 
 		method unit { } {
-			my variable unit
-			return $unit
+			my variable _unit
+			return $_unit
 		}
 
 		method standard_value { } {
-			my variable standard_value
-			return $standard_value
+			my variable _standard_value
+			return $_standard_value
 		}
 
 		method current_value { } {
-			my variable current_value
-			return $current_value
+			my variable _current_value
+			return $_current_value
 		}
 
-		method setUnit { _unit } {
-			my variable unit
-			set unit $_unit
+		method set_unit { unit } {
+			my variable _unit
+			set _unit $unit
 		}
 
-		method setStandardValue { _standard } {
-			my variable standard_value
-			set standard_value $_standard
+		method set_standard_value { value } {
+			my variable _standard_value
+			set _standard_value $value
 		}
 
-		method addDrift { jsonDrift } {
+		method add_drift { json_drift } {
 
 		}
 
-		method set_from_JSON { jsonParameter } {
+		method set_from_json { jsonParameter } {
 			my reset
-			my variable current_value standard_value unit drifts
+			my variable _current_value _standard_value _unit _drifts
 
 			set success 0
 
 			if { [json exists $jsonParameter value] } {
-				if { ![isNull_jsonObject $jsonParameter] } {
-					set standard_value [::ctsimu::in_native_unit $unit $jsonParameter]
+				if { ![object_value_is_null $jsonParameter] } {
+					my set_standard_value [::ctsimu::in_native_unit $_unit $jsonParameter]
 					set success 1
 				} else {
 					set success 0
 				}
 			}
 
-			set current_value $standard_value
+			set _current_value $_standard_value
 
 			if { [json exists $jsonParameter drift] } {
 				if { ![json isnull $jsonParameter drift] } {
-					set jsonDrifts [::ctsimu::extractJSONobject $jsonParameter drifts]
+					set jsonDrifts [::ctsimu::extract_json_object $jsonParameter drifts]
 					set jsonType [json type $jsonDrifts]
 
 					if {$jsonType == "array"} {

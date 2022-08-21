@@ -24,17 +24,17 @@ CTSimU defines a [JSON-based file format](https://bamresearch.github.io/ctsimu-s
 
 ### Checkers for valid JSON data
 
-* `isNull_value { value }` — Checks if a specific value is set to `null`.
-* `isNullOrZero_value { value }` — Checks if a specific value is set to `null` or zero.
-* `isNull_jsonObject { json_obj }` — Checks if a JSON object has a `value` parameter and if this parameter is set to `null`.
-* `isNullOrZero_jsonObject { json_obj }` — Checks if a JSON object has a `value` parameter and if this parameter is set to `null` or zero.
+* `value_is_null { value }` — Checks if a specific value is set to `null`.
+* `value_is_null_or_zero { value }` — Checks if a specific value is set to `null` or zero.
+* `object_value_is_null { json_obj }` — Checks if a JSON object has a `value` parameter and if this parameter is set to `null`.
+* `object_value_is_null_or_zero { json_obj }` — Checks if a JSON object has a `value` parameter and if this parameter is set to `null` or zero.
 
 ### Getters
 
-* `getValue { sceneDict keys }` — Get the specific value of parameter that is located by a given sequence of `keys` in the JSON dictionary. Example from above:
+* `getValue { sceneDict keys }` — Get the specific value of the parameter that is located at the given sequence of `keys` in the JSON dictionary. Example from above:
     
     `getValue $object {center x value}` returns `10.0`
-* `extractJSONobject { sceneDict keys }`  — Get the JSON sub-object that is located by a given sequence of `keys` in the JSON dictionary.
+* `extract_json_object { sceneDict keys }`  — Get the JSON sub-object that is located by a given sequence of `keys` in the JSON dictionary.
 
 ### Unit Conversion
 
@@ -48,7 +48,7 @@ Unit conversion functions take a JSON object that must contain a `value` and a `
 * `in_kV { value unit }` — Converts a voltage to kV.
 * `in_g_per_cm3 { value unit }` — Converts a mass density to g/cm³.
 * `from_bool { value }` — Converts `true` to `1` and `false` to `0`.
-* `convertSNR_FWHM { snrOrFWHM intensity }` — Converts between SNR and Gaussian FWHM for a given intensity (i.e., more generally, the given distribution's mean value).
-* `convert_to_native_unit { givenUnit nativeUnit value }` — Checks which native unit is requested, converts JSON `value` accordingly. Possible native units are `"mm"`, `"rad"`, `"deg"`, `"s"`, `"mA"`, `"kV"`, `"g/cm^3"` and `"bool"`.
-* `json_convert_to_native_unit { nativeUnit valueAndUnit }` — Like the previous function `convert_to_native_unit`, but takes a JSON object `valueAndUnit` that must contain a `value` and an associated `unit` (the "given unit"). Checks which native unit is requested, converts JSON `value` accordingly.
-* `json_get { nativeUnit sceneDict keys }` — Takes a sequence of JSON `keys` from the given dictionary where a JSON object with a value/unit pair must be located. Returns the value of this JSON object in the requested `nativeUnit`.
+* `convert_SNR_FWHM { SNR_or_FWHM intensity }` — Converts between SNR and Gaussian FWHM for a given intensity (i.e., more generally, the given distribution's mean value).
+* `convert_to_native_unit { given_unit native_unit value }` — Checks which native unit is requested, converts JSON `value` accordingly. Possible native units are `"mm"`, `"rad"`, `"deg"`, `"s"`, `"mA"`, `"kV"`, `"g/cm^3"` and `"bool"`.
+* `json_convert_to_native_unit { native_unit value_and_unit }` — Like the previous function `convert_to_native_unit`, but takes a JSON object `value_and_unit` that must contain a `value` and an associated `unit` (the "given unit"). Checks which native unit is requested, converts JSON `value` accordingly.
+* `json_get { native_unit sceneDict keys }` — Takes a sequence of JSON `keys` from the given dictionary where a JSON object with a value/unit pair must be located. Returns the value of this JSON object in the requested `native_unit`.

@@ -11,41 +11,41 @@ namespace eval ::ctsimu {
 	namespace import ::rl_json::*
 
 	::oo::class create drift {
-		constructor { _unit } {
-			my variable isActive;                 # Is this an active (set) drift?
-			my variable known_to_reconstruction;  # Should the projection matrices follow the drift, therefore compensate it during the reconstruction?
-			my variable interpolation;            # Interpolate between values if number of drift positions does not match number of frames?
-			my variable trajectory;               # List of drift values
-			my variable unit;                     # Physical (internal) unit for all list values
+		constructor { unit } {
+			my variable _is_active;                 # Is this an active (set) drift?
+			my variable _known_to_reconstruction;  # Should the projection matrices follow the drift, therefore compensate it during the reconstruction?
+			my variable _interpolation;            # Interpolate between values if number of drift positions does not match number of frames?
+			my variable _trajectory;               # List of drift values
+			my variable _unit;                     # Physical (internal) unit for all list values
 
 			my reset
-			set unit $_unit
+			set _unit $unit
 		}
 
 		method reset { } {
 			# Reset drift object to standard parameters.
 			# Clears the trajectory list as well.
 			# Used by the constructor as initialization function.
-			set isActive                1
-			set known_to_reconstruction 1
-			set interpolation           0
-			set trajectory              [list ]
+			set _is_active               1
+			set _known_to_reconstruction 1
+			set _interpolation           0
+			set _trajectory              [list ]
 		}
 
 		# Getters
 		# -------------------------
 		method is_active { } {
 			# Returns whether this drift object is active (1) or inactive (0).
-			my variable isActive
-			return $isActive
+			my variable _is_active
+			return $_is_active
 		}
 
 		method known_to_reconstruction { } {
 			# Returns whether this drift must be considered during a
 			# reconstruction (1) or not (0). This parameter is used
 			# when calculating projection matrices.
-			my variable known_to_reconstruction
-			return $known_to_reconstruction
+			my variable _known_to_reconstruction
+			return $_known_to_reconstruction
 		}
 
 		method interpolation { } {
@@ -53,48 +53,48 @@ namespace eval ::ctsimu {
 			# drift values (if the number of drift values does not match the number
 			# of frames). If no interpolation takes place, there will be discrete
 			# steps of drift values (and possibly sudden changes).
-			my variable interpolation
-			return $interpolation
+			my variable _interpolation
+			return $_interpolation
 		}
 
 		method unit { } {
 			# Returns the unit for the drift values.
-			my variable unit
-			return $unit
+			my variable _unit
+			return $_unit
 		}
 
 		# Setters
 		# -------------------------
-		method setActive { state } {
+		method set_active { state } {
 			# Activates (state = 1) or deactivates (state = 0)
 			# this drift object.
-			my variable isActive
-			set isActive $state
+			my variable _is_active
+			set _is_active $state
 		}
 
 		method set_known_to_reconstruction { known } {
 			# Sets the "known to reconstruction" attribute to
 			# true (known = 1) or false (known = 0).
-			my variable known_to_reconstruction
-			set known_to_reconstruction $known
+			my variable _known_to_reconstruction
+			set _known_to_reconstruction $known
 		}
 
-		method setInterpolation { intpol } {
+		method set_interpolation { intpol } {
 			# Activates linear interpolation between drift values
 			# (intpol = 1) or deactivates it (intpol = 0).
-			my variable interpolation
-			set interpolation $intpol
+			my variable _interpolation
+			set _interpolation $intpol
 		}
 
-		method setUnit { u } {
+		method set_unit { unit } {
 			# Sets the unit of the drift values.
-			my variable unit
-			set unit $u
+			my variable _unit
+			set _unit $unit
 		}
 
-		method set_from_JSON { jsonObj } {
+		method set_from_json { jsonObj } {
 			# Sets the drift from a given JSON drift object.
-			my variable trajectory unit
+			my variable _trajectory _unit
 			my reset
 			set success 0
 
@@ -109,14 +109,14 @@ namespace eval ::ctsimu {
 			# Get drift value(s)
 			if { [json exists $jsonObj value] } {
 				if { ![json isnull $value value] } {
-					set jsonValue [::ctsimu::getValue $jsonObj value]
+					set jsonValue [::ctsimu::get_value $jsonObj value]
 					set jsonValueType [json type $jsonValue]
 
 					if {$jsonValueType == "number"} {
-						lappend trajectory [::ctsimu::json_convert_to_native_unit $unit $jsonValue]
+						lappend _trajectory [::ctsimu::json_convert_to_native_unit $_unit $jsonValue]
 					} elseif {$jsonValueType == "array"} {
 						json foreach value $jsonValue {
-							lappend trajectory [::ctsimu::convert_to_native_unit $jsonUnit $unit $value]
+							lappend _trajectory [::ctsimu::convert_to_native_unit $jsonUnit $_unit $value]
 						}
 					}
 				} else {
@@ -124,20 +124,20 @@ namespace eval ::ctsimu {
 				}
 			}
 
-			set isActive 0
+			set is_active 0
 			return $success; # 0 (unsuccessful)
 		}
 
-		method getValueForFrame { frame nFrames } {
+		method get_value_for_frame { frame nFrames } {
 			# Returns a drift value for the given frame number,
 			# assuming a total number of nFrames. If interpolation
 			# is activated, linear interpolation will take place between
 			# drift values, but also for frame numbers outside the
 			# expected range: 0 < frame > nFrames.
 			# Note that the frame number starts at 0.
-			my variable interpolation trajectory
+			my variable _interpolation _trajectory
 
-			set nTrajectoryPoints [llength $trajectory]
+			set nTrajectoryPoints [llength $_trajectory]
 
 			if { $nTrajectoryPoints > 1 } {
 				if { $nFrames > 1 } {
@@ -164,10 +164,10 @@ namespace eval ::ctsimu {
 
 						if { double($leftIndex) == $trajectoryIndex } {
 							# We are exactly at one trajectory point; no need for interpolation.
-							return [lindex $trajectory $leftIndex]]
+							return [lindex $_trajectory $leftIndex]]
 						}
 
-						if { $interpolation } {
+						if { $_interpolation } {
 							# Linear interpolation...
 							set rightIndex [expr int($leftIndex+1)]
 
@@ -185,21 +185,21 @@ namespace eval ::ctsimu {
 							set leftWeight [expr 1.0 - $rightWeight]
 
 							# Linear interpolation between left and right trajectory point:
-							return [expr $leftWeight*[lindex $trajectory $leftIndex] + $rightWeight*[lindex $trajectory $rightIndex]]
+							return [expr $leftWeight*[lindex $_trajectory $leftIndex] + $rightWeight*[lindex $_trajectory $rightIndex]]
 						} else {
 							# Return the value at the last drift value index
 							# that would apply to this frame position.
-							return [lindex $trajectory $leftIndex]
+							return [lindex $_trajectory $leftIndex]
 						}
 					} else {
 						# Linear interpolation beyond provided trajectory data
 
 						if { $progress > 1.0 } {
 							# We are beyond the expected last frame.
-							if { $interpolation } {
+							if { $_interpolation } {
 								# Linear interpolation beyond last two drift values:
-								set trajectoryValue0 [lindex $trajectory [expr int($lastTrajectoryIndex-1)]]
-								set trajectoryValue1 [lindex $trajectory $lastTrajectoryIndex]
+								set trajectoryValue0 [lindex $_trajectory [expr int($lastTrajectoryIndex-1)]]
+								set trajectoryValue1 [lindex $_trajectory $lastTrajectoryIndex]
 								
 								# We assume a linear interpolation function beyond the two
 								# last drift values. Taking the last frame as the zero point
@@ -208,14 +208,14 @@ namespace eval ::ctsimu {
 								set xFrame [expr $trajectoryIndex - double($lastTrajectoryIndex)]
 							} else {
 								# No interpolation. Return last trajectory value:
-								return [lindex $trajectory $lastTrajectoryIndex]
+								return [lindex $_trajectory $lastTrajectoryIndex]
 							}
 						} else {
 							# We are before the first frame (i.e., before frame 0).
-							if { $interpolation } {
+							if { $_interpolation } {
 								# Linear interpolation previous to first two drift values:
-								set trajectoryValue0 [lindex $trajectory 0]
-								set trajectoryValue1 [lindex $trajectory 1]
+								set trajectoryValue0 [lindex $_trajectory 0]
+								set trajectoryValue1 [lindex $_trajectory 1]
 
 								# We assume a linear interpolation function beyond the two
 								# last drift values. Taking the last frame as the zero point
@@ -224,7 +224,7 @@ namespace eval ::ctsimu {
 								set xFrame $trajectoryIndex; # is negative in this case
 							} else {
 								# No interpolation. Return first trajectory value:
-								return [lindex $trajectory 0]
+								return [lindex $_trajectory 0]
 							}
 						}
 
@@ -240,13 +240,13 @@ namespace eval ::ctsimu {
 					}
 				} else {
 					# If "scan" only has 1 or 0 frames, simply return the first trajectory value
-					return [lindex $trajectory 0]
+					return [lindex $_trajectory 0]
 				}
 			} else {
 				# trajectory points <= 1
 				if { $nTrajectoryPoints > 0 } {
 					# Simply check if the trajectory consists of at least 1 point and return this value:
-					return [lindex $trajectory 0]
+					return [lindex $_trajectory 0]
 				}
 			}
 

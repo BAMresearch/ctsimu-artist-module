@@ -1,32 +1,36 @@
-# ::ctsimu::vector
-A basic vector class.
+# ctsimu_vector
+This submodule provides a basic vector class.
 
-Intialize a vector by passing a list to its constructor:
+## Methods of the `::ctsimu::vector` class
 
-    set e1 [::ctsimu::vector new [list 1 0 0]]
+### Constructor
 
-Or create an empty vector and initialize it later:
+* `constructor { { valueList {} } }`
+    
+    Intialize a vector by passing a list to its constructor:
 
-    set e2 [::ctsimu::vector new]
-    $e2 set 0 1 0
+        set e1 [::ctsimu::vector new [list 1 0 0]]
 
-Print the vector with:
+    Or create an empty vector and initialize it later:
 
-    puts [$e1 print]
+        set e2 [::ctsimu::vector new]
+        $e2 set 0 1 0
 
-## Methods
+    Print the vector with:
+
+        puts [$e1 print]
 
 ### General
 
 * `print` — Get a printable string for this vector.
-* `nElements` — Get the number of vector elements (i.e., number of dimensions).
-* `getCopy` — Get a new vector object that is a copy of this vector. Do not forget to `destroy` when you won't need it anymore ;-)
-* `matchDimensions { other }` — Does number of vector elements (dimensions) match with `other` vector? Returns `1` if true, `0` if false.
+* `size` — Get the number of vector elements (i.e., number of dimensions).
+* `get_copy` — Get a new vector object that is a copy of this vector. Do not forget to `destroy` when you won't need it anymore ;-)
+* `match_dimensions { other }` — Does number of vector elements (dimensions) match with `other` vector? Returns `1` if true, `0` if false.
 
 ### Getter Functions
 
 * `element {i}` — Get vector element at position `i`.
-* `getValues` — Get list of all vector elements.
+* `get_values` — Get list of all vector elements.
 * `x` — Shortcut to get vector element `0`.
 * `y` — Shortcut to get vector element `1`.
 * `z` — Shortcut to get vector element `2`.
@@ -36,14 +40,14 @@ Print the vector with:
 
 All setter functions automatically convert the given values to double when storing them in the vector.
 
-* `setValues { l }` — Set vector elements to given value list `l`.
-* `set { _x [_y [_z [_w ]]] }` — Sets up a 1D, 2D, 3D or 4D vector, depending on number of given arguments.
-* `addElement { value }` — Append another element to the vector with the given `value`.
-* `setElement { i value }` — Set vector element at index `i` to the given `value`.
-* `setx { value }` — Shortcut to set vector element at index `0` to given `value`.
-* `sety { value }` — Shortcut to set vector element at index `1` to given `value`.
-* `setz { value }` — Shortcut to set vector element at index `2` to given `value`.
-* `setw { value }` — Shortcut to set vector element at index `3` to given `value`.
+* `set_values { l }` — Set vector elements to given value list `l`.
+* `set { x [y [z [w]]] }` — Sets up a 1D, 2D, 3D or 4D vector, depending on number of given arguments.
+* `add_element { value }` — Append another element to the vector with the given `value`.
+* `set_element { i value }` — Set vector element at index `i` to the given `value`.
+* `set_x { value }` — Shortcut to set vector element at index `0` to given `value`.
+* `set_y { value }` — Shortcut to set vector element at index `1` to given `value`.
+* `set_z { value }` — Shortcut to set vector element at index `2` to given `value`.
+* `set_w { value }` — Shortcut to set vector element at index `3` to given `value`.
 * `copy { other }` — Make this vector a copy of the `other` vector.
 
 ### Arithmetics and Geometry
@@ -58,11 +62,11 @@ All setter functions automatically convert the given values to double when stori
 * `to { other }` — Returns a vector that points from this point to other point.
 * `sum` — Returns sum of vector elements.
 * `length` — Returns this vector's absolute length.
-* `getUnitVector` — Returns a new unit vector based on this vector.
-* `toUnitVector` — Convert this vector into a unit vector.
+* `get_unit_vector` — Returns a new unit vector based on this vector.
+* `to_unit_vector` — Convert this vector into a unit vector.
 * `distance { other }` — Distance between the points where this vector and the `other` vector point.
 * `dot { other }` — Returns dot product `with` other vector.
 * `cross { other }` — Returns cross product with other vector.
 * `angle { other }` — Calculate angle between this vector and `other` vector, using the dot product definition.
-* `rotate { axis angleInRad }` — Rotate this vector around given `axis` vector by given angle (in rad).
+* `rotate { axis angle_in_rad }` — Rotate this vector around given `axis` vector by given angle (in rad).
 * `transform_by_matrix { M }` — Multiply matrix `M` to this vector `v`: `r=Mv`, and set this vector to the result `r` of this transformation.

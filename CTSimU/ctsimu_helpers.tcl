@@ -10,7 +10,7 @@ namespace eval ::ctsimu {
 	# Checkers for valid JSON data
 	# -----------------------------
 
-	proc isNull_value { value } {
+	proc value_is_null { value } {
 		# Checks if a specific value is set to `null`.
 		if {$value == "null"} {
 			return 1
@@ -19,7 +19,7 @@ namespace eval ::ctsimu {
 		return 0
 	}
 
-	proc isNullOrZero_value { value } {
+	proc value_is_null_or_zero { value } {
 		# Checks if a specific value is set to `null` or zero.
 		if {($value == 0) || ($value == 0.0) || ($value == "null")} {
 			return 1
@@ -28,7 +28,7 @@ namespace eval ::ctsimu {
 		return 0
 	}
 
-	proc isNull_jsonObject { json_obj } {
+	proc object_value_is_null { json_obj } {
 		# Checks if a JSON object has a `value` parameter
 		# and if this parameter is set to `null` or the string "null".
 		if [json exists $json_obj value] {
@@ -39,31 +39,31 @@ namespace eval ::ctsimu {
 			# If the value is not set to `null`,
 			# still check if it is set to the string "null":
 			set value [json get $json_obj value]
-			return [isNull_value $value]
+			return [value_is_null $value]
 		}
 		
 		return 1
 	}
 
-	proc isNullOrZero_jsonObject { json_obj } {
+	proc object_value_is_null_or_zero { json_obj } {
 		# Checks if a JSON object has a `value` parameter
 		# and if this parameter is set to `null` or zero.
-		if [isNull_jsonObject $json_obj] {
+		if [object_value_is_null $json_obj] {
 			return 1
 		}
 
 		# At this point the value exists and it is not `null`.
 		# Check if it is 0:
 		set value [json get $json_obj value]
-		return [isNullOrZero_value $value]
+		return [value_is_null_or_zero $value]
 	}
 
 	# Getters
 	# -----------------------------
 
-	proc getValue { sceneDict keys } {
-		# Get the specific value of parameter that is located
-		# by a given sequence of `keys` in the JSON dictionary.
+	proc get_value { sceneDict keys } {
+		# Get the specific value of the parameter that is located
+		# at the given sequence of `keys` in the JSON dictionary.
 		if [json exists $sceneDict {*}$keys] {
 			if { [json get $sceneDict {*}$keys] != "" } {
 				return [json get $sceneDict {*}$keys]
@@ -73,7 +73,7 @@ namespace eval ::ctsimu {
 		return "null"
 	}
 
-	proc extractJSONobject { sceneDict keys } {
+	proc extract_json_object { sceneDict keys } {
 		# Get the JSON sub-object that is located
 		# by a given sequence of `keys` in the JSON dictionary.
 		if [json exists $sceneDict {*}$keys] {
@@ -205,72 +205,72 @@ namespace eval ::ctsimu {
 		return $value
 	}
 
-	proc convertSNR_FWHM { snrOrFWHM intensity } {
+	proc convert_SNR_FWHM { SNR_or_FWHM intensity } {
 		# Converts between SNR and Gaussian FWHM for a given intensity
 		# (i.e., more generally, the given distribution's mean value).
-		return [expr 2.0*sqrt(2.0*log(2.0))*double($intensity)/double($snrOrFWHM) ]
+		return [expr 2.0*sqrt(2.0*log(2.0))*double($intensity)/double($SNR_or_FWHM) ]
 	}
 
-	proc convert_to_native_unit { givenUnit nativeUnit value } {
+	proc convert_to_native_unit { given_unit native_unit value } {
 		# Check which native unit is requested, convert value accordingly.
-		if { $nativeUnit == "" } {
+		if { $native_unit == "" } {
 			return $value
 		} else {
-			if { $nativeUnit == "mm" } {
+			if { $native_unit == "mm" } {
 				# internal lengths are always in mm
 				return [::ctsimu::in_mm $value $unit]
-			} elseif { $nativeUnit == "s" } {
+			} elseif { $native_unit == "s" } {
 				# internal time durations are always in s
 				return [::ctsimu::in_s $value $unit]
-			} elseif { $nativeUnit == "deg" } {
+			} elseif { $native_unit == "deg" } {
 				return [::ctsimu::in_deg $value $unit]
-			} elseif { $nativeUnit == "rad" } {
+			} elseif { $native_unit == "rad" } {
 				return [::ctsimu::in_rad $value $unit]
-			} elseif { $nativeUnit == "mA" } {
+			} elseif { $native_unit == "mA" } {
 				# internal currents are always in mA
 				return [::ctsimu::in_mA $value $unit]
-			} elseif { $nativeUnit == "kV" } {
+			} elseif { $native_unit == "kV" } {
 				# internal voltages are always in kV
 				return [::ctsimu::in_kV $value $unit]
-			} elseif { $nativeUnit == "g/cm^3" } {
+			} elseif { $native_unit == "g/cm^3" } {
 				# internal mass densities are always in g/cm^3
 				return [::ctsimu::in_g_per_cm3 $value $unit]
-			} elseif { $nativeUnit == "bool" } {
+			} elseif { $native_unit == "bool" } {
 				return [::ctsimu::from_bool $value]
 			}
 		}
 
-		fail "Native unit $nativeUnit is incompatible with the given unit $givenUnit."
+		fail "Native unit $native_unit is incompatible with the given unit $given_unit."
 		return 0
 	}
 
-	proc json_convert_to_native_unit { nativeUnit valueAndUnit } {
+	proc json_convert_to_native_unit { native_unit value_and_unit } {
 		# Like the previous function `convert_to_native_unit`, but takes
-		# a JSON object `valueAndUnit` that must contain a `value` and
+		# a JSON object `value_and_unit` that must contain a `value` and
 		# an associated `unit`.
 		# Checks which native unit is requested, converts
 		# JSON `value` accordingly.
-		if { $nativeUnit == "" } {
-			return [::ctsimu::getValue $valueAndUnit value]
+		if { $native_unit == "" } {
+			return [::ctsimu::get_value $value_and_unit value]
 		}
 
-		if { [json exists $valueAndUnit value] && [json exists $valueAndUnit unit] } {
-			set value [json get $valueAndUnit value]
-			set unit  [json get $valueAndUnit unit]
+		if { [json exists $value_and_unit value] && [json exists $value_and_unit unit] } {
+			set value [json get $value_and_unit value]
+			set unit  [json get $value_and_unit unit]
 
-			return [::ctsimu::convert_to_native_unit $unit $nativeUnit $value]
+			return [::ctsimu::convert_to_native_unit $unit $native_unit $value]
 		} else {
-			fail "Trying to convert a value to $nativeUnit, but no value+unit pair is provided from JSON object."
+			fail "Trying to convert a value to $native_unit, but no value+unit pair is provided from JSON object."
 		}
 	}
 
-	proc json_get { nativeUnit sceneDict keys } {
+	proc json_get { native_unit sceneDict keys } {
 		# Takes a sequence of JSON keys from the given dictionary where
 		# a JSON object with a value/unit pair must be located.
-		# Returns the value of this JSON object in the requested nativeUnit.
-		set value_unit_pair [extractJSONobject $sceneDict $keys]
-		if {![isNullOrZero_jsonObject $value_unit_pair]} {
-			return [::ctsimu::json_convert_to_native_unit $nativeUnit $value_unit_pair]
+		# Returns the value of this JSON object in the requested native_unit.
+		set value_unit_pair [extract_json_object $sceneDict $keys]
+		if {![object_value_is_null_or_zero $value_unit_pair]} {
+			return [::ctsimu::json_convert_to_native_unit $native_unit $value_unit_pair]
 		}
 
 		return "null"

@@ -15,11 +15,16 @@ namespace eval ::ctsimu {
 		constructor { } {
 			# State
 			my variable running
-			my variable batchIsRunning
-			my variable jsonLoadedSuccessfully
+			my variable batch_is_running
+			my variable json_loaded_successfully
 
-			my setRunning        0
-			my setBatchIsRunning 0
+			my set_run_status        0
+			my set_batch_run_status 0
+
+			# Settings
+			my variable _settings;  # dictionary with simulation settings
+			set _settings [dict create]
+
 
 			# Output settings
 			my variable output_fileformat; # "tiff" or "raw"
@@ -30,7 +35,7 @@ namespace eval ::ctsimu {
 			my variable create_cera_config_file
 			my variable create_clfdk_config_file
 
-			my variable projectionCounterFormat;  # minimum digit format for projection files
+			my variable projection_counter_format;  # minimum digit format for projection files
 
 			my setFileFormat        "tiff"
 			my setDataType          "16bit"
@@ -88,10 +93,10 @@ namespace eval ::ctsimu {
 		}
 
 		method reset { } {
-			my variable csFocus csStage csDetector csSamples
+			my variable _settings csFocus csStage csDetector csSamples
 
 			# Initial values after a reset.
-			my setJSONloadStatus    0
+			my set_json_load_status    0
 
 			my setJsonfile          ""
 			my setStartAngle        0
@@ -119,27 +124,33 @@ namespace eval ::ctsimu {
 		}
 
 		# Getters
-		method isRunning { } {
+		method get { setting } {
+			# Get a settings value from the settings dict
+			my variable _settings
+			return [dict get $_settings $setting]
+		}
+
+		method is_running { } {
 			my variable running
 			return $running
 		}
 
-		method batchIsRunning { } {
-			my variable batchIsRunning
-			return $batchIsRunning
+		method batch_is_running { } {
+			my variable batch_is_running
+			return $batch_is_running
 		}
 
-		method jsonLoadedSuccessfully { } {
-			my variable jsonLoadedSuccessfully
-			return $jsonLoadedSuccessfully
+		method json_loaded_successfully { } {
+			my variable json_loaded_successfully
+			return $json_loaded_successfully
 		}
 
-		method fileFormat { } {
+		method file_format { } {
 			my variable output_fileformat
 			return $output_fileformat
 		}
 
-		method dataType { } {
+		method data_type { } {
 			my variable output_datatype
 			return $output_datatype
 		}
@@ -149,24 +160,24 @@ namespace eval ::ctsimu {
 			return $output_basename
 		}
 
-		method outputFolder { } {
+		method output_folder { } {
 			my variable output_folder
 			return $output_folder
 		}
 
-		method createCERAconfigFile { } {
+		method create_cera_config_file { } {
 			my variable create_cera_config_file
 			return $create_cera_config_file
 		}
 
-		method createCLFDKconfigFile { } {
+		method create_clfdk_config_file { } {
 			my variable create_clfdk_config_file
 			return $create_clfdk_config_file
 		}
 
-		method projectionCounterFormat { } {
-			my variable projectionCounterFormat
-			return $projectionCounterFormat
+		method projection_counter_format { } {
+			my variable projection_counter_format
+			return $projection_counter_format
 		}
 
 		method jsonfile { } {
@@ -231,19 +242,25 @@ namespace eval ::ctsimu {
 
 
 		# Setters
-		method setRunning { r } {
+		method set { setting value } {
+			# Set a settings value in the settings dict
+			my variable _settings
+			dict set _settings $setting $value
+		}
+
+		method set_run_status { r } {
 			my variable running
 			set running $r
 		}
 
-		method setBatchIsRunning { r } {
-			my variable batchIsRunning
-			set batchIsRunning $r
+		method set_batch_run_status { r } {
+			my variable batch_is_running
+			set batch_is_running $r
 		}
 
-		method setJSONloadStatus { status } {
-			my variable jsonLoadedSuccessfully
-			set jsonLoadedSuccessfully $status
+		method set_json_load_status { status } {
+			my variable json_loaded_successfully
+			set json_loaded_successfully $status
 		}
 
 		method setFileFormat { fileformat } {
@@ -290,7 +307,7 @@ namespace eval ::ctsimu {
 		method setProjectionCounterFormat { nProjections } {
 			# Sets the number format string to get the correct
 			# number of digits in the consecutive projection file names.
-			my variable projectionCounterFormat
+			my variable projection_counter_format
 
 			set digits 4
 
@@ -299,9 +316,9 @@ namespace eval ::ctsimu {
 				set digits [expr int(ceil(log10($nProjections)))]
 			}
 
-			set projectionCounterFormat "%0"
-			append projectionCounterFormat $digits
-			append projectionCounterFormat "d"
+			set projection_counter_format "%0"
+			append projection_counter_format $digits
+			append projection_counter_format "d"
 		}
 
 		method setJsonfile { jf } {
@@ -393,26 +410,26 @@ namespace eval ::ctsimu {
 			set scenarioName "CTSimU"
 
 			if {[json exists $scene file file_type]} {
-				set filetype [::ctsimu::getValue $scene {file file_type}]
+				set filetype [::ctsimu::get_value $scene {file file_type}]
 				if {$filetype == "CTSimU Scenario"} {
 
 					# Check if file format version exists
 					if {([json exists $scene file version major] && [json exists $scene file version minor]) || ([json exists $scene file file_format_version major] && [json exists $scene file file_format_version minor])} {
 						
 						# Check version to correctly interpret JSON
-						set version_major [::ctsimu::getValue $scene {file file_format_version major}]
-						set version_minor [::ctsimu::getValue $scene {file file_format_version minor}]
+						set version_major [::ctsimu::get_value $scene {file file_format_version major}]
+						set version_minor [::ctsimu::get_value $scene {file file_format_version minor}]
 
 						if {($version_major == "null") && ($version_minor == "null")} {
-							set version_major [::ctsimu::getValue $scene {file version major}]
-							set version_minor [::ctsimu::getValue $scene {file version minor}]
+							set version_major [::ctsimu::get_value $scene {file version major}]
+							set version_minor [::ctsimu::get_value $scene {file version minor}]
 						}
 
 						# Parsing for version 0.3 to 0.9:
 						if {$version_major == 0 && ( $version_minor == 3 || $version_minor == 4 || $version_minor == 5 || $version_minor == 6 || $version_minor == 7 || $version_minor == 8 || $version_minor == 9 )} {
 							aRTist::Info { "Scenario Version $version_major.$version_minor" }
 
-							set scenarioName [::ctsimu::getValue $scene {file name}]
+							set scenarioName [::ctsimu::get_value $scene {file name}]
 
 							# Geometry dictionaries for detector, source and stage (from JSON)
 							set detectorGeometry 0
@@ -479,7 +496,7 @@ namespace eval ::ctsimu {
 							set rfoc [vec3Diff $S $O]
 
 							# New centre of source in stage CS (which is world CS as far as the projection matrix is concerned):
-							set m_worldToStage [basisTransformMatrix $csWorld $csStage]
+							set m_worldToStage [basis_transform_matrix $csWorld $csStage]
 
 							set rfoc_in_stageCS [::math::linearalgebra::matmul $m_worldToStage $rfoc]
 
@@ -525,8 +542,8 @@ namespace eval ::ctsimu {
 
 							# Save a source CS as seen from the detector CS. This is convenient to
 							# later get the SDD, ufoc and vfoc:
-							set sourceFromDetector [changeReferenceFrame $csSource $csWorld $csDetector]
-							set stageFromDetector [changeReferenceFrame $csStage $csWorld $csDetector]
+							set sourceFromDetector [change_reference_frame $csSource $csWorld $csDetector]
+							set stageFromDetector [change_reference_frame $csStage $csWorld $csDetector]
 
 							# Focus point on detector: principal, perpendicular ray.
 							# In the detector coordinate system, ufoc and vfoc are the u and v coordinates
@@ -739,7 +756,7 @@ namespace eval ::ctsimu {
 							}
 
 							if [json exists $scene source target thickness] {
-								if {[isNullOrZero_jsonObject [json extract $scene source target thickness]] == 0} {
+								if {[object_value_is_null_or_zero [json extract $scene source target thickness]] == 0} {
 									set ::Xsource(TargetThickness) [in_mm [json extract $scene source target thickness]]
 								}
 							}
@@ -909,16 +926,16 @@ namespace eval ::ctsimu {
 
 							# If a finite spot size is provided, but no Gaussian sigmas,
 							# the spot size is assumed to be the Gaussian width.
-							if { [isNullOrZero_value $sigmaX] } {
+							if { [value_is_null_or_zero $sigmaX] } {
 								aRTist::Info { "sigmaX is null or 0, retreating to spotSizeX." }
 								set sigmaX $spotSizeX
 							}
-							if { [isNullOrZero_value $sigmaY] } {
+							if { [value_is_null_or_zero $sigmaY] } {
 								aRTist::Info { "sigmaY is null or 0, retreating to spotSizeY." }
 								set sigmaY $spotSizeY
 							}
 
-							if { [isNullOrZero_value $sigmaX] || [isNullOrZero_value $sigmaY] } {
+							if { [value_is_null_or_zero $sigmaX] || [value_is_null_or_zero $sigmaY] } {
 								# Point source
 								aRTist::Info { "sigmaX=0 or sigmaY=0. Setting point source." }
 								
@@ -942,12 +959,12 @@ namespace eval ::ctsimu {
 							}
 
 							# Override detector and spot multisampling, if defined in JSON:
-							set multisampling_detector [::ctsimu::getValue $scene {simulation aRTist multisampling_detector}]
+							set multisampling_detector [::ctsimu::get_value $scene {simulation aRTist multisampling_detector}]
 							if {$multisampling_detector != "null"} {
 								set ::Xsetup(DetectorSampling) $multisampling_detector
 							}
 
-							set multisampling_source   [::ctsimu::getValue $scene {simulation aRTist multisampling_spot}]
+							set multisampling_source   [::ctsimu::get_value $scene {simulation aRTist multisampling_spot}]
 							if {$multisampling_source != "null"} {
 								set ::Xsetup(SourceSampling) $multisampling_source
 								::XSource::SelectSpotType
@@ -968,7 +985,7 @@ namespace eval ::ctsimu {
 								}
 							}
 
-							set scattering_photons [::ctsimu::getValue $scene {simulation aRTist scattering_mcray_photons}]
+							set scattering_photons [::ctsimu::get_value $scene {simulation aRTist scattering_mcray_photons}]
 							if {$scattering_photons != "null"} {
 								set ::Xscattering(nPhotons) $scattering_photons
 							}
@@ -1081,7 +1098,7 @@ namespace eval ::ctsimu {
 							# Generate filter list:
 							set frontPanelFilters {}
 							if [json exists $scene detector filters front] {
-								if {[isNullOrZero_value [json extract $scene detector filters front]] == 0} {
+								if {[value_is_null_or_zero [json extract $scene detector filters front]] == 0} {
 									json foreach mat [json extract $scene detector filters front] {
 										if {$mat != "null"} {
 											lappend frontPanelFilters [getMaterialID [json get $mat material_id]]
@@ -1139,14 +1156,14 @@ namespace eval ::ctsimu {
 							set detector [generateDetector $detectorName $detectorType $detPixelSizeU $detPixelSizeV $pixelCountU $pixelCountV $scintillatorMaterialID $scintillatorThickness $minEnergy $maxEnergy $current $integrationTime $nFrames $frontPanelFilters $SDDbrightestSpot $SRb $SNRatImax $FWHMatImax $maxGVfromDetector $GVatMin $GVatMax $GVfactor $GVoffset]
 
 							# Set frame averaging:
-							set nFramesToAverage [::ctsimu::getValue $scene {acquisition frame_average}]
-							if {![isNullOrZero_value $nFramesToAverage]} {
+							set nFramesToAverage [::ctsimu::get_value $scene {acquisition frame_average}]
+							if {![value_is_null_or_zero $nFramesToAverage]} {
 								set ::Xdetector(NrOfFrames) $nFramesToAverage
 							}
 
-							set nDarkFields [::ctsimu::getValue $scene {acquisition dark_field number} ]
-							if {![isNullOrZero_value $nDarkFields]} {
-								set dfIdeal [from_bool [::ctsimu::getValue $scene {acquisition dark_field ideal} ]]
+							set nDarkFields [::ctsimu::get_value $scene {acquisition dark_field number} ]
+							if {![value_is_null_or_zero $nDarkFields]} {
+								set dfIdeal [from_bool [::ctsimu::get_value $scene {acquisition dark_field ideal} ]]
 								if { $dfIdeal == 1 } {
 									dict set ctsimuSettings takeDarkField 1
 								} else {
@@ -1154,12 +1171,12 @@ namespace eval ::ctsimu {
 								}
 							}
 
-							set nFlatFields [::ctsimu::getValue $scene {acquisition flat_field number} ]
-							if {![isNullOrZero_value $nFlatFields]} {
+							set nFlatFields [::ctsimu::get_value $scene {acquisition flat_field number} ]
+							if {![value_is_null_or_zero $nFlatFields]} {
 								dict set ctsimuSettings nFlatFrames $nFlatFields
 
-								set nFlatAvg [::ctsimu::getValue $scene {acquisition flat_field frame_average} ]
-								if {![isNullOrZero_value $nFlatAvg]} {
+								set nFlatAvg [::ctsimu::get_value $scene {acquisition flat_field frame_average} ]
+								if {![value_is_null_or_zero $nFlatAvg]} {
 									if {$nFlatAvg > 0} {
 										dict set ctsimuSettings nFlatAvg $nFlatAvg 
 									} else {
@@ -1169,8 +1186,8 @@ namespace eval ::ctsimu {
 									fail "Number of flat field frames to average must be greater than 0."
 								}
 
-								set ffIdeal [from_bool [::ctsimu::getValue $scene {acquisition flat_field ideal} ]]
-								if {![isNullOrZero_value $ffIdeal]} {
+								set ffIdeal [from_bool [::ctsimu::get_value $scene {acquisition flat_field ideal} ]]
+								if {![value_is_null_or_zero $ffIdeal]} {
 									dict set ctsimuSettings ffIdeal $ffIdeal
 								} else {
 									dict set ctsimuSettings ffIdeal 0
@@ -1206,7 +1223,7 @@ namespace eval ::ctsimu {
 							}
 
 							createCERA_RDabcuv
-							$ctsimu_scenario setJSONloadStatus 1; # loaded successfully
+							$ctsimu_scenario set_json_load_status 1; # loaded successfully
 							
 							return 1
 

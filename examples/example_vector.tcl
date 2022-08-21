@@ -11,9 +11,9 @@ $e2 set 0 1 0
 
 # Third vector initialized by appending elements:
 set e3 [::ctsimu::vector new ]
-$e3 addElement 0
-$e3 addElement 0
-$e3 addElement 1
+$e3 add_element 0
+$e3 add_element 0
+$e3 add_element 1
 
 $e3 rotate $e1 0.1
 

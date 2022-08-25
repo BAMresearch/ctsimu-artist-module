@@ -18,32 +18,20 @@ namespace eval ::ctsimu {
 			my variable batch_is_running
 			my variable json_loaded_successfully
 
-			my set_run_status        0
-			my set_batch_run_status 0
+			my _set_run_status       0
+			my _set_batch_run_status 0
 
 			# Settings
 			my variable _settings;  # dictionary with simulation settings
 			set _settings [dict create]
 
-
-			# Output settings
-			my variable output_fileformat; # "tiff" or "raw"
-			my variable output_datatype;   # 16 bit uint, 32 bit float
-			my variable output_folder
-			my variable output_basename
-
-			my variable create_cera_config_file
-			my variable create_clfdk_config_file
-
-			my variable projection_counter_format;  # minimum digit format for projection files
-
-			my setFileFormat        "tiff"
-			my setDataType          "16bit"
-			my setBasename          "proj_"
-			my setOutputFolder      ""
-			my setCreateCERAconfigFile  1
-			my setCreateCLFDKconfigFile 1
-
+			# Standard settings
+			my set output_fileformat        "tiff"
+			my set output_datatype          "16bit"
+			my set output_basename          "proj_"
+			my set output_folder            ""
+			my set create_cera_config_file  1
+			my set create_clfdk_config_file 1
 
 			# Geometry: coordinate systems and their drifts
 			my variable csWorld
@@ -51,21 +39,6 @@ namespace eval ::ctsimu {
 			my variable csStage
 			my variable csDetector
 			my variable csSamples
-
-			# Acquisition parameters
-			my variable jsonfile;           # currently loaded JSON file
-			my variable startAngle;         # angle where CT rotation starts
-			my variable stopAngle;          # angle where CT rotation stops
-			my variable nProjections;       # total number of projections for CT scan
-			my variable projNr;             # current projection number of the scene
-			my variable includeFinalAngle;  # 0 or 1: take the last projection at the stop angle?
-			my variable startProjNr;        # projection number where to pick up CT scan (useful if a simulation crashed)
-
-			my variable takeDarkField; # 0 or 1: take a dark field image? (typically noise-free in aRTist)
-			my variable nDarks;        # number of dark field images to create
-			my variable nFlats;        # number of flat field images to create
-			my variable nFlatAvg;      # number of frame averages for a flat field image
-			my variable ffIdeal;       # take ideal (noise-free) flat field image?
 
 			set csWorld    [::ctsimu::coordinate_system new]
 			set csCERA     [::ctsimu::coordinate_system new]
@@ -93,24 +66,25 @@ namespace eval ::ctsimu {
 		}
 
 		method reset { } {
+			# Reset scenario to standard settings.
 			my variable _settings csFocus csStage csDetector csSamples
 
 			# Initial values after a reset.
-			my set_json_load_status    0
+			my _set_json_load_status       0
 
-			my setJsonfile          ""
-			my setStartAngle        0
-			my setStopAngle         360
-			my setNprojections      2000
-			my setProjNr            0
-			my setIncludeFinalAngle 0
-			my setStartProjNr       0
+			my set json_file             ""
+			my set start_angle            0
+			my set stop_angle           360
+			my set n_projections       2000
+			my set proj_nr                0
+			my set include_final_angle    0
+			my set start_proj_nr          0
 
-			my setTakeDarkField     0
-			my setDarks             1
-			my setFlats             1
-			my setFlatAvg           20
-			my setFFideal           0
+			my set dark_field             0
+			my set n_darks                1
+			my set n_flats                1
+			my set n_flat_avg            20
+			my set flat_field_ideal       0
 
 			# Delete all existing samples:
 			foreach sample $csSamples {
@@ -145,102 +119,6 @@ namespace eval ::ctsimu {
 			return $json_loaded_successfully
 		}
 
-		method file_format { } {
-			my variable output_fileformat
-			return $output_fileformat
-		}
-
-		method data_type { } {
-			my variable output_datatype
-			return $output_datatype
-		}
-
-		method basename { } {
-			my variable output_basename
-			return $output_basename
-		}
-
-		method output_folder { } {
-			my variable output_folder
-			return $output_folder
-		}
-
-		method create_cera_config_file { } {
-			my variable create_cera_config_file
-			return $create_cera_config_file
-		}
-
-		method create_clfdk_config_file { } {
-			my variable create_clfdk_config_file
-			return $create_clfdk_config_file
-		}
-
-		method projection_counter_format { } {
-			my variable projection_counter_format
-			return $projection_counter_format
-		}
-
-		method jsonfile { } {
-			my variable jsonfile
-			return $jsonfile
-		}
-
-		method startAngle { } {
-			my variable startAngle
-			return $startAngle
-		}
-
-		method stopAngle { } {
-			my variable stopAngle
-			return $stopAngle
-		}
-
-		method nProjections { } {
-			my variable nProjections
-			return $nProjections
-		}
-
-		method projNr { } {
-			my variable projNr
-			return $projNr
-		}
-
-		method includeFinalAngle { } {
-			my variable includeFinalAngle
-			return $includeFinalAngle
-		}
-
-		method startProjNr { } {
-			my variable startProjNr
-			return $startProjNr
-		}
-
-		method takeDarkField { } {
-			my variable takeDarkField
-			return $takeDarkField
-		}
-
-		method nDarks { } {
-			my variable nDarks
-			return $nDarks
-		}
-
-		method nFlats { } {
-			my variable nFlats
-			return $nFlats
-		}
-
-		method nFlatAvg { } {
-			my variable nFlatAvg
-			return $nFlatAvg
-		}
-
-		method ffIdeal { } {
-			my variable ffIdeal
-			return $ffIdeal
-		}
-
-
 		# Setters
 		method set { setting value } {
 			# Set a settings value in the settings dict
@@ -248,63 +126,31 @@ namespace eval ::ctsimu {
 			dict set _settings $setting $value
 		}
 
-		method set_run_status { r } {
+		method _set_run_status { status } {
 			my variable running
-			set running $r
+			set running $status
 		}
 
-		method set_batch_run_status { r } {
+		method _set_batch_run_status { status } {
 			my variable batch_is_running
-			set batch_is_running $r
+			set batch_is_running $status
 		}
 
-		method set_json_load_status { status } {
+		method _set_json_load_status { status } {
 			my variable json_loaded_successfully
 			set json_loaded_successfully $status
 		}
 
-		method setFileFormat { fileformat } {
-			my variable output_fileformat
-			set output_fileformat $fileformat
-		}
-
-		method setDataType { datatype } {
-			my variable output_datatype
-			set output_datatype $datatype
-		}
-
-		method setBasename { name } {
-			my variable output_basename
-			set output_basename $name
-		}
-
-		method setBasenameFromJSON { jsonfilename } {
-			set baseName [file root [file tail $jsonfilename]]
+		method set_basename_from_json { json_filename } {
+			# Extracts the base name of a JSON file and
+			# sets the output_basename setting accordingly.
+			set baseName [file root [file tail $json_filename]]
 			set outputBaseName $baseName
 			#append outputBaseName "_aRTist"
-			my setBasename $outputBaseName
+			my set output_basename $outputBaseName
 		}
 
-		method setOutputFolder { folder } {
-			my variable output_folder
-			set output_folder $folder
-		}
-
-		method setOutputFolderFromJSON { jsonfilename } {
-			my setOutputFolder [file dirname "$jsonfilename"]
-		}
-
-		method setCreateCERAconfigFile { ceraCfgFile } {
-			my variable create_cera_config_file
-			set create_cera_config_file $ceraCfgFile
-		}
-
-		method setCreateCLFDKconfigFile { clfdkCfgFile } {
-			my variable create_clfdk_config_file
-			set create_clfdk_config_file $clfdkCfgFile
-		}
-
-		method setProjectionCounterFormat { nProjections } {
+		method create_projection_counter_format { nProjections } {
 			# Sets the number format string to get the correct
 			# number of digits in the consecutive projection file names.
 			my variable projection_counter_format
@@ -321,69 +167,7 @@ namespace eval ::ctsimu {
 			append projection_counter_format "d"
 		}
 
-		method setJsonfile { jf } {
-			my variable jsonfile
-			set jsonfile $jf
-		}
-
-		method setStartAngle { sa } {
-			my variable startAngle
-			set startAngle $sa
-		}
-
-		method setStopAngle { sa } {
-			my variable stopAngle
-			set stopAngle $sa
-		}
-
-		method setNprojections { nproj } {
-			my variable nProjections
-			set nProjections $nproj
-
-			my setProjectionCounterFormat $nproj
-		}
-
-		method setProjNr { pn } {
-			my variable projNr
-			set projNr $pn
-		}
-
-		method setIncludeFinalAngle { fa } {
-			my variable includeFinalAngle
-			set includeFinalAngle $fa
-		}
-
-		method setStartProjNr { spn } {
-			my variable startProjNr
-			set startProjNr $spn
-		}
-
-		method setTakeDarkField { tdf } {
-			my variable takeDarkField
-			set takeDarkField $tdf
-		}
-
-		method setDarks { nd } {
-			my variable nDarks
-			set nDarks $nd
-		}
-
-		method setFlats { nf } {
-			my variable nFlats
-			set nFlats $nf
-		}
-
-		method setFlatAvg { favg } {
-			my variable nFlatAvg
-			set nFlatAvg $favg
-		}
-
-		method setFFideal { ffi } {
-			my variable ffIdeal
-			set ffIdeal $ffi
-		}
-
-		method setup_json_scene { jsonfilename } {
+		method load_json_scene { json_filename } {
 			my variable csWorld csFocus csStage csDetector csSamples
 
 			my reset; # also sets JSON load status to 0 (not yet successful)
@@ -395,16 +179,16 @@ namespace eval ::ctsimu {
 			set ctsimuSamples {}
 			set ctsimuSceneMaterials {}
 
-			set jsonfiledir [file dirname "$jsonfilename"]
+			set jsonfiledir [file dirname "$json_filename"]
 
-			set jsonfile [open $jsonfilename r]
+			set jsonfile [open $json_filename r]
 			fconfigure $jsonfile -encoding utf-8
 			set jsonstring [read $jsonfile]
 			close $jsonfile
 
 			# Set output folder and basename for projections:
-			my setOutputFolderFromJSON $jsonfilename
-			my setBasenameFromJSON $jsonfilename
+			my setOutputFolderFromJSON $json_filename
+			my setBasenameFromJSON $json_filename
 
 			set scene $jsonstring
 			set scenarioName "CTSimU"

@@ -90,9 +90,14 @@ namespace eval ::ctsimu {
 			# Sets the unit of the drift values.
 			my variable _unit
 			set _unit $unit
+
+			if { $_unit == "string" } {
+				# String drifts (e.g. spectrum files) cannot be interpolated.
+				my set_interpolation 0
+			}
 		}
 
-		method set_from_json { jsonObj } {
+		method set_from_json { json_object } {
 			# Sets the drift from a given JSON drift object.
 			my variable _trajectory _unit
 			my reset
@@ -100,16 +105,16 @@ namespace eval ::ctsimu {
 
 			# Get JSON unit
 			set jsonUnit ""
-			if { [json exists $jsonObj unit] } {
-				if { ![json isnull $jsonObj unit] } {
-					set jsonUnit [json get $jsonObj unit]
+			if { [json exists $json_object unit] } {
+				if { ![json isnull $json_object unit] } {
+					set jsonUnit [json get $json_object unit]
 				}
 			}
 
 			# Get drift value(s)
-			if { [json exists $jsonObj value] } {
+			if { [json exists $json_object value] } {
 				if { ![json isnull $value value] } {
-					set jsonValue [::ctsimu::get_value $jsonObj value]
+					set jsonValue [::ctsimu::get_value $json_object value]
 					set jsonValueType [json type $jsonValue]
 
 					if {$jsonValueType == "number"} {

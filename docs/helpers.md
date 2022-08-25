@@ -49,6 +49,6 @@ Unit conversion functions take a JSON object that must contain a `value` and a `
 * `in_g_per_cm3 { value unit }` — Converts a mass density to g/cm³.
 * `from_bool { value }` — Converts `true` to `1` and `false` to `0`.
 * `convert_SNR_FWHM { SNR_or_FWHM intensity }` — Converts between SNR and Gaussian FWHM for a given intensity (i.e., more generally, the given distribution's mean value).
-* `convert_to_native_unit { given_unit native_unit value }` — Checks which native unit is requested, converts JSON `value` accordingly. Possible native units are `"mm"`, `"rad"`, `"deg"`, `"s"`, `"mA"`, `"kV"`, `"g/cm^3"` and `"bool"`.
+* `convert_to_native_unit { given_unit native_unit value }` — Checks which native unit is requested, converts JSON `value` accordingly. Possible native units are `"mm"`, `"rad"`, `"deg"`, `"s"`, `"mA"`, `"kV"`, `"g/cm^3"`, `"bool"` and `"string"`.
 * `json_convert_to_native_unit { native_unit value_and_unit }` — Like the previous function `convert_to_native_unit`, but takes a JSON object `value_and_unit` that must contain a `value` and an associated `unit` (the "given unit"). Checks which native unit is requested, converts JSON `value` accordingly.
 * `json_get { native_unit sceneDict keys }` — Takes a sequence of JSON `keys` from the given dictionary where a JSON object with a value/unit pair must be located. Returns the value of this JSON object in the requested `native_unit`.

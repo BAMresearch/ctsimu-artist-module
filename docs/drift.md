@@ -3,6 +3,16 @@ This submodule provides a general class to handle the drift of an arbitrary para
 
 ## Methods of the `::ctsimu::drift` class
 
+### Constructor
+
+* `constructor { unit }`
+
+    When a drift object is constructed, is must be assigned a valid native `unit` to enable the JSON parser to convert the drift values from the JSON file, if necessary. Valid drift units are:
+
+    + `""` — Unitless.
+    + `"mm"`, `"rad"`, `"deg"`, `"s"`, `"mA"`, `"kV"`, `"g/cm^3"` and `"bool"`.
+    + `"string"` — Special type for string parameters such as spectrum file names.
+
 ### General
 
 * `reset` — Reset drift object to standard parameters. Clears the trajectory list as well. Used by the constructor as initialization function.
@@ -21,4 +31,4 @@ This submodule provides a general class to handle the drift of an arbitrary para
 * `set_known_to_reconstruction { known }` — Sets the "known to reconstruction" attribute to true (`known` = `1`) or false (`known` = `0`).
 * `set_interpolation { intpol }` — Activates linear interpolation between drift values (`intpol` = `1`) or deactivates it (`intpol` = `0`).
 * `set_unit { unit }` — Sets the `unit` (string) of the drift values.
-* `set_from_json { jsonObj }` — Sets the drift from a given JSON drift object.
+* `set_from_json { json_object }` — Sets the drift from a given JSON drift object.

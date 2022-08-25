@@ -215,6 +215,8 @@ namespace eval ::ctsimu {
 		# Check which native unit is requested, convert value accordingly.
 		if { $native_unit == "" } {
 			return $value
+		} elseif { $native_unit == "string" } {
+			return $value; # this is a string in this case, e.g. spectrum file
 		} else {
 			if { $native_unit == "mm" } {
 				# internal lengths are always in mm

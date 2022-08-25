@@ -4,15 +4,12 @@ package require rl_json
 variable BasePath [file dirname [info script]]
 source -encoding utf-8 [file join $BasePath ctsimu_drift.tcl]
 
-# A general class to handle the drift of an arbitrary value
-# for a given number of frames, including interpolation.
-
 namespace eval ::ctsimu {
 	namespace import ::rl_json::*
 
 	::oo::class create parameter {
 		constructor { unit { standard 0 } } {
-			my variable _standard_value
+			my variable _standard_value; # unaffected by drifts
 			my variable _unit
 			my variable _drifts
 
@@ -32,6 +29,7 @@ namespace eval ::ctsimu {
 		}
 
 		method reset { } {
+			# Delete all drifts and set the parameter's current value to the standard value.
 			my variable _current_value _standard_value _drifts
 
 			# Delete all existing drifts:
@@ -43,43 +41,56 @@ namespace eval ::ctsimu {
 		}
 
 		method unit { } {
+			# Get the parameter's native unit.
 			my variable _unit
 			return $_unit
 		}
 
 		method standard_value { } {
+			# Get the parameter's standard value (unaffected by drifts).
 			my variable _standard_value
 			return $_standard_value
 		}
 
 		method current_value { } {
+			# Get the parameter's current value.
 			my variable _current_value
 			return $_current_value
 		}
 
 		method set_unit { unit } {
+			# Set the parameter's native unit.
 			my variable _unit
 			set _unit $unit
 		}
 
 		method set_standard_value { value } {
+			# Set the parameter's standard value.
 			my variable _standard_value
 			set _standard_value $value
 		}
 
-		method add_drift { json_drift } {
-
+		method add_drift { json_drift_obj } {
+			# Generates a ctsimu::drift object
+			# (from a JSON object that defines a drift)
+			# and adds it to its internal list of drifts to handle.
+			my variable _unit _drifts
+			set d [ctsimu::drift new $_unit]
+			$d set_from_json $json_drift_obj
+			lappend _drifts $d
 		}
 
-		method set_from_json { jsonParameter } {
+		method set_from_json { json_parameter } {
+			# Set up this parameter from a JSON parameter object.
 			my reset
 			my variable _current_value _standard_value _unit _drifts
 
 			set success 0
 
-			if { [json exists $jsonParameter value] } {
-				if { ![object_value_is_null $jsonParameter] } {
-					my set_standard_value [::ctsimu::in_native_unit $_unit $jsonParameter]
+			# Value, automatically converted to parameter's native unit:
+			if { [json exists $json_parameter value] } {
+				if { ![object_value_is_null $json_parameter] } {
+					my set_standard_value [::ctsimu::in_native_unit $_unit $json_parameter]
 					set success 1
 				} else {
 					set success 0
@@ -88,17 +99,20 @@ namespace eval ::ctsimu {
 
 			set _current_value $_standard_value
 
-			if { [json exists $jsonParameter drift] } {
-				if { ![json isnull $jsonParameter drift] } {
-					set jsonDrifts [::ctsimu::extract_json_object $jsonParameter drifts]
+			# Drifts:
+			if { [json exists $json_parameter drift] } {
+				if { ![json isnull $json_parameter drift] } {
+					set jsonDrifts [::ctsimu::extract_json_object $json_parameter drifts]
 					set jsonType [json type $jsonDrifts]
 
 					if {$jsonType == "array"} {
 						# an array of drift objects
-						json foreach drift $jsonDrifts {
+						json foreach jsonDriftObj $jsonDrifts {
+							my add_drift $jsonDriftObj
 						}
 					} elseif {$jsonType == "object"} {
 						# a single drift object (apparently)
+						my add_drift $jsonDrifts
 						warning "Warning: invalid drift syntax. A drift should always be defined as a JSON array. Trying to interpret this drift as a single drift object."
 					}
 				}
@@ -106,5 +120,54 @@ namespace eval ::ctsimu {
 	
 			return $success
 		}
+	}
+
+	method set_frame { frame nFrames { only_drifts_known_to_reconstruction 0 } } {
+		my variable _current_value _standard_value _drifts _unit
+		set new_value $_standard_value
+
+		if { $_unit == "string" } {
+			# A string-type parameter can only be one string,
+			# nothing is added, and the _drifts array should only
+			# contain one element. Otherwise, the last drift is the
+			# one that has precedence.
+			foreach d $_drifts {
+				if { $only_drifts_known_to_reconstruction == 1 } {
+					if { [$d known_to_reconstruction] == 0 } {
+						# Skip this drift if it is unknown to the reconstruction,
+						# but we only want to obey drifts that are actually known
+						# to the reconstruction...
+						continue
+					}
+				}
+				
+				set new_value [$d get_value_for_frame $frame $nFrames]
+			}
+		} else {
+			# The parameter is a number-type (unitless or a valid physical unit).
+			foreach d $_drifts {
+				if { $only_drifts_known_to_reconstruction == 1 } {
+					if { [$d known_to_reconstruction] == 0 } {
+						# Skip this drift if it is unknown to the reconstruction,
+						# but we only want to obey drifts that are actually known
+						# to the reconstruction...
+						continue
+					}
+				}
+
+				# Add up all drift values for requested frame:
+				set new_value [expr $new_value + [$d get_value_for_frame $frame $nFrames]]
+			}
+		}
+
+		# Check if the value has changed when compared to the previous value:
+		set value_has_changed 0
+		if { $_current_value != $new_value } {
+			set value_has_changed 1
+			set _current_value $new_value
+		}
+
+		# Return 1 if the parameter's value has changed, 0 if not:
+		return $value_has_changed		
 	}
 }

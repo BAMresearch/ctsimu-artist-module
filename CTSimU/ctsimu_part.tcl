@@ -24,22 +24,23 @@ namespace eval ::ctsimu {
 			my variable _cs_initial_recon;  # frame 0
 			my variable _cs_current_recon;  # current frame
 
-			# Lists of geometric drifts. Initialize to empty lists:
-			my variable _drifts_center_x
-			my variable _drifts_center_y
-			my variable _drifts_center_z
+			# The coordinates and orientation must be kept as
+			# ::ctsimu::parameter objects to properly handle drifts.
+			my variable _center_x
+			my variable _center_y
+			my variable _center_z
 
-			my variable _drifts_vector_u_x
-			my variable _drifts_vector_u_y
-			my variable _drifts_vector_u_z
+			my variable _vector_u_x
+			my variable _vector_u_y
+			my variable _vector_u_z
 
-			my variable _drifts_vector_w_x
-			my variable _drifts_vector_w_y
-			my variable _drifts_vector_w_z
+			my variable _vector_w_x
+			my variable _vector_w_y
+			my variable _vector_w_z
 
-			my variable _drifts_rotation_u
-			my variable _drifts_rotation_v
-			my variable _drifts_rotation_w
+			my variable _rotation_u
+			my variable _rotation_v
+			my variable _rotation_w
 
 			set _cs_initial [::ctsimu::coordinate_system new];  # frame 0
 			set _cs_current [::ctsimu::coordinate_system new];  # current frame
@@ -49,22 +50,22 @@ namespace eval ::ctsimu {
 			set _cs_initial_recon [::ctsimu::coordinate_system new];  # frame 0
 			set _cs_current_recon [::ctsimu::coordinate_system new];  # current frame
 
-			# Lists of geometric drifts. Initialize to empty lists:
-			set _drifts_center_x [list]
-			set _drifts_center_y [list]
-			set _drifts_center_z [list]
+			# Geometry parameters:
+			set _center_x [::ctsimu::parameter new]
+			set _center_y [::ctsimu::parameter new]
+			set _center_z [::ctsimu::parameter new]
 
-			set _drifts_vector_u_x [list]
-			set _drifts_vector_u_y [list]
-			set _drifts_vector_u_z [list]
+			set _vector_u_x [::ctsimu::parameter new]
+			set _vector_u_y [::ctsimu::parameter new]
+			set _vector_u_z [::ctsimu::parameter new]
 
-			set _drifts_vector_w_x [list]
-			set _drifts_vector_w_y [list]
-			set _drifts_vector_w_z [list]
+			set _vector_w_x [::ctsimu::parameter new]
+			set _vector_w_y [::ctsimu::parameter new]
+			set _vector_w_z [::ctsimu::parameter new]
 
-			set _drifts_rotation_u [list]
-			set _drifts_rotation_v [list]
-			set _drifts_rotation_w [list]
+			set _rotation_u [::ctsimu::parameter new]
+			set _rotation_v [::ctsimu::parameter new]
+			set _rotation_w [::ctsimu::parameter new]
 		}
 
 		destructor {
@@ -74,6 +75,19 @@ namespace eval ::ctsimu {
 			$_cs_current destroy
 			$_cs_initial_recon destroy
 			$_cs_current_recon destroy
+
+			$_center_x destroy
+			$_center_y destroy
+			$_center_z destroy
+			$_vector_u_x destroy
+			$_vector_u_y destroy
+			$_vector_u_z destroy
+			$_vector_w_x destroy
+			$_vector_w_y destroy
+			$_vector_w_z destroy
+			$_rotation_u destroy
+			$_rotation_v destroy
+			$_rotation_w destroy
 		}
 
 		method reset { } {
@@ -90,10 +104,7 @@ namespace eval ::ctsimu {
 			$_cs_initial        set_up_from_json_geometry { $jsonGeometry $world $stage 0 }
 			$_cs_initial_recon  set_up_from_json_geometry { $jsonGeometry $world $stage 1 }
 
-			# set up drifts:
-			if [json exists $jsonGeometry drift] {
-
-			}
+			
 		}
 	}
 }

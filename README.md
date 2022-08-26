@@ -5,8 +5,9 @@ This is a module for the radiographic simulator [aRTist](http://artist.bam.de/) 
 
 ## Installation
 
-Drag and drop the .artp file into your aRTist window.
-The module relies on the 'rl_json' module, which is comes by default since aRTist 2.10.2.
+Drag and drop the .artp file into your aRTist window to install the module.
+
+The module relies on the `rl_json` extension, which comes by default since aRTist 2.10.2.
 
 ## Known Limitations
 

@@ -65,7 +65,7 @@ namespace eval ::ctsimu {
 			$C set_center [$_center get_copy]
 			$C set_u      [$_u get_copy]
 			$C set_v      [$_v get_copy]
-			$C set_w     [$_w get_copy]
+			$C set_w      [$_w get_copy]
 
 			return $C
 		}
@@ -189,7 +189,8 @@ namespace eval ::ctsimu {
 			# Move coordinate system such that pivot point is at world origin:
 			$_center subtract $pivot_point
 
-			# Rotate center point and transform back into world coordinate system:
+			# Rotate center point and transform back into
+			# world coordinate system:
 			$_center rotate $axis $angle_in_rad
 			$_center add $pivot_point
 
@@ -236,22 +237,38 @@ namespace eval ::ctsimu {
 		method transform { csFrom csTo } {
 			# Relative transformation in world coordinates
 			# from csFrom to csTo, result will be in world coordinates.
+			#
+			# Detailed description: assuming this CS, csFrom and csTo
+			# all three are independent coordinate systems in a common
+			# reference coordinate system (e.g. world). This function
+			# will calculate the necessary translation and rotation that
+			# would have to be done to superimpose csFrom with csTo.
+			# This translation and rotation will, however, be applied
+			# to this CS, not to csFrom.
 
 			set t [[$csFrom center] to [$csTo center]]
 			my translate $t
 			$t destroy
 
-			# -- ROTATIONS
+			# We need a copy of csFrom and csTo because later on,
+			# we might have to transform them and don't want to
+			# affect the original csFrom passed to this function.
+			# Also, csFrom or csTo could simply be pointers to
+			# this coordinate system.
+			set csFromCopy [$csFrom get_copy]
+			set csToCopy   [$csTo get_copy]
+
+			# -- ROTATIONS	
 			# Rotation to bring w axis from -> to
-			set wFrom [$csFrom w]
-			set wTo   [$csTo w]
+			set wFrom [$csFromCopy w]
+			set wTo   [$csToCopy w]
 			set rotationAxis [$wFrom cross $wTo]
 			
 			if { [$rotationAxis length] == 0 } {
 				if { [$wTo dot $wFrom] < 0 } {
 					# 180° flip; vectors point in opposite direction. Rotation axis is another CS basis vector.
 					$rotationAxis destroy
-					set rotationAxis [[$csFrom u] get_copy]
+					set rotationAxis [[$csFromCopy u] get_copy]
 				} else {
 					# wFrom already points in direction of wTo.
 				}
@@ -260,23 +277,24 @@ namespace eval ::ctsimu {
 			if { [$rotationAxis length] > 0 } {
 				set rotationAngle [$wFrom angle $wTo]
 				if { $rotationAngle != 0 } {
-					my rotate_around_pivot_point $rotationAxis $rotationAngle [$csTo center]
+					my rotate_around_pivot_point $rotationAxis $rotationAngle [$csToCopy center]
 
 					# Also rotate the csFrom to make calculation of rotation around u axis possible (next step):
-					$csFrom rotate $rotationAxis $rotationAngle
+					$csFromCopy rotate $rotationAxis $rotationAngle
 				}
 			}
 
 			# Rotation to bring u axis from -> to (around now fixed w axis)
-			set uFrom [$csFrom u]
-			set uTo   [$csTo u]
+			set uFrom [$csFromCopy u]
+			set uTo   [$csToCopy u]
 
+			$rotationAxis destroy
 			set rotationAxis [$uFrom cross $uTo]
 			if { [$rotationAxis length] == 0 } {
 				if { [$uTo dot $uFrom] < 0 } {
 					# 180° flip; vectors point in opposite direction. Rotation axis is another CS basis vector.
 					$rotationAxis destroy
-					set rotationAxis [[$csFrom w] get_copy]
+					set rotationAxis [[$csFromCopy w] get_copy]
 				} else {
 					# uFrom already points in direction of uTo.
 				}
@@ -285,13 +303,18 @@ namespace eval ::ctsimu {
 			if { [$rotationAxis length] > 0 } {
 				set rotationAngle [$uFrom angle $uTo]
 				if { $rotationAngle != 0 } {
-					my rotate_around_pivot_point $rotationAxis $rotationAngle [$csTo center]
+					my rotate_around_pivot_point $rotationAxis $rotationAngle [$csToCopy center]
 				}
 			}
+
+			# Clean up:
+			$rotationAxis destroy
+			$csFromCopy destroy
+			$csToCopy destroy
 		}
 
 		method change_reference_frame { csFrom csTo } {
-			# Transform a coordinate system from the csFrom reference frame
+			# Transform this coordinate system from the csFrom reference frame
 			# to the csTo reference frame. Result will be in terms of csTo.
 
 			my variable _center _u _v _w

@@ -8,9 +8,12 @@ namespace eval ::ctsimu {
 	namespace import ::rl_json::*
 
 	::oo::class create coordinate_system {
-		constructor { } {
+		constructor { { name "" } } {
 			# Define center and direction vectors u, v, w and initialize to world coordinate system.
-			my variable _center _u _v _w _attachedToStage
+			my variable _name _center _u _v _w _attachedToStage
+
+			set _name ""
+			my set_name $name
 
 			# Current center and basis vectors:
 			set _center [::ctsimu::vector new]
@@ -68,6 +71,16 @@ namespace eval ::ctsimu {
 			$C set_w      [$_w get_copy]
 
 			return $C
+		}
+
+		method name { } {
+			my variable _name
+			return $_name
+		}
+
+		method set_name { name } {
+			my variable _name
+			set _name $name
 		}
 
 		method center { } {
@@ -386,7 +399,7 @@ namespace eval ::ctsimu {
 			#   so only deviations that are known to the reconstruction software
 			#   will be handled. Other deviations will be ignored.
 
-			my variable _center _u _v _w
+			my variable _name _center _u _v _w
 			my reset
 
 			set known_to_recon 0
@@ -397,42 +410,37 @@ namespace eval ::ctsimu {
 				my attach_to_stage 0
 
 				# Position
-				$_center set_x [::ctsimu::json_get "mm" $geometry {centre x}]
-				$_center set_y [::ctsimu::json_get "mm" $geometry {centre y}]
-				$_center set_z [::ctsimu::json_get "mm" $geometry {centre z}]
+				$_center set_x [::ctsimu::get_value_in_unit "mm" $geometry {centre x}]
+				$_center set_y [::ctsimu::get_value_in_unit "mm" $geometry {centre y}]
+				$_center set_z [::ctsimu::get_value_in_unit "mm" $geometry {centre z}]
 
 				# Orientation
 				if {[json exists $geometry vector_u x] && [json exists $geometry vector_u y] && [json exists $geometry vector_u z] && [json exists $geometry vector_w x] && [json exists $geometry vector_w y] && [json exists $geometry vector_w z]} {
-					$_u set_x [json get $geometry vector_u x]
-					$_u set_y [json get $geometry vector_u y]
-					$_u set_z [json get $geometry vector_u z]
-					$_w set_x [json get $geometry vector_w x]
-					$_w set_y [json get $geometry vector_w y]
-					$_w set_z [json get $geometry vector_w z]
+					$_u set_x [::ctsimu::get_value $geometry {vector_u x}]
+					$_u set_y [::ctsimu::get_value $geometry {vector_u y}]
+					$_u set_z [::ctsimu::get_value $geometry {vector_u z}]
+					$_w set_x [::ctsimu::get_value $geometry {vector_w x}]
+					$_w set_y [::ctsimu::get_value $geometry {vector_w y}]
+					$_w set_z [::ctsimu::get_value $geometry {vector_w z}]
 				} elseif {[json exists $geometry vector_r x] && [json exists $geometry vector_r y] && [json exists $geometry vector_r z] && [json exists $geometry vector_t x] && [json exists $geometry vector_t y] && [json exists $geometry vector_t z]} {
-					$_u set_x [json get $geometry vector_r x]
-					$_u set_y [json get $geometry vector_r y]
-					$_u set_z [json get $geometry vector_r z]
-					$_w set_x [json get $geometry vector_t x]
-					$_w set_y [json get $geometry vector_t y]
-					$_w set_z [json get $geometry vector_t z]
+					$_u set_x [::ctsimu::get_value $geometry {vector_r x}]
+					$_u set_y [::ctsimu::get_value $geometry {vector_r y}]
+					$_u set_z [::ctsimu::get_value $geometry {vector_r z}]
+					$_w set_x [::ctsimu::get_value $geometry {vector_t x}]
+					$_w set_y [::ctsimu::get_value $geometry {vector_t y}]
+					$_w set_z [::ctsimu::get_value $geometry {vector_t z}]
 				} else {
-					fail "Object $object is put in world coordinate system, but the vectors u and w (or r and t, for samples) are not properly defined (each with an x, y and z component)."
+					error "Coordinate system \'$_name\' is placed in world coordinate system, but the vectors u and w (or r and t, for samples) are not properly defined (each with an x, y and z component)."
 					return
 				}
 
-				# Deviations in Position (before file format version 0.9)
-				if {[json exists $geometry deviation position x]} {
-					set devPosX [::ctsimu::in_mm [json extract $geometry deviation position x]]}
-
-				if {[json exists $geometry deviation position y]} {
-					set devPosY [::ctsimu::in_mm [json extract $geometry deviation position y]]}
-
-				if {[json exists $geometry deviation position z]} {
-					set devPosZ [::ctsimu::in_mm [json extract $geometry deviation position z]]}
+				# Deviations in position (before file format version 0.9)
+				set devPosX [::ctsimu::get_value_in_unit "mm" $geometry {deviation position x}]
+				set devPosY [::ctsimu::get_value_in_unit "mm" $geometry {deviation position y}]
+				set devPosZ [::ctsimu::get_value_in_unit "mm" $geometry {deviation position z}]
 
 				if {[json exists $geometry deviation position u value] || [json exists $geometry deviation position v value] || [json exists $geometry deviation position w value]} {
-					fail "Object $object: Positional deviations u, v, w not allowed for a sample that is fixed to the world coordinate system. "
+					error "Coordinate system \'$_name\': Positional deviations u, v, w not allowed for a sample that is fixed to the world coordinate system. "
 					return
 				}
 			} elseif {[json exists $geometry centre u] && [json exists $geometry centre v] && [json exists $geometry centre w]} {
@@ -440,35 +448,30 @@ namespace eval ::ctsimu {
 				my attach_to_stage 1
 
 				# Position
-				$_center set_x [::ctsimu::in_mm [json extract $geometry centre u]]
-				$_center set_y [::ctsimu::in_mm [json extract $geometry centre v]]
-				$_center set_z [::ctsimu::in_mm [json extract $geometry centre w]]
+				$_center set_x [::ctsimu::get_value_in_unit "mm" $geometry {centre u}]
+				$_center set_y [::ctsimu::get_value_in_unit "mm" $geometry {centre v}]
+				$_center set_z [::ctsimu::get_value_in_unit "mm" $geometry {centre w}]
 
 				# Orientation
 				if {[json exists $geometry vector_r u] && [json exists $geometry vector_r v] && [json exists $geometry vector_r w] && [json exists $geometry vector_t u] && [json exists $geometry vector_t v] && [json exists $geometry vector_t w]} {
-					$_u set_x [json get $geometry vector_r u]
-					$_u set_y [json get $geometry vector_r v]
-					$_u set_z [json get $geometry vector_r w]
-					$_w set_x [json get $geometry vector_t u]
-					$_w set_y [json get $geometry vector_t v]
-					$_w set_z [json get $geometry vector_t w]
+					$_u set_x [::ctsimu::get_value $geometry {vector_r u}]
+					$_u set_y [::ctsimu::get_value $geometry {vector_r v}]
+					$_u set_z [::ctsimu::get_value $geometry {vector_r w}]
+					$_w set_x [::ctsimu::get_value $geometry {vector_t u}]
+					$_w set_y [::ctsimu::get_value $geometry {vector_t v}]
+					$_w set_z [::ctsimu::get_value $geometry {vector_t w}]
 				} else {
-					fail "Object $object is placed in stage coordinate system, but the vectors r and t are not properly defined (each with an u, v and w component)."
+					error "Coordinate system \'$_name\' is placed in stage coordinate system, but the vectors r and t are not properly defined (each with an u, v and w component)."
 					return
 				}
 
 				# Deviations in Position (before file format version 0.9)
-				if {[json exists $geometry deviation position u]} {
-					set devPosX [::ctsimu::in_mm [json extract $geometry deviation position u]]}
-
-				if {[json exists $geometry deviation position v]} {
-					set devPosY [::ctsimu::in_mm [json extract $geometry deviation position v]]}
-
-				if {[json exists $geometry deviation position w]} {
-					set devPosZ [::ctsimu::in_mm [json extract $geometry deviation position w]]}
+				set devPosX [::ctsimu::get_value_in_unit "mm" $geometry {deviation position u}]
+				set devPosY [::ctsimu::get_value_in_unit "mm" $geometry {deviation position v}]
+				set devPosZ [::ctsimu::get_value_in_unit "mm" $geometry {deviation position w}]
 
 				if {[json exists $geometry deviation position x] || [json exists $geometry deviation position y] || [json exists $geometry deviation position z]} {
-					fail "Object $object: Positional deviations x, y, z not allowed for a sample that is placed in the stage coordinate system."
+					error "Coordinate system \'$_name\': Positional deviations x, y, z not allowed for a sample that is placed in the stage coordinate system."
 					return
 				}
 			}
@@ -481,12 +484,12 @@ namespace eval ::ctsimu {
 
 			# Prior to file format 0.9:
 			if {[json exists $geometry deviation known_to_reconstruction]} {
-				set known_to_recon [::ctsimu::from_bool [json extract $geometry deviation known_to_reconstruction]]
+				set known_to_recon [::ctsimu::get_value_in_unit "bool" $geometry {deviation known_to_reconstruction} $known_to_recon]
 			}
 
 			# Starting with file format 0.9:
 			if {[json exists $geometry rotation known_to_reconstruction]} {
-				set known_to_recon [::ctsimu::from_bool [json extract $geometry rotation known_to_reconstruction]]
+				set known_to_recon [::ctsimu::get_value_in_unit "bool" $geometry {rotation known_to_reconstruction} $known_to_recon]
 			}
 
 			# Apply deviations in position:
@@ -505,44 +508,44 @@ namespace eval ::ctsimu {
 			if { ($onlyKnownToReconstruction == 0) || ($known_to_recon == 1) } {
 				# Deviations in rotation (for source, stage, detector, before file format version 0.9):
 				if {[json exists $geometry deviation rotation u]} {
-					set devRotU [::ctsimu::in_rad [json extract $geometry deviation rotation u]]}
+					set devRotU [::ctsimu::get_value_in_unit "rad" $geometry {deviation rotation u}]}
 
 				if {[json exists $geometry deviation rotation v]} {
-					set devRotV [::ctsimu::in_rad [json extract $geometry deviation rotation v]]}
+					set devRotV [::ctsimu::get_value_in_unit "rad" $geometry {deviation rotation v}]}
 
 				if {[json exists $geometry deviation rotation w]} {
-					set devRotW [::ctsimu::in_rad [json extract $geometry deviation rotation w]]}
+					set devRotW [::ctsimu::get_value_in_unit "rad" $geometry {deviation rotation w}]}
 
 				# Deviations in Rotation (for samples):
 				if {[json exists $geometry deviation rotation r]} {
-					set devRotU [::ctsimu::in_rad [json extract $geometry deviation rotation r]]}
+					set devRotU [::ctsimu::get_value_in_unit "rad" $geometry {deviation rotation r}]}
 
 				if {[json exists $geometry deviation rotation s]} {
-					set devRotV [::ctsimu::in_rad [json extract $geometry deviation rotation s]]}
+					set devRotV [::ctsimu::get_value_in_unit "rad" $geometry {deviation rotation s}]}
 
 				if {[json exists $geometry deviation rotation t]} {
-					set devRotW [::ctsimu::in_rad [json extract $geometry deviation rotation t]]}
+					set devRotW [::ctsimu::get_value_in_unit "rad" $geometry {deviation rotation t}]}
 
 
 				# Deviations in rotation (for source, stage, detector, starting with file format version 0.9):
 				if {[json exists $geometry rotation u]} {
-					set devRotU [::ctsimu::in_rad [json extract $geometry rotation u]]}
+					set devRotU [::ctsimu::get_value_in_unit "rad" $geometry {rotation u}]}
 
 				if {[json exists $geometry rotation v]} {
-					set devRotV [::ctsimu::in_rad [json extract $geometry rotation v]]}
+					set devRotV [::ctsimu::get_value_in_unit "rad" $geometry {rotation v}]}
 
 				if {[json exists $geometry rotation w]} {
-					set devRotW [::ctsimu::in_rad [json extract $geometry rotation w]]}
+					set devRotW [::ctsimu::get_value_in_unit "rad" $geometry {rotation w}]}
 
-				# Deviations in Rotation (for samples):
+				# Deviations in rotation (for samples):
 				if {[json exists $geometry rotation r]} {
-					set devRotU [::ctsimu::in_rad [json extract $geometry rotation r]]}
+					set devRotU [::ctsimu::get_value_in_unit "rad" $geometry {rotation r}]}
 
 				if {[json exists $geometry rotation s]} {
-					set devRotV [::ctsimu::in_rad [json extract $geometry rotation s]]}
+					set devRotV [::ctsimu::get_value_in_unit "rad" $geometry {rotation s}]}
 
 				if {[json exists $geometry rotation t]} {
-					set devRotW [::ctsimu::in_rad [json extract $geometry rotation t]]}
+					set devRotW [::ctsimu::get_value_in_unit "rad" $geometry {rotation t}]}
 
 
 				# Apply rotations:

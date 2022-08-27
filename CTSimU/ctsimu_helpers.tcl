@@ -61,7 +61,7 @@ namespace eval ::ctsimu {
 	# Getters
 	# -----------------------------
 
-	proc get_value { sceneDict keys } {
+	proc get_value { sceneDict keys {fail_value 0} } {
 		# Get the specific value of the parameter that is located
 		# at the given sequence of `keys` in the JSON dictionary.
 		if [json exists $sceneDict {*}$keys] {
@@ -70,7 +70,7 @@ namespace eval ::ctsimu {
 			}
 		}
 
-		return "null"
+		return $fail_value
 	}
 
 	proc extract_json_object { sceneDict keys } {
@@ -104,7 +104,7 @@ namespace eval ::ctsimu {
 			return "null"
 		}
 
-		fail "Not a valid unit of length: \'$unit\'"
+		error "Not a valid unit of length: \'$unit\'"
 	}
 
 	proc in_rad { value unit } {
@@ -118,7 +118,7 @@ namespace eval ::ctsimu {
 			return "null"
 		}
 
-		fail "Not a valid unit for an angle: \'$unit\'"
+		error "Not a valid unit for an angle: \'$unit\'"
 	}
 
 	proc in_deg { value unit } {
@@ -132,7 +132,7 @@ namespace eval ::ctsimu {
 			return "null"
 		}
 
-		fail "Not a valid unit for an angle: \'$unit\'"
+		error "Not a valid unit for an angle: \'$unit\'"
 	}
 
 	proc in_s { value unit } {
@@ -148,7 +148,7 @@ namespace eval ::ctsimu {
 			return "null"
 		}
 
-		fail "Not a valid unit of time: \'$unit\'"
+		error "Not a valid unit of time: \'$unit\'"
 	}
 
 	proc in_mA { value unit } {
@@ -163,7 +163,7 @@ namespace eval ::ctsimu {
 			return "null"
 		}
 
-		fail "Not a valid unit of current: \'$unit\'"
+		error "Not a valid unit of current: \'$unit\'"
 	}
 
 	proc in_kV { value unit } {
@@ -178,7 +178,7 @@ namespace eval ::ctsimu {
 			return "null"
 		}
 
-		fail "Not a valid unit of voltage: \'$unit\'"
+		error "Not a valid unit of voltage: \'$unit\'"
 	}
 
 	proc in_g_per_cm3 { value unit } {
@@ -192,7 +192,7 @@ namespace eval ::ctsimu {
 			return "null"
 		}
 
-		fail "Not a valid unit of density: \'$unit\'"
+		error "Not a valid unit of density: \'$unit\'"
 	}
 
 	proc from_bool { value } {
@@ -242,7 +242,7 @@ namespace eval ::ctsimu {
 			}
 		}
 
-		fail "Native unit $native_unit is incompatible with the given unit $given_unit."
+		error "Native unit $native_unit is incompatible with the given unit $given_unit."
 		return 0
 	}
 
@@ -262,19 +262,19 @@ namespace eval ::ctsimu {
 
 			return [::ctsimu::convert_to_native_unit $unit $native_unit $value]
 		} else {
-			fail "Trying to convert a value to $native_unit, but no value+unit pair is provided from JSON object."
+			error "Trying to convert a value to $native_unit, but no value+unit pair is provided from JSON object."
 		}
 	}
 
-	proc json_get { native_unit sceneDict keys } {
+	proc get_value_in_unit { native_unit sceneDict keys {fail_value 0} } {
 		# Takes a sequence of JSON keys from the given dictionary where
 		# a JSON object with a value/unit pair must be located.
 		# Returns the value of this JSON object in the requested native_unit.
-		set value_unit_pair [extract_json_object $sceneDict $keys]
-		if {![object_value_is_null_or_zero $value_unit_pair]} {
+		set value_unit_pair [::ctsimu::extract_json_object $sceneDict $keys]
+		if {![::ctsimu::object_value_is_null_or_zero $value_unit_pair]} {
 			return [::ctsimu::json_convert_to_native_unit $native_unit $value_unit_pair]
 		}
 
-		return "null"
+		return $fail_value
 	}
 }

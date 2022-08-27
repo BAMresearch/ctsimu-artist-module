@@ -120,54 +120,54 @@ namespace eval ::ctsimu {
 	
 			return $success
 		}
-	}
 
-	method set_frame { frame nFrames { only_drifts_known_to_reconstruction 0 } } {
-		my variable _current_value _standard_value _drifts _unit
-		set new_value $_standard_value
+		method set_frame { frame nFrames { only_drifts_known_to_reconstruction 0 } } {
+			my variable _current_value _standard_value _drifts _unit
+			set new_value $_standard_value
 
-		if { $_unit == "string" } {
-			# A string-type parameter can only be one string,
-			# nothing is added, and the _drifts array should only
-			# contain one element. Otherwise, the last drift is the
-			# one that has precedence.
-			foreach d $_drifts {
-				if { $only_drifts_known_to_reconstruction == 1 } {
-					if { [$d known_to_reconstruction] == 0 } {
-						# Skip this drift if it is unknown to the reconstruction,
-						# but we only want to obey drifts that are actually known
-						# to the reconstruction...
-						continue
+			if { $_unit == "string" } {
+				# A string-type parameter can only be one string,
+				# nothing is added, and the _drifts array should only
+				# contain one element. Otherwise, the last drift is the
+				# one that has precedence.
+				foreach d $_drifts {
+					if { $only_drifts_known_to_reconstruction == 1 } {
+						if { [$d known_to_reconstruction] == 0 } {
+							# Skip this drift if it is unknown to the reconstruction,
+							# but we only want to obey drifts that are actually known
+							# to the reconstruction...
+							continue
+						}
 					}
+					
+					set new_value [$d get_value_for_frame $frame $nFrames]
 				}
-				
-				set new_value [$d get_value_for_frame $frame $nFrames]
-			}
-		} else {
-			# The parameter is a number-type (unitless or a valid physical unit).
-			foreach d $_drifts {
-				if { $only_drifts_known_to_reconstruction == 1 } {
-					if { [$d known_to_reconstruction] == 0 } {
-						# Skip this drift if it is unknown to the reconstruction,
-						# but we only want to obey drifts that are actually known
-						# to the reconstruction...
-						continue
+			} else {
+				# The parameter is a number-type (unitless or a valid physical unit).
+				foreach d $_drifts {
+					if { $only_drifts_known_to_reconstruction == 1 } {
+						if { [$d known_to_reconstruction] == 0 } {
+							# Skip this drift if it is unknown to the reconstruction,
+							# but we only want to obey drifts that are actually known
+							# to the reconstruction...
+							continue
+						}
 					}
+
+					# Add up all drift values for requested frame:
+					set new_value [expr $new_value + [$d get_value_for_frame $frame $nFrames]]
 				}
-
-				# Add up all drift values for requested frame:
-				set new_value [expr $new_value + [$d get_value_for_frame $frame $nFrames]]
 			}
-		}
 
-		# Check if the value has changed when compared to the previous value:
-		set value_has_changed 0
-		if { $_current_value != $new_value } {
-			set value_has_changed 1
-			set _current_value $new_value
-		}
+			# Check if the value has changed when compared to the previous value:
+			set value_has_changed 0
+			if { $_current_value != $new_value } {
+				set value_has_changed 1
+				set _current_value $new_value
+			}
 
-		# Return 1 if the parameter's value has changed, 0 if not:
-		return $value_has_changed		
+			# Return 1 if the parameter's value has changed, 0 if not:
+			return $value_has_changed		
+		}
 	}
 }

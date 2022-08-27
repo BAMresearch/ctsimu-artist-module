@@ -12,9 +12,9 @@ This module adds the following functions to the `::ctsimu` namespace:
 
 ### Constructor
 
-* `constructor { }`
+* `constructor { { name "" } }`
 
-    The constructor currently does not take any arguments.
+    Optionally, a name for the coordinate system can be passed to the constructor. This name can appear in error messages to trace problems.
 
 ### General
 
@@ -32,6 +32,7 @@ This module adds the following functions to the `::ctsimu` namespace:
 ### Getter Functions
 
 * `get_copy` — Returns a copy of this coordinate system.
+* `name` — Get the name of the coordinate system.
 * `center` — A vector that represents the coordinate system's center (in its reference coordinate system).
 * `u` — The `u` basis vector in terms of the reference coordinate system.
 * `v` — The `v` basis vector in terms of the reference coordinate system.
@@ -40,6 +41,7 @@ This module adds the following functions to the `::ctsimu` namespace:
 
 ### Setter Functions
 
+* `set_name { name }` — Set the name of the coordinate system.
 * `set_center { c }` — Set the coordinates of the origin of the coordinate system (in terms of its reference coordinate system). The argument `c` must be a `::ctsimu::vector`.
 * `set_u { u }` — Set the `u` basis vector. A `::ctsimu::vector` is expected.
 * `set_v { v }` — Set the `v` basis vector. A `::ctsimu::vector` is expected.

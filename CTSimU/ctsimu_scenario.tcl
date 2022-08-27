@@ -227,7 +227,7 @@ namespace eval ::ctsimu {
 								set stageGeometry [json extract $scene geometry stage]
 								$csStage set_geometry $stageGeometry $csWorld $csWorld
 							} else {
-								fail "Cannot find stage geometry."
+								error "Cannot find stage geometry."
 								return
 							}
 
@@ -236,7 +236,7 @@ namespace eval ::ctsimu {
 								set detectorGeometry [json extract $scene geometry detector]
 								$csDetector set_geometry $detectorGeometry $csWorld $csStage
 							} else {
-								fail "Cannot find detector geometry."
+								error "Cannot find detector geometry."
 								return
 							}
 
@@ -247,7 +247,7 @@ namespace eval ::ctsimu {
 								aRTist_placeObjectInCoordinateSystem S $csSource
 								dict set ctsimuSettings csSource $csSource
 							} else {
-								fail "Cannot find source geometry."
+								error "Cannot find source geometry."
 								return
 							}
 
@@ -443,14 +443,14 @@ namespace eval ::ctsimu {
 							if [json exists $scene acquisition start_angle] {
 								$ctsimu_scenario setStartAngle [in_deg [json extract $scene acquisition start_angle]]
 							} else {
-								fail "Start angle not specified."
+								error "Start angle not specified."
 								return
 							}
 
 							if [json exists $scene acquisition stop_angle] {
 								$ctsimu_scenario setStopAngle [in_deg [json extract $scene acquisition stop_angle]]
 							} else {
-								fail "Stop angle not specified."
+								error "Stop angle not specified."
 								return
 							}
 
@@ -462,14 +462,14 @@ namespace eval ::ctsimu {
 								# Format version >=0.4:
 								setnProjections [json get $scene acquisition number_of_projections]
 							} else {
-								fail "Number of resulting projections not specified."
+								error "Number of resulting projections not specified."
 								return
 							}
 
 							if [json exists $scene acquisition direction] {
 								setScanDirection [json get $scene acquisition direction]
 							} else {
-								fail "Scan direction not specified."
+								error "Scan direction not specified."
 								return
 							}
 
@@ -818,7 +818,7 @@ namespace eval ::ctsimu {
 								} elseif {$value == "real"} {
 									set detectorType "real"
 								} else {
-									fail "Unknown detector type: $value"
+									error "Unknown detector type: $value"
 									return
 								}
 							}
@@ -951,7 +951,7 @@ namespace eval ::ctsimu {
 								if { $dfIdeal == 1 } {
 									dict set ctsimuSettings takeDarkField 1
 								} else {
-									fail "aRTist does not support non-ideal dark field images."
+									error "aRTist does not support non-ideal dark field images."
 								}
 							}
 
@@ -964,10 +964,10 @@ namespace eval ::ctsimu {
 									if {$nFlatAvg > 0} {
 										dict set ctsimuSettings nFlatAvg $nFlatAvg 
 									} else {
-										fail "Number of flat field frames to average must be greater than 0."
+										error "Number of flat field frames to average must be greater than 0."
 									}
 								} else {
-									fail "Number of flat field frames to average must be greater than 0."
+									error "Number of flat field frames to average must be greater than 0."
 								}
 
 								set ffIdeal [from_bool [::ctsimu::get_value $scene {acquisition flat_field ideal} ]]
@@ -1012,17 +1012,17 @@ namespace eval ::ctsimu {
 							return 1
 
 						} else {
-							fail "File format version number $version_major.$version_minor is not supported."
+							error "File format version number $version_major.$version_minor is not supported."
 						}
 
 					} else {
-						fail { "Scenario file does not contain any valid file format version number." }
+						error{ "Scenario file does not contain any valid file format version number." }
 					}
 				} else {
-					fail { "This does not appear to be a CTSimU scenario file. Did you mistakenly open a metadata file?" }
+					error{ "This does not appear to be a CTSimU scenario file. Did you mistakenly open a metadata file?" }
 				}
 			} else {
-				fail { "This does not appear to be a CTSimU scenario file. Did you mistakenly open a metadata file?" }
+				error{ "This does not appear to be a CTSimU scenario file. Did you mistakenly open a metadata file?" }
 			}
 
 			return 0

@@ -114,13 +114,14 @@ namespace eval ::ctsimu {
 			# Get drift value(s)
 			if { [json exists $json_object value] } {
 				if { ![json isnull $value value] } {
-					set jsonValue [::ctsimu::get_value $json_object value]
-					set jsonValueType [json type $jsonValue]
+					set jsonValueType [json type $json_object value]
 
 					if {$jsonValueType == "number"} {
+						set jsonValue [json type $json_object value]
 						lappend _trajectory [::ctsimu::json_convert_to_native_unit $_unit $jsonValue]
 					} elseif {$jsonValueType == "array"} {
-						json foreach value $jsonValue {
+						set jsonValueArray [::ctsimu::extract_json_object $json_object {value}]
+						json foreach value $jsonValueArray {
 							lappend _trajectory [::ctsimu::convert_to_native_unit $jsonUnit $_unit $value]
 						}
 					}

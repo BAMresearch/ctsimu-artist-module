@@ -8,8 +8,10 @@ namespace eval ::ctsimu {
 	namespace import ::rl_json::*
 
 	::oo::class create parameter {
-		constructor { unit { standard 0 } } {
-			my variable _standard_value; # unaffected by drifts
+		# Class for a parameter value, includes handling of parameter drifts.
+
+		constructor { { unit "" } { standard 0 } } {
+			my variable _standard_value
 			my variable _unit
 			my variable _drifts
 
@@ -26,6 +28,8 @@ namespace eval ::ctsimu {
 			foreach drift $_drifts {
 				$drift destroy
 			}
+			
+			set _drifts [list]
 		}
 
 		method reset { } {
@@ -57,7 +61,13 @@ namespace eval ::ctsimu {
 			my variable _current_value
 			return $_current_value
 		}
-
+		
+		method get_value_for_frame { frame { nFrames 1 } { only_drifts_known_to_reconstruction 0 } } {
+			# Set the new frame number, return current value
+			my set_frame $frame $nFrames $only_drifts_known_to_reconstruction
+			return [my current_value]
+		}
+		
 		method set_unit { unit } {
 			# Set the parameter's native unit.
 			my variable _unit
@@ -80,7 +90,7 @@ namespace eval ::ctsimu {
 			lappend _drifts $d
 		}
 
-		method set_from_json { json_parameter } {
+		method set_from_json { json_parameter_object } {
 			# Set up this parameter from a JSON parameter object.
 			my reset
 			my variable _current_value _standard_value _unit _drifts
@@ -88,9 +98,9 @@ namespace eval ::ctsimu {
 			set success 0
 
 			# Value, automatically converted to parameter's native unit:
-			if { [json exists $json_parameter value] } {
-				if { ![object_value_is_null $json_parameter] } {
-					my set_standard_value [::ctsimu::in_native_unit $_unit $json_parameter]
+			if { [json exists $json_parameter_object value] } {
+				if { ![object_value_is_null $json_parameter_object] } {
+					my set_standard_value [::ctsimu::in_native_unit $_unit $json_parameter_object]
 					set success 1
 				} else {
 					set success 0
@@ -100,9 +110,9 @@ namespace eval ::ctsimu {
 			set _current_value $_standard_value
 
 			# Drifts:
-			if { [json exists $json_parameter drift] } {
-				if { ![json isnull $json_parameter drift] } {
-					set jsonDrifts [::ctsimu::extract_json_object $json_parameter drifts]
+			if { [json exists $json_parameter_object drift] } {
+				if { ![json isnull $json_parameter_object drift] } {
+					set jsonDrifts [::ctsimu::extract_json_object $json_parameter_object drifts]
 					set jsonType [json type $jsonDrifts]
 
 					if {$jsonType == "array"} {
@@ -119,6 +129,32 @@ namespace eval ::ctsimu {
 			}
 	
 			return $success
+		}
+
+		method set_from_key { json_object key_sequence } {
+			if { [json exists $json_object $key_sequence] } {
+				if { [my set_from_json [json extract $json_object $key_sequence]] } {
+					return 1
+				}
+			}
+
+			return 0
+		}
+
+		method set_from_possible_keys { json_object key_sequences } {
+			# Searches the JSON object for each
+			# key sequence in the given list of key_sequences.
+			# The first sequence that matches is taken
+			# for the parameter.
+			foreach keyseq $key_sequences {
+				if { [my set_from_key $json_object $keyseq] } {
+					# Returned succesfully, so we can finish this...
+
+					return 1
+				}
+			}
+
+			return 0
 		}
 
 		method set_frame { frame nFrames { only_drifts_known_to_reconstruction 0 } } {

@@ -254,6 +254,10 @@ namespace eval ::ctsimu {
 		# JSON `value` accordingly.
 		if { $native_unit == "" } {
 			return [::ctsimu::get_value $value_and_unit value]
+		} elseif { $native_unit == "bool" } {
+			# This is not a value/unit pair.
+			# Only convert bool $value to 1 or 0.
+			return [::ctsimu::from_bool $value_and_unit]
 		}
 
 		if { [json exists $value_and_unit value] && [json exists $value_and_unit unit] } {

@@ -31,7 +31,7 @@ This module adds the following functions to the `::ctsimu` namespace:
 
 ### Getter Functions
 
-* `get_copy` — Returns a copy of this coordinate system.
+* `get_copy { { new_name 0 } }` — Returns a copy of this coordinate system. Optionally, a `new_name` for the copy can be passed. Otherwise, the existing name of this coordinate system will be copied to the new coordinate system.
 * `name` — Get the name of the coordinate system.
 * `center` — A vector that represents the coordinate system's center (in its reference coordinate system).
 * `u` — The `u` basis vector in terms of the reference coordinate system.

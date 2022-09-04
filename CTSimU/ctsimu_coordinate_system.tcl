@@ -62,9 +62,47 @@ namespace eval ::ctsimu {
 			return $s
 		}
 
+		method make_unit_coordinate_system { } {
+			# Make coordinate system base unit vectors.
+			my variable _u _v _w
+			$_u to_unit_vector
+			$_v to_unit_vector
+			$_w to_unit_vector
+		}
+
+		method make_from_vectors { center u w attached } {
+			# Set the coordinate system from the ::ctsimu::vector objects
+			# center, u (first basis vector) and w (third basis vector).
+			# attached should be 1 if the reference coordinate system is
+			# the stage ("attached to stage") and 0 if not.
+
+			my set_center $center
+			my set_u      $u
+			my set_w      $w
+			my set_v      [$w cross $u]
+
+			my attach_to_stage $attached
+		}
+
+		method make { cx cy cz ux uy uz wx wy wz attached } {
+			# Set up the coordinate system from vector components (all floats)
+			# for the center (cx, cy, cz), the u vector (first basis vector,
+			# ux, uy, uz) and the w vector (third basis vector, wx, wy, wz).
+			# attached should be 1 if the reference coordinate system is
+			# the stage ("attached to stage") and 0 if not.
+
+			set c [::ctsimu::vector new [list $cx $cy $cz]]
+			set u [::ctsimu::vector new [list $ux $uy $uz]]
+			set w [::ctsimu::vector new [list $wx $wy $wz]]
+
+			my make_from_vectors $c $u $w $attached
+		}
+
+		# Getters
+		# -------------------------
 		method get_copy { { new_name 0 } } {
 			# Return a copy of this coordinate system.
-			my variable _name _center _u _v _w
+			my variable _center _u _v _w
 			set C [::ctsimu::coordinate_system new]
 
 			$C set_center [$_center get_copy]
@@ -75,7 +113,7 @@ namespace eval ::ctsimu {
 			if { $new_name != 0 } {
 				$C set_name $new_name
 			} else {
-				$C set_name $_name
+				$C set_name [my name]
 			}
 
 			return $C
@@ -86,20 +124,9 @@ namespace eval ::ctsimu {
 			return $_name
 		}
 
-		method set_name { name } {
-			my variable _name
-			set _name $name
-		}
-
 		method center { } {
 			my variable _center
 			return $_center
-		}
-
-		method set_center { c } {
-			my variable _center
-			$_center destroy
-			set _center $c
 		}
 
 		method u { } {
@@ -107,32 +134,14 @@ namespace eval ::ctsimu {
 			return $_u
 		}
 
-		method set_u { u } {
-			my variable _u
-			$_u destroy
-			set _u $u
-		}
-
 		method v { } {
 			my variable _v
 			return $_v
 		}
 
-		method set_v { v } {
-			my variable _v
-			$_v destroy
-			set _v $v
-		}
-
 		method w { } {
 			my variable _w
 			return $_w
-		}
-
-		method set_w { w } {
-			my variable _w
-			$_w destroy
-			set _w $w
 		}
 
 		method is_attached_to_stage { } {
@@ -141,69 +150,94 @@ namespace eval ::ctsimu {
 			return $_attachedToStage
 		}
 
+		# Setters
+		# -------------------------
+		method set_name { name } {
+			my variable _name
+			set _name $name
+		}
+
+		method set_center { c } {
+			my variable _center
+			$_center destroy
+			set _center $c
+		}
+
+		method set_u { u } {
+			my variable _u
+			$_u destroy
+			set _u $u
+		}
+
+		method set_v { v } {
+			my variable _v
+			$_v destroy
+			set _v $v
+		}
+
+		method set_w { w } {
+			my variable _w
+			$_w destroy
+			set _w $w
+		}
+
 		method attach_to_stage { attached } {
 			# 0: not attached, 1: attached to stage.
 			my variable _attachedToStage
 			set _attachedToStage $attached
 		}
 
-		method make_unit_coordinate_system { } {
-			# Make coordinate system base unit vectors.
-			my variable _u _v _w
-			$_u to_unit_vector
-			$_v to_unit_vector
-			$_w to_unit_vector
-		}
-
-		method translate { vec } {
-			# Shift center by vector.
+		# Transformations
+		# -------------------------
+		method translate { translation_vector } {
+			# Shift center by given translation vector.
 			my variable _center
-			$_center add $vec
+			$_center add $translation_vector
 		}
 		
-		method translate_axis { axis value } {
-			# Shift center by vector.
+		method translate_axis { axis distance } {
+			# Shift center along `axis` by given `distance`.
 			my variable _center
 			set t [$axis get_unit_vector]
-			$t scale $value
+			$t scale $distance
 			$t destroy
 		}
 
 		method translate_x { dx } {
-			# Translate coordinate system in x direction by amount dx.
+			# Translate coordinate system in x direction by distance dx.
 			set t [::ctsimu::vector new [list $dx 0 0]]; # new translation vector
 			my translate $t
 			$t destroy
 		}
 
 		method translate_y { dy } {
-			# Translate coordinate system in y direction by amount dy.
+			# Translate coordinate system in y direction by distance dy.
 			set t [::ctsimu::vector new [list 0 $dy 0]]; # new translation vector
 			my translate $t
 			$t destroy
 		}
 
 		method translate_z { dz } {
-			# Translate coordinate system in z direction by amount dz.
+			# Translate coordinate system in z direction by distance dz.
 			set t [::ctsimu::vector new [list 0 0 $dz]]; # new translation vector
 			my translate $t
 			$t destroy
 		}
 		
 		method translate_u { du } {
-			# Translate coordinate system in u direction by amount du.
+			# Translate coordinate system in u direction by distance du.
 			my variable _u
 			my translate_axis $_u du
 		}
 		
 		method translate_v { dv } {
-			# Translate coordinate system in v direction by amount dv.
+			# Translate coordinate system in v direction by distance dv.
 			my variable _v
 			my translate_axis $_v dv
 		}
 		
 		method translate_w { dw } {
-			# Translate coordinate system in w direction by amount dw.
+			# Translate coordinate system in w direction by distance dw.
 			my variable _w
 			my translate_axis $_w dw
 		}
@@ -213,9 +247,8 @@ namespace eval ::ctsimu {
 			# by angle_in_rad. This does not move the center point,
 			# as the axis vector is assumed to be attached to
 			# the center of the coordinate system.
-			my variable _u _v _w
-
 			if {$angle_in_rad != 0} {
+				my variable _u _v _w
 				set R [::ctsimu::rotation_matrix $axis $angle_in_rad]
 				$_u transform_by_matrix $R
 				$_v transform_by_matrix $R
@@ -245,11 +278,37 @@ namespace eval ::ctsimu {
 			my rotate $axis $angle_in_rad
 		}
 
+		method rotate_around_x { angle_in_rad } {
+			# Rotate coordinate system around world's x axis by angle.
+			if {$angle_in_rad != 0} {
+				set x_axis [::ctsimu_vector new [list 1 0 0]]
+				my rotate $x_axis $angle_in_rad
+				$x_axis destroy
+			}
+		}
+
+		method rotate_around_y { angle_in_rad } {
+			# Rotate coordinate system around world's y axis by angle.
+			if {$angle_in_rad != 0} {
+				set y_axis [::ctsimu_vector new [list 0 1 0]]
+				my rotate $y_axis $angle_in_rad
+				$y_axis destroy
+			}
+		}
+
+		method rotate_around_z { angle_in_rad } {
+			# Rotate coordinate system around world's z axis by angle.
+			if {$angle_in_rad != 0} {
+				set z_axis [::ctsimu_vector new [list 0 0 1]]
+				my rotate $z_axis $angle_in_rad
+				$z_axis destroy
+			}
+		}
+
 		method rotate_around_u { angle_in_rad } {
 			# Rotate coordinate system around u axis by angle.
-			my variable _u _v _w
-
 			if {$angle_in_rad != 0} {
+				my variable _u _v _w
 				set R [::ctsimu::rotation_matrix $_u $angle_in_rad]
 				$_v transform_by_matrix $R
 				$_w transform_by_matrix $R
@@ -259,9 +318,8 @@ namespace eval ::ctsimu {
 
 		method rotate_around_v { angle_in_rad } {
 			# Rotate coordinate system around v axis by angle.
-			my variable _u _v _w
-
 			if {$angle_in_rad != 0} {
+				my variable _u _v _w
 				set R [::ctsimu::rotation_matrix $_v $angle_in_rad]
 				$_u transform_by_matrix $R
 				$_w transform_by_matrix $R
@@ -271,9 +329,8 @@ namespace eval ::ctsimu {
 
 		method rotate_around_w { angle_in_rad } {
 			# Rotate coordinate system around w axis by angle.
-			my variable _u _v _w
-
 			if {$angle_in_rad != 0} {
+				my variable _u _v _w
 				set R [::ctsimu::rotation_matrix $_w $angle_in_rad]
 				$_u transform_by_matrix $R
 				$_v transform_by_matrix $R
@@ -387,33 +444,7 @@ namespace eval ::ctsimu {
 			$new_center_in_from destroy
 		}
 
-		method make_from_vectors { center u w attached } {
-			# Set the coordinate system from the ::ctsimu::vector objects
-			# center, u (first basis vector) and w (third basis vector).
-			# attached should be 1 if the reference coordinate system is
-			# the stage ("attached to stage") and 0 if not.
 
-			my set_center $center
-			my set_u      $u
-			my set_w      $w
-			my set_v      [$w cross $u]
-
-			my attach_to_stage $attached
-		}
-
-		method make { cx cy cz ux uy uz wx wy wz attached } {
-			# Set up the coordinate system from vector components (all floats)
-			# for the center (cx, cy, cz), the u vector (first basis vector,
-			# ux, uy, uz) and the w vector (third basis vector, wx, wy, wz).
-			# attached should be 1 if the reference coordinate system is
-			# the stage ("attached to stage") and 0 if not.
-
-			set c [::ctsimu::vector new [list $cx $cy $cz]]
-			set u [::ctsimu::vector new [list $ux $uy $uz]]
-			set w [::ctsimu::vector new [list $wx $wy $wz]]
-
-			my make_from_vectors $c $u $w $attached
-		}
 		
 		method deviate { deviation world stage { frame 0 } { nFrames 1 } { only_known_to_reconstruction 0 } } {
 			# Apply a ::ctsimu::deviation to this coordinate system.

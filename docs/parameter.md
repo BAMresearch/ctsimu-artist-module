@@ -37,19 +37,10 @@ CTSimU defines a [JSON-based file format](https://bamresearch.github.io/ctsimu-s
 ### General
 
 * `reset` — Delete all drifts and set the parameter's current value to the standard value.
-
-### Getters
-
-* `unit` — Get the parameter's native unit.
-* `standard_value` — Get the parameter's standard value (unaffected by drifts).
-* `current_value` — Get the parameter's current value.
-
-### Setters
-
-* `set_unit { unit }` — Set the parameter's native unit.
-* `set_standard_value { value }` — Set the parameter's standard value.
+* `get_value_for_frame { frame { nFrames 1 } { only_drifts_known_to_reconstruction 0 } }` — Sets and returns the parameter's current value such that it matches the given `frame` out of a total of `nFrames`, depending on wheter all drifts are applied or only drifts known to the reconstruction software.
+* `get_total_drift_value_for_frame { frame nFrames { only_drifts_known_to_reconstruction 0 } }` — Calculates the total drift value from all drift components, for the given `frame` out of a total of `nFrames`, depending on wheter all drifts are applied or only drifts known to the reconstruction software.
 * `add_drift { json_drift_obj }` — Generates a `ctsimu::drift` object (from a JSON object that defines a drift) and adds it to its internal list of drifts to handle.
-* `set_from_json { json_parameter }` — Set up this parameter from a JSON parameter object. Returns `1` on success, `0` otherwise.
+* `set_from_json { json_parameter_object }` — Set up this parameter from a JSON parameter object. Returns `1` on success, `0` otherwise.
 * `set_from_key { json_object key_sequence }` — Tries to find a valid parameter object at the given `key_sequence` in the given `json_object`. Sets the parameter if possible and returns `1` on success, `0` otherwise.
 * `set_from_possible_keys { json_object key_sequences }` — Accepts a list of `key_sequences` that specify possible locations of a parameter object in the given `json_object`. Sets up the parameter from the first valid JSON parameter object it finds, and returns `1` on success, `0` if no key sequence in the list of key sequences turned out to be a valid parameter. This can be used to support multiple spelling variants, for example "center" and "centre":
 
@@ -60,3 +51,14 @@ CTSimU defines a [JSON-based file format](https://bamresearch.github.io/ctsimu-s
     The parameter `only_drifts_known_to_reconstruction` can be set to `1` if this the new parameter value should only be calculated from drifts which are known to the reconstruction software.
 
     Returns `1` if the parameter value has changed from its previous state (due to drifts) and `0` if it has not changed.
+
+### Getters
+
+* `unit` — Get the parameter's native unit.
+* `standard_value` — Get the parameter's standard value (unaffected by any drifts).
+* `current_value` — Get the parameter's current value. Should be used after `set_frame`.
+
+### Setters
+
+* `set_unit { unit }` — Set the parameter's native unit.
+* `set_standard_value { value }` — Set the parameter's standard value.

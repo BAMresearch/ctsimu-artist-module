@@ -5,30 +5,38 @@ variable BasePath [file dirname [info script]]
 source -encoding utf-8 [file join $BasePath ctsimu_coordinate_system.tcl]
 
 # Parts are objects in the scene: detector, source, stage and samples.
-# Each part has its own coordinate system, and a parallel "ghost" coordinate system
-# for calculating projection matrices for the reconstruction.
-# This is necessary because the user is free not to pass any deviations to the
-# reconstruction.
+#
+# They have a coordinate system and can define deviations from their
+# standard geometries (translations and rotations around given axes).
+# The center, vectors and deviations can all have drifts,
+# allowing for an evolution through time.
+#
+# Each part has its own coordinate system, and a parallel "ghost"
+# coordinate system for calculating projection matrices for the
+# reconstruction. This is necessary because the user is free
+# not to pass any deviations to the reconstruction.
 
 namespace eval ::ctsimu {
 	namespace import ::rl_json::*
 
 	::oo::class create part {
 		constructor { { name "" } } {
-			my variable _attachedToStage;  # Is this object attached to the stage coordinate sytem?
+			# Is this object attached to the stage coordinate sytem?
+			my variable _attachedToStage
 			my attach_to_stage 0
 
-			my variable _cs_initial;  # coordinate system for frame 0
-			my variable _cs_current;  # coordinate system for current frame
+			# Coordinate system for current frame:
+			my variable _cs_current
 
-			# Ghost coordinate systems to use for the calculation of
+			# Ghost coordinate system to use for the calculation of
 			# recon projection matrices. Those only obey drifts that are
-			# 'known_to_reconstruction'.
-			my variable _cs_initial_recon;  # frame 0
-			my variable _cs_current_recon;  # current frame
+			# 'known_to_reconstruction':
+			my variable _cs_recon
 
 			# The coordinates and orientation must be kept as
 			# ::ctsimu::parameter objects to properly handle drifts.
+			# These parameters are used to assemble a coordinate
+			# system for each frame.
 			my variable _center_x
 			my variable _center_y
 			my variable _center_z
@@ -41,20 +49,19 @@ namespace eval ::ctsimu {
 			my variable _vector_w_y
 			my variable _vector_w_z
 
-			# Translational and rotational deviations:
+			# Translational and rotational deviations
+			# (themselves including drifts):
 			my variable _deviations
 
-			set _cs_initial [::ctsimu::coordinate_system new];  # frame 0
-			set _cs_current [::ctsimu::coordinate_system new];  # current frame
+			# A name for this part:
+			my variable _name
 
-			# Ghost coordinate system to use for the calculation of
-			# recon projection matrices. Those only obey drifts 'known_to_reconstruction'.
-			set _cs_initial_recon [::ctsimu::coordinate_system new];  # frame 0
-			set _cs_current_recon [::ctsimu::coordinate_system new];  # current frame
+			# Initialize the coordinate systems:
+			set _cs_current [::ctsimu::coordinate_system new];  # current frame
+			set _cs_recon   [::ctsimu::coordinate_system new];  # current frame
 
 			# The object's name will be passed on to the coordinate
 			# system via the set_name function.
-			my variable _name
 			set _name ""
 			my set_name $name
 
@@ -75,29 +82,29 @@ namespace eval ::ctsimu {
 		}
 
 		destructor {
-			my variable _cs_initial _cs_current _cs_initial_recon _cs_current_recon
+			my variable _cs_current _cs_recon
 
-			$_cs_initial destroy
 			$_cs_current destroy
-			$_cs_initial_recon destroy
-			$_cs_current_recon destroy
+			$_cs_recon destroy
 
 			my variable _deviations
 			foreach dev $_deviations {
 				$dev destroy
 			}
-			set _deviations [list]
+			set _deviations [list]		
 		}
 
 		method reset { } {
+			# Reset to the default (such as after the
+			# object is constructed). Will result in
+			# standard alignment with the world coordinate system.
+			# Any geometrical deviations are deleted.
 			my attach_to_stage 0
 
-			my variable _cs_initial _cs_current _cs_initial_recon _cs_current_recon
+			my variable _cs_current _cs_recon
 
-			$_cs_initial reset
 			$_cs_current reset
-			$_cs_initial_recon reset
-			$_cs_current_recon reset
+			$_cs_recon reset
 
 			my variable _deviations
 			foreach dev $_deviations {
@@ -129,21 +136,16 @@ namespace eval ::ctsimu {
 		}
 
 		method set_cs_names { } {
-			# Uses this object's name to give names to the proper coordinate systems.
+			# Uses this object's name to give names to the
+			# proper coordinate systems.
 			# Invoked by default by the set_name function.
-			my variable _name _cs_initial _cs_current _cs_initial_recon _cs_current_recon
-
-			append cs_initial_name $_name "_initial"
-			$_cs_initial set_name $cs_initial_name
+			my variable _name _cs_current _cs_recon
 
 			append cs_current_name $_name "_current"
 			$_cs_current set_name $cs_current_name
 
-			append cs_initial_recon_name $_name "_recon_initial"
-			$_cs_initial_recon set_name $cs_initial_recon_name
-
-			append cs_current_recon_name $_name "_recon_current"
-			$_cs_current_recon set_name $cs_current_recon_name
+			append cs_recon_name $_name "_recon"
+			$_cs_recon set_name $cs_recon_name
 		}
 
 		method attach_to_stage { attached } {
@@ -152,7 +154,13 @@ namespace eval ::ctsimu {
 			set _attachedToStage $attached
 		}
 
+		# General
+		# -------------------------
 		method set_geometry { geometry world stage } {
+			# Sets up the part from a JSON geometry definition.
+			# `geometry` must be an `rl_json` object.
+			# The `world` and `stage` have to be given as
+			# `::ctsimu::coordinate_system` objects.
 			my reset
 
 			my variable _center_x _center_y _center_z
@@ -270,7 +278,7 @@ namespace eval ::ctsimu {
 					# prior to version 0.9, but we still add them here
 					# because now we easily can... ;-)
 					if {[json exists $geometry deviation position $axis]} {
-						set pos_dev [::ctsimu::deviation new "mm"]
+						set pos_dev [::ctsimu::deviation new]
 						$pos_dev set_type "translation"
 						$pos_dev set_axis "$axis"
 						$pos_dev set_known_to_reconstruction $known_to_recon
@@ -288,7 +296,7 @@ namespace eval ::ctsimu {
 					# The list ::ctsimu::valid_axes is already in the
 					# correct order for legacy rotations.
 					if {[json exists $geometry deviation rotation $axis]} {
-						set rot_dev [::ctsimu::deviation new "rad"]
+						set rot_dev [::ctsimu::deviation new]
 						$rot_dev set_type "rotation"
 						$rot_dev set_axis "$axis"
 						$rot_dev set_known_to_reconstruction $known_to_recon
@@ -297,21 +305,18 @@ namespace eval ::ctsimu {
 					}
 				}
 			}
-			
-			my variable _cs_initial
-			my variable _cs_initial_recon
-			
-			set frame 0; # Set up frame 0 for all coordinate systems.
-			set nFrames 1; # Because for frame zero, it doesn't matter how many frames there are.
-			my set_frame_cs $_cs_initial       $world $stage $frame $nFrames 0
-			my set_frame_cs $_cs_initial_recon $world $stage $frame $nFrames 1
-			my set_frame                       $world $stage $frame $nFrames 0
+
+			my set_frame $world $stage 0 1 0
 		}
 			
-		method set_frame_cs { cs world stage frame nFrames { only_known_to_reconstruction 0 } } {
+		method set_frame_cs { cs world stage frame nFrames { only_known_to_reconstruction 0 } { w_rotation_in_rad 0 } } {
 			# Set up the given coordinate system 'cs' such
-			# that is complies with the 'frame' number
+			# that it complies with the 'frame' number
+			# and all necessary drifts and deviations.
 			# (assuming a total number of 'nFrames').
+			#
+			# This function is used by `set_frame` and is
+			# usually not called from outside the object.
 			my variable _center_x
 			my variable _center_y
 			my variable _center_z
@@ -326,31 +331,76 @@ namespace eval ::ctsimu {
 
 			my variable _deviations
 			
+			# Set up standard coordinate system at frame zero:
 			set center [::ctsimu::vector new [list \
-				[$_center_x get_value_for_frame $frame $nFrames $only_known_to_reconstruction] \
-				[$_center_y get_value_for_frame $frame $nFrames $only_known_to_reconstruction] \
-				[$_center_z get_value_for_frame $frame $nFrames $only_known_to_reconstruction] ]]
+				[$_center_x standard_value] \
+				[$_center_y standard_value] \
+				[$_center_z standard_value] ]]
 			set u [::ctsimu::vector new [list \
-				[$_vector_u_x get_value_for_frame $frame $nFrames $only_known_to_reconstruction] \
-				[$_vector_u_y get_value_for_frame $frame $nFrames $only_known_to_reconstruction] \
-				[$_vector_u_z get_value_for_frame $frame $nFrames $only_known_to_reconstruction] ]]
+				[$_vector_u_x standard_value] \
+				[$_vector_u_y standard_value] \
+				[$_vector_u_z standard_value] ]]
 			set w [::ctsimu::vector new [list \
-				[$_vector_w_x get_value_for_frame $frame $nFrames $only_known_to_reconstruction] \
-				[$_vector_w_y get_value_for_frame $frame $nFrames $only_known_to_reconstruction] \
-				[$_vector_w_z get_value_for_frame $frame $nFrames $only_known_to_reconstruction] ]]
+				[$_vector_w_x standard_value] \
+				[$_vector_w_y standard_value] \
+				[$_vector_w_z standard_value] ]]
 			
 			$cs make_from_vectors $center $u $w [my is_attached_to_stage]
 			$cs make_unit_coordinate_system
+
+			# Potential stage rotation:
+			# ------------------------------------
+			# Potential rotation around the w axis (in rad).
+			$cs rotate_around_w $w_rotation_in_rad
 			
 			# Deviations:
 			# ------------------------------------
 			foreach deviation $_deviations {
 				$cs deviate $deviation $world $stage $frame $nFrames $only_known_to_reconstruction
 			}
+
+			# Drifts (center and vector components):
+			# -----------------------------------------------
+			# Build a translation vector for the center point
+			# from the total drift for this frame, and apply
+			# the translation:
+			set center_drift [::ctsimu::vector new [list \
+				[$_center_x get_total_drift_value_for_frame $frame $nFrames $only_known_to_reconstruction] \
+				[$_center_y get_total_drift_value_for_frame $frame $nFrames $only_known_to_reconstruction]
+				[$_center_z get_total_drift_value_for_frame $frame $nFrames $only_known_to_reconstruction] ]]
+			$cs translate $center_drift
+
+			set vector_u_drift [::ctsimu::vector new [list \
+				[$_vector_u_x get_total_drift_value_for_frame $frame $nFrames $only_known_to_reconstruction] \
+				[$_vector_u_y get_total_drift_value_for_frame $frame $nFrames $only_known_to_reconstruction]
+				[$_vector_u_z get_total_drift_value_for_frame $frame $nFrames $only_known_to_reconstruction] ]]
+
+			set vector_w_drift [::ctsimu::vector new [list \
+				[$_vector_w_x get_total_drift_value_for_frame $frame $nFrames $only_known_to_reconstruction] \
+				[$_vector_w_y get_total_drift_value_for_frame $frame $nFrames $only_known_to_reconstruction]
+				[$_vector_w_z get_total_drift_value_for_frame $frame $nFrames $only_known_to_reconstruction] ]]
+
+			if { ([$vector_u_drift length] > 0) || ([$vector_v_drift length] > 0)} {
+				set new_u [[$cs u] get_copy]
+				set new_w [[$cs w] get_copy]
+				$new_u add $vector_drift_u
+				$new_w add $vector_drift_w
+
+				set new_center [[$cs center] get_copy]
+				$cs make_from_vectors $new_center $new_u $new_w [$cs is_attached_to_stage]
+				$cs make_unit_coordinate_system
+			}
+			
+			$center_drift destroy
+			$vector_u_drift destroy
+			$vector_v_drift destroy
 		}
 		
-		method set_frame { world stage frame nFrames w_rotation_angle } {
-			# Set up the 
+		method set_frame { world stage frame nFrames w_rotation_in_rad } {
+			# Set up the part for the given frame number, obeying all
+			# deviations and drifts.
+			#
+			# Function arguments:
 			# - world:
 			#   A ::ctsimu::coordinate_system that represents the world.
 			# - stage:
@@ -358,24 +408,22 @@ namespace eval ::ctsimu {
 			#   Only necessary if the coordinate system will be attached to the
 			#   stage. Otherwise, the world coordinate system can be passed as an 
 			#   argument.
-			# - onlyKnownToReconstruction:
-			#   Pass 1 if the known_to_reconstruction JSON parameter must be obeyed,
-			#   so only deviations that are known to the reconstruction software
-			#   will be handled. Other deviations will be ignored.
+			# - frame:
+			#   Frame number to set up.
+			# - nFrames:
+			#   Total number of frames in the CT scan.
+			# - w_rotation_in_rad:
+			#   Possible rotation of the object around its w axis.
+			#   Only used for the CT rotation of the sample stage.
 			
-			my variable _cs_initial
-			my variable _cs_initial_recon
+			my variable _cs_current
+			my variable _cs_recon
 
-			# What needs to be done for normal objects:
-			# Apply set_frame_cs to _cs_current and _cs_current_recon.
-			
-			# What needs to be done for the stage:
-			# 1. Get initial stage WITH VECTOR DRIFTS.
-			# 2. Apply deviations WITHOUT DEVIATIONAL DRIFTS.
-			# 3. Rotate stage by w_rotation_angle.
-			# 4. Apply all drifts: for deviations and centre.
+			# Set up the current CS obeying all drifts:
+			my set_frame_cs $_cs_current $world $stage $frame $nFrames 0 $w_rotation_in_rad
+
+			# Set up the recon CS only obeying the drifts 'known to reconstruction':
+			my set_frame_cs $_cs_recon   $world $stage $frame $nFrames 1 $w_rotation_in_rad			
 		}
-		
-		method deviate { }
 	}
 }

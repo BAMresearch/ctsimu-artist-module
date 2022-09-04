@@ -55,14 +55,21 @@ This module adds the following functions to the `::ctsimu` namespace:
 
 ### Transformations
 
-* `translate { vec }` — Shift center by given vector.
-* `translate_x { dx }` — Translate coordinate system in x direction by amount `dx`.
-* `translate_y { dy }` — Translate coordinate system in y direction by amount `dy`.
-* `translate_z { dz }` — Translate coordinate system in z direction by amount `dz`.
+* `translate { vec }` — Shift center by given translation vector.
+* `translate_axis { axis distance }` — Shift center along `axis` by given `distance`.
+* `translate_x { dx }` — Translate coordinate system in x direction by distance `dx`.
+* `translate_y { dy }` — Translate coordinate system in y direction by distance `dy`.
+* `translate_z { dz }` — Translate coordinate system in z direction by distance `dz`.
+* `translate_u { du }` — Translate coordinate system in u direction by distance `du`.
+* `translate_v { dv }` — Translate coordinate system in v direction by distance `dv`.
+* `translate_w { dw }` — Translate coordinate system in w direction by distance `dw`.
 * `rotate { axis angle_in_rad }` — Rotate coordinate system around the given `axis` vector by `angle_in_rad`. This does not move the center point, as the axis vector is assumed to be attached to the center of the coordinate system.
 * `rotate_around_pivot_point { axis angle_in_rad pivot_point }` — Rotate coordinate system around a pivot point. Generally, this will result in a different center position, as the axis of rotation is assumed to be attached to the pivot point. `axis` and `pivot_point` must be given as `::ctsimu::vector` objects.
+* `rotate_around_x { angle_in_rad }` — Rotate coordinate system around the world's x axis by `angle_in_rad`.
+* `rotate_around_y { angle_in_rad }` — Rotate coordinate system around the world's y axis by `angle_in_rad`.
+* `rotate_around_z { angle_in_rad }` — Rotate coordinate system around the world's z axis by `angle_in_rad`.
 * `rotate_around_u { angle_in_rad }` — Rotate coordinate system around its u axis by `angle_in_rad`.
 * `rotate_around_v { angle_in_rad }` — Rotate coordinate system around its v axis by `angle_in_rad`.
 * `rotate_around_w { angle_in_rad }` — Rotate coordinate system around its w axis by `angle_in_rad`.
-* `transform { csFrom csTo }` — Relative transformation in world coordinates from `csFrom` to `csTo`, result will be in world coordinates. Detailed description: assuming this CS, `csFrom` and `csTo` all three are independent coordinate systems in a common reference coordinate system (e.g. world). This function will calculate the necessary translation and rotation that would have to be done to superimpose `csFrom` with `csTo`. This translation and rotation will, however, be applied to this CS, not to `csFrom`.
+* `transform { csFrom csTo }` — Relative transformation in world coordinates from `csFrom` to `csTo`, result will be in world coordinates. Assuming this CS, `csFrom` and `csTo` all three are independent coordinate systems in a common reference coordinate system (e.g. world). This function will calculate the necessary translation and rotation that would have to be done to superimpose `csFrom` onto `csTo`. This translation and rotation will, however, be applied to this CS, not to `csFrom`.
 * `change_reference_frame { csFrom csTo }` — Transform this coordinate system from the `csFrom` reference frame to the `csTo` reference frame. Result will be in terms of `csTo`. Note: both `csFrom` and `csTo` must be in the same reference coordinate system (e.g., the world coordinate system).

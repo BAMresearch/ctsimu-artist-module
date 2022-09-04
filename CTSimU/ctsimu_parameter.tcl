@@ -44,6 +44,8 @@ namespace eval ::ctsimu {
 			set _current_value $_standard_value
 		}
 
+		# Getters
+		# -------------------------
 		method unit { } {
 			# Get the parameter's native unit.
 			my variable _unit
@@ -58,16 +60,14 @@ namespace eval ::ctsimu {
 
 		method current_value { } {
 			# Get the parameter's current value.
+			# Should be used after `set_frame`.
 			my variable _current_value
 			return $_current_value
 		}
-		
-		method get_value_for_frame { frame { nFrames 1 } { only_drifts_known_to_reconstruction 0 } } {
-			# Set the new frame number, return current value
-			my set_frame $frame $nFrames $only_drifts_known_to_reconstruction
-			return [my current_value]
-		}
-		
+
+		# Setters
+		# -------------------------
+
 		method set_unit { unit } {
 			# Set the parameter's native unit.
 			my variable _unit
@@ -78,6 +78,55 @@ namespace eval ::ctsimu {
 			# Set the parameter's standard value.
 			my variable _standard_value
 			set _standard_value $value
+		}
+
+		# General
+		# -------------------------
+		method get_value_for_frame { frame { nFrames 1 } { only_drifts_known_to_reconstruction 0 } } {
+			# Set the new frame number, return current value
+			my set_frame $frame $nFrames $only_drifts_known_to_reconstruction
+			return [my current_value]
+		}
+
+		method get_total_drift_value_for_frame { frame nFrames { only_drifts_known_to_reconstruction 0 } } {
+			my variable _current_value _standard_value _drifts _unit
+			set total_drift 0
+
+			if { $_unit == "string" } {
+				# A string-type parameter can only be one string,
+				# nothing is added, and the _drifts array should only
+				# contain one element. Otherwise, the last drift is the
+				# one that has precedence.
+				foreach d $_drifts {
+					if { $only_drifts_known_to_reconstruction == 1 } {
+						if { [$d known_to_reconstruction] == 0 } {
+							# Skip this drift if it is unknown to the reconstruction,
+							# but we only want to obey drifts that are actually known
+							# to the reconstruction...
+							continue
+						}
+					}
+					
+					set total_drift [$d get_value_for_frame $frame $nFrames]
+				}
+			} else {
+				# The parameter is a number-type (unitless or a valid physical unit).
+				foreach d $_drifts {
+					if { $only_drifts_known_to_reconstruction == 1 } {
+						if { [$d known_to_reconstruction] == 0 } {
+							# Skip this drift if it is unknown to the reconstruction,
+							# but we only want to obey drifts that are actually known
+							# to the reconstruction...
+							continue
+						}
+					}
+
+					# Add up all drift values for requested frame:
+					set total_drift [expr $total_drift + [$d get_value_for_frame $frame $nFrames]]
+				}
+			}
+
+			return $total_drift
 		}
 
 		method add_drift { json_drift_obj } {
@@ -92,6 +141,8 @@ namespace eval ::ctsimu {
 
 		method set_from_json { json_parameter_object } {
 			# Set up this parameter from a JSON parameter object.
+			# The proper `_unit` must be set up correctly before
+			# running this function.
 			my reset
 			my variable _current_value _standard_value _unit _drifts
 
@@ -158,41 +209,15 @@ namespace eval ::ctsimu {
 		}
 
 		method set_frame { frame nFrames { only_drifts_known_to_reconstruction 0 } } {
-			my variable _current_value _standard_value _drifts _unit
+			my variable _current_value _standard_value _unit
 			set new_value $_standard_value
 
-			if { $_unit == "string" } {
-				# A string-type parameter can only be one string,
-				# nothing is added, and the _drifts array should only
-				# contain one element. Otherwise, the last drift is the
-				# one that has precedence.
-				foreach d $_drifts {
-					if { $only_drifts_known_to_reconstruction == 1 } {
-						if { [$d known_to_reconstruction] == 0 } {
-							# Skip this drift if it is unknown to the reconstruction,
-							# but we only want to obey drifts that are actually known
-							# to the reconstruction...
-							continue
-						}
-					}
-					
-					set new_value [$d get_value_for_frame $frame $nFrames]
-				}
-			} else {
-				# The parameter is a number-type (unitless or a valid physical unit).
-				foreach d $_drifts {
-					if { $only_drifts_known_to_reconstruction == 1 } {
-						if { [$d known_to_reconstruction] == 0 } {
-							# Skip this drift if it is unknown to the reconstruction,
-							# but we only want to obey drifts that are actually known
-							# to the reconstruction...
-							continue
-						}
-					}
+			set total_drift [my get_total_drift_value_for_frame $frame $nFrames $only_drifts_known_to_reconstruction]
 
-					# Add up all drift values for requested frame:
-					set new_value [expr $new_value + [$d get_value_for_frame $frame $nFrames]]
-				}
+			if { $_unit == "string" } {
+				set new_value $total_drift
+			} else {
+				set new_value [expr $new_value + $total_drift]
 			}
 
 			# Check if the value has changed when compared to the previous value:
@@ -203,7 +228,7 @@ namespace eval ::ctsimu {
 			}
 
 			# Return 1 if the parameter's value has changed, 0 if not:
-			return $value_has_changed		
+			return $value_has_changed
 		}
 	}
 }

@@ -12,11 +12,19 @@ namespace eval ::ctsimu {
 
 	::oo::class create drift {
 		constructor { unit } {
-			my variable _is_active;                 # Is this an active (set) drift?
-			my variable _known_to_reconstruction;  # Should the projection matrices follow the drift, therefore compensate it during the reconstruction?
-			my variable _interpolation;            # Interpolate between values if number of drift positions does not match number of frames?
-			my variable _trajectory;               # List of drift values
-			my variable _unit;                     # Physical (internal) unit for all list values
+			# Should the recon projection matrices follow the drift,
+			# therefore compensate it during the reconstruction?
+			my variable _known_to_reconstruction
+
+			# Interpolate between values if number of drift
+			# positions does not match number of frames?
+			my variable _interpolation
+
+			# List of drift values:
+			my variable _trajectory
+
+			# Physical (internal) unit for all list values:
+			my variable _unit
 
 			my reset
 			set _unit $unit
@@ -26,7 +34,6 @@ namespace eval ::ctsimu {
 			# Reset drift object to standard parameters.
 			# Clears the trajectory list as well.
 			# Used by the constructor as initialization function.
-			set _is_active               1
 			set _known_to_reconstruction 1
 			set _interpolation           0
 			set _trajectory              [list ]
@@ -34,12 +41,6 @@ namespace eval ::ctsimu {
 
 		# Getters
 		# -------------------------
-		method is_active { } {
-			# Returns whether this drift object is active (1) or inactive (0).
-			my variable _is_active
-			return $_is_active
-		}
-
 		method known_to_reconstruction { } {
 			# Returns whether this drift must be considered during a
 			# reconstruction (1) or not (0). This parameter is used
@@ -65,13 +66,6 @@ namespace eval ::ctsimu {
 
 		# Setters
 		# -------------------------
-		method set_active { state } {
-			# Activates (state = 1) or deactivates (state = 0)
-			# this drift object.
-			my variable _is_active
-			set _is_active $state
-		}
-
 		method set_known_to_reconstruction { known } {
 			# Sets the "known to reconstruction" attribute to
 			# true (known = 1) or false (known = 0).
@@ -130,7 +124,6 @@ namespace eval ::ctsimu {
 				}
 			}
 
-			set is_active 0
 			return $success; # 0 (unsuccessful)
 		}
 

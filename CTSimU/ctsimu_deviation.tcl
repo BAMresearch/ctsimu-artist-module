@@ -17,17 +17,16 @@ namespace eval ::ctsimu {
 		# axes x, y, z (world), u, v, w (local),
 		# or r, s, t (sample).
 		#
-		# Deviations are constant offsets at frame 0,
-		# but can define drifts across frames.
+		# Like any parameter, they can have drifts,
+		# which means they can change over time.
 		
-		constructor { { unit "" } } {
+		constructor { } {
 			my variable _type;  # "rotation" or "translation"
 			my variable _axis
 			my variable _amount
 			my variable _known_to_reconstruction
 			
 			set _amount [::ctsimu::parameter new]
-			$_amount set_unit $unit
 		}
 
 		destructor {
@@ -48,18 +47,19 @@ namespace eval ::ctsimu {
 		# Getters
 		# -------------------------
 		method type { } {
-			# Get the deviation's type ("rotation" or "translation").
+			# Get the transformation type ("rotation" or "translation").
 			my variable _type
 			return $_type
 		}		
 
 		method axis { } {
-			# Get the deviation's transformation axis.
+			# Get the transformation axis.
 			my variable _axis
 			return $_axis
 		}
 		
 		method amount { } {
+			# Amount of the deviation.
 			my variable _amount
 			return $_amount
 		}
@@ -75,19 +75,26 @@ namespace eval ::ctsimu {
 		# Setters
 		# -------------------------
 		method set_type { type } {
-			my variable _type
+			# Sets the transformation type ("rotation" or "translation").
+			my variable _type _amount
 			
-			# Set the deviation's type ("rotation" or "translation")
 			if { ($type == "rotation") || ($type == "translation") } {
-				
 				set _type $type
+
+				# Set the correct native unit for the amount:
+				if { $type == "rotation" } {
+					$_amount set_unit "rad"
+				} elseif { $type == "translation" } {
+					$_amount set_unit "mm"
+				}
 			} else {
 				error "$type is not a valid deviation type. Valid types are: \"rotation\" and \"translation\"."
 			}
 		}
 
 		method set_axis { axis } {
-			# Set the deviation's transformation axis.
+			# Sets the deviation's transformation axis.
+			# Can be: "x", "y", "z", "u", "v", "w", "r", "s", "t"
 			my variable _axis
 			
 			if { [lsearch -exact $::ctsimu::valid_axis_strings $axis] >= 0 } {
@@ -105,15 +112,17 @@ namespace eval ::ctsimu {
 		}
 		
 		method set_amount_from_json { json_obj } {
-			# Set the deviation's amount from a JSON object,
-			# which is a parameter with a value and potentially
-			# a drift.
+			# Set the deviation's amount from a JSON object, which
+			# is a parameter with a value and potentially a drift.
+			# 
+			# This function is usually not called from the outside,
+			# but used by `set_from_json`.
 			my variable _amount
 			$_amount set_from_json $json_obj
 		}
 		
 		method set_from_json { json_obj } {
-			# Set up the deviation from a JSON structure.	
+			# Set up the deviation from a JSON deviation structure.
 			if { [json exists $json_obj type] } {
 				my set_type [::ctsimu::get_value $json_obj type ""]
 			} else {

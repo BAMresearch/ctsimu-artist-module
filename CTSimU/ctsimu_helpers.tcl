@@ -61,23 +61,37 @@ namespace eval ::ctsimu {
 	# Getters
 	# -----------------------------
 
-	proc get_value { sceneDict keys {fail_value 0} } {
+	proc get_value { dictionary keys {fail_value 0} } {
 		# Get the specific value of the parameter that is located
 		# at the given sequence of `keys` in the JSON dictionary.
-		if [json exists $sceneDict {*}$keys] {
-			if { [json get $sceneDict {*}$keys] != "" } {
-				return [json get $sceneDict {*}$keys]
+		if [json exists $dictionary {*}$keys] {
+			if { [json get $dictionary {*}$keys] != "" } {
+				return [json get $dictionary {*}$keys]
 			}
 		}
 
 		return $fail_value
 	}
 
-	proc extract_json_object { sceneDict keys } {
+	proc extract_json_object { dictionary keys } {
 		# Get the JSON sub-object that is located
 		# by a given sequence of `keys` in the JSON dictionary.
-		if [json exists $sceneDict {*}$keys] {
-			return [json extract $sceneDict {*}$keys]
+		if [json exists $dictionary {*}$keys] {
+			return [json extract $dictionary {*}$keys]
+		}
+
+		return "null"
+	}
+	
+	proc extract_json_object_from_possible_keys { dictionary key_sequences } {
+		# Searches the JSON object for each
+		# key sequence in the given list of key_sequences.
+		# The first sequence that exists will
+		# return an extracted JSON object.
+		foreach keyseq $key_sequences {
+			if [json exists $dictionary {*}$keys] {
+				return [json extract $dictionary {*}$keys]
+			}
 		}
 
 		return "null"
@@ -270,11 +284,11 @@ namespace eval ::ctsimu {
 		}
 	}
 
-	proc get_value_in_unit { native_unit sceneDict keys {fail_value 0} } {
+	proc get_value_in_unit { native_unit dictionary keys {fail_value 0} } {
 		# Takes a sequence of JSON keys from the given dictionary where
 		# a JSON object with a value/unit pair must be located.
 		# Returns the value of this JSON object in the requested native_unit.
-		set value_unit_pair [::ctsimu::extract_json_object $sceneDict $keys]
+		set value_unit_pair [::ctsimu::extract_json_object $dictionary $keys]
 		if {![::ctsimu::object_value_is_null_or_zero $value_unit_pair]} {
 			return [::ctsimu::json_convert_to_native_unit $native_unit $value_unit_pair]
 		}

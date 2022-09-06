@@ -11,7 +11,7 @@ namespace eval ::ctsimu {
 	namespace import ::rl_json::*
 
 	::oo::class create drift {
-		constructor { unit } {
+		constructor { native_unit } {
 			# Should the recon projection matrices follow the drift,
 			# therefore compensate it during the reconstruction?
 			my variable _known_to_reconstruction
@@ -24,10 +24,10 @@ namespace eval ::ctsimu {
 			my variable _trajectory
 
 			# Physical (internal) unit for all list values:
-			my variable _unit
+			my variable _native_unit
 
 			my reset
-			set _unit $unit
+			my set_native_unit $native_unit
 		}
 
 		method reset { } {
@@ -58,10 +58,10 @@ namespace eval ::ctsimu {
 			return $_interpolation
 		}
 
-		method unit { } {
-			# Returns the unit for the drift values.
-			my variable _unit
-			return $_unit
+		method native_unit { } {
+			# Returns the native_unit for the drift values.
+			my variable _native_unit
+			return $_native_unit
 		}
 
 		# Setters
@@ -80,12 +80,12 @@ namespace eval ::ctsimu {
 			set _interpolation $intpol
 		}
 
-		method set_unit { unit } {
+		method set_native_unit { native_unit } {
 			# Sets the unit of the drift values.
-			my variable _unit
-			set _unit $unit
+			my variable _native_unit
+			set _native_unit $native_unit
 
-			if { $_unit == "string" } {
+			if { $_native_unit == "string" } {
 				# String drifts (e.g. spectrum files) cannot be interpolated.
 				my set_interpolation 0
 			}
@@ -93,7 +93,7 @@ namespace eval ::ctsimu {
 
 		method set_from_json { json_object } {
 			# Sets the drift from a given JSON drift object.
-			my variable _trajectory _unit
+			my variable _trajectory _native_unit
 			my reset
 			set success 0
 
@@ -112,11 +112,11 @@ namespace eval ::ctsimu {
 
 					if {$jsonValueType == "number"} {
 						set jsonValue [json type $json_object value]
-						lappend _trajectory [::ctsimu::json_convert_to_native_unit $_unit $jsonValue]
+						lappend _trajectory [::ctsimu::json_convert_to_native_unit $_native_unit $jsonValue]
 					} elseif {$jsonValueType == "array"} {
 						set jsonValueArray [::ctsimu::extract_json_object $json_object {value}]
 						json foreach value $jsonValueArray {
-							lappend _trajectory [::ctsimu::convert_to_native_unit $jsonUnit $_unit $value]
+							lappend _trajectory [::ctsimu::convert_to_native_unit $jsonUnit $_native_unit $value]
 						}
 					}
 				} else {

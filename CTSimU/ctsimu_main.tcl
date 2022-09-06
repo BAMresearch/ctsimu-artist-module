@@ -1,6 +1,6 @@
 # Main CTSimU module file which takes care of sourcing all other files.
 # When using the CTSimU module in your own project,
-# always source this file to get the whole package.
+# only source this file to get the whole package.
 
 package require TclOO
 package require fileutil

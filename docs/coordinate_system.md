@@ -6,7 +6,8 @@ This submodule provides a class for coordinate systems and coordinate transforma
 This module adds the following functions to the `::ctsimu` namespace:
 
 * `basis_transform_matrix { csFrom csTo {m4x4 0} }` — Returns the basis transform matrix to convert vector coordinates given in `csFrom` to vector coordinates in `csTo`, assuming both coordinate systems share a common point of origin. If `m4x4` is set to `1`, a 4x4 matrix will be returned instead of a 3x3 matrix.
-* `change_reference_frame_of_point { point csFrom csTo }` — Returns point's coordinates, given in `csFrom`, in terms of `csTo`.
+* `change_reference_frame_of_vector { vec csFrom csTo }` — Returns the direction of vector `vec`, given in `csFrom`, in terms of `csTo` (simple multiplication with the basis transform matrix). `csFrom` and `csTo` must be in the same reference coordinate system.
+* `change_reference_frame_of_point { point csFrom csTo }` — Returns point's coordinates, given in `csFrom`, in terms of `csTo`. `csFrom` and `csTo` must be in the same reference coordinate system.
 
 ## Methods of the `::ctsimu::coordinate_system` class
 
@@ -56,7 +57,7 @@ This module adds the following functions to the `::ctsimu` namespace:
 ### Transformations
 
 * `translate { vec }` — Shift center by given translation vector.
-* `translate_axis { axis distance }` — Shift center along `axis` by given `distance`.
+* `translate_along_axis { axis distance }` — Shift center along `axis` by given `distance`.
 * `translate_x { dx }` — Translate coordinate system in x direction by distance `dx`.
 * `translate_y { dy }` — Translate coordinate system in y direction by distance `dy`.
 * `translate_z { dz }` — Translate coordinate system in z direction by distance `dz`.

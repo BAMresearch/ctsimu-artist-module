@@ -4,6 +4,8 @@ package require rl_json
 variable BasePath [file dirname [info script]]
 source -encoding utf-8 [file join $BasePath ctsimu_deviation.tcl]
 
+# Class for a coordinate system with three basis vectors.
+
 namespace eval ::ctsimu {
 	namespace import ::rl_json::*
 
@@ -195,11 +197,12 @@ namespace eval ::ctsimu {
 			$_center add $translation_vector
 		}
 		
-		method translate_axis { axis distance } {
+		method translate_along_axis { axis distance } {
 			# Shift center along `axis` by given `distance`.
 			my variable _center
 			set t [$axis get_unit_vector]
 			$t scale $distance
+			my translate $t
 			$t destroy
 		}
 
@@ -227,19 +230,19 @@ namespace eval ::ctsimu {
 		method translate_u { du } {
 			# Translate coordinate system in u direction by distance du.
 			my variable _u
-			my translate_axis $_u du
+			my translate_along_axis $_u du
 		}
 		
 		method translate_v { dv } {
 			# Translate coordinate system in v direction by distance dv.
 			my variable _v
-			my translate_axis $_v dv
+			my translate_along_axis $_v dv
 		}
 		
 		method translate_w { dw } {
 			# Translate coordinate system in w direction by distance dw.
 			my variable _w
-			my translate_axis $_w dw
+			my translate_along_axis $_w dw
 		}
 		
 		method rotate { axis angle_in_rad } {
@@ -444,8 +447,6 @@ namespace eval ::ctsimu {
 			$new_center_in_from destroy
 		}
 
-
-		
 		method deviate { deviation world stage { frame 0 } { nFrames 1 } { only_known_to_reconstruction 0 } } {
 			# Apply a ::ctsimu::deviation to this coordinate system.
 			# The function arguments are:
@@ -472,258 +473,70 @@ namespace eval ::ctsimu {
 				set value [[$deviation amount] get_value_for_frame $frame $nFrames $only_known_to_reconstruction]
 				
 				if { [$deviation type] == "translation" } {
-					if { [$deviation unit] == "mm" } {
+					if { [$deviation native_unit] == "mm" } {
 						if { [my is_attached_to_stage] == 0} {
 							# Object in world coordinate system.
-							if { [$deviation axis] == "x" } { my translate_x $value }
-							if { [$deviation axis] == "y" } { my translate_y $value }
-							if { [$deviation axis] == "z" } { my translate_z $value }
-							if { [$deviation axis] == "u" } { my translate_u $value }
-							if { [$deviation axis] == "v" } { my translate_v $value }
-							if { [$deviation axis] == "w" } { my translate_w $value }
-							if { [$deviation axis] == "r" } { my translate_u $value }
-							if { [$deviation axis] == "s" } { my translate_v $value }
-							if { [$deviation axis] == "t" } { my translate_w $value }
+							# --------------------------------------
+							# The deviation axis can undergo drifts and could
+							# be expressed in any coordinate system (world, local, sample).
+							# Therefore, the axis is a ::ctsimu::scenevector, which can
+							# give us the translation vector for the current frame:
+							set translation_axis [[$deviation axis] in_world "direction" \
+									$world [self] $world \
+									$frame $nFrames $only_known_to_reconstruction]
+									
+							my translate_along_axis $translation_axis $value
+							
+							$translation_axis destroy
 						} else {
 							# Object is in stage coordinate system.
-							my change_reference_frame $stage $world
-							if { [$deviation axis] == "x" } { my translate_x $value }
-							if { [$deviation axis] == "y" } { my translate_y $value }
-							if { [$deviation axis] == "z" } { my translate_z $value }
-							if { [$deviation axis] == "u" } { my translate_axis [$stage u] $value }
-							if { [$deviation axis] == "v" } { my translate_axis [$stage v] $value }
-							if { [$deviation axis] == "w" } { my translate_axis [$stage w] $value }
-							if { [$deviation axis] == "r" } { my translate_u $value }
-							if { [$deviation axis] == "s" } { my translate_v $value }
-							if { [$deviation axis] == "t" } { my translate_w $value }
-							my change_reference_frame $wolrd $stage
+							# --------------------------------------
+							set translation_axis [[$deviation axis] in_stage "direction" \
+									$world $stage [self] \
+									$frame $nFrames $only_known_to_reconstruction]
+									
+							my translate_along_axis $translation_axis $value
+							
+							$translation_axis destroy
 						}
 					} else {
 						error "All translational deviations must be given in units of length (e.g., \"mm\")."
 					}
 				} elseif { [$deviation type] == "rotation" } {
-					if { [$deviation unit] == "rad" } {
-						if { [my is_attached_to_stage] == 0} {
+					if { [$deviation native_unit] == "rad" } {
+						if { [my is_attached_to_stage] == 0 } {
 							# Object in world coordinate system.
-							if { [$deviation axis] == "x" } { my rotate [$world x] $value }
-							if { [$deviation axis] == "y" } { my rotate [$world y] $value }
-							if { [$deviation axis] == "z" } { my rotate [$world z] $value }
-							if { [$deviation axis] == "u" } { my rotate_around_u $value }
-							if { [$deviation axis] == "v" } { my rotate_around_v $value }
-							if { [$deviation axis] == "w" } { my rotate_around_w $value }
-							if { [$deviation axis] == "r" } { my rotate_around_u $value }
-							if { [$deviation axis] == "s" } { my rotate_around_v $value }
-							if { [$deviation axis] == "t" } { my rotate_around_w $value }
+							# --------------------------------------
+							set rotation_axis [[$deviation axis] in_world "direction" \
+									$world [self] $world \
+									$frame $nFrames $only_known_to_reconstruction]
+							set pivot_point [[$deviation pivot] in_world "point" \
+									$world [self] $world \
+									$frame $nFrames $only_known_to_reconstruction]
+									
+							my rotate_around_pivot_point $rotation_axis $value $pivot_point
+							
+							$rotation_axis destroy
+							$pivot_point destroy								
 						} else {
 							# Object is in stage coordinate system.
-							my change_reference_frame $stage $world
-							if { [$deviation axis] == "x" } { my rotate [$world x] $value }
-							if { [$deviation axis] == "y" } { my rotate [$world y] $value }
-							if { [$deviation axis] == "z" } { my rotate [$world z] $value }
-							if { [$deviation axis] == "u" } { my rotate [$stage u] $value }
-							if { [$deviation axis] == "v" } { my rotate [$stage v] $value }
-							if { [$deviation axis] == "w" } { my rotate [$stage w] $value }
-							if { [$deviation axis] == "r" } { my rotate_around_u $value }
-							if { [$deviation axis] == "s" } { my rotate_around_v $value }
-							if { [$deviation axis] == "t" } { my rotate_around_w $value }
-							my change_reference_frame $wolrd $stage
+							# --------------------------------------
+							set rotation_axis [[$deviation axis] in_stage "direction" \
+									$world $stage [self] \
+									$frame $nFrames $only_known_to_reconstruction]
+							set pivot_point [[$deviation pivot] in_stage "point" \
+									$world $stage [self] \
+									$frame $nFrames $only_known_to_reconstruction]
+									
+							my rotate_around_pivot_point $rotation_axis $value $pivot_point
+							
+							$rotation_axis destroy
+							$pivot_point destroy	
 						}
 					} else {
 						error "All rotational deviations must be given in units of angles (e.g., \"rad\")."
 					}
 				}
-			}
-		}
-
-		method set_up_from_json_geometry { geometry world stage { only_known_to_reconstruction 0 } } {
-			# Set up the geometry from a JSON object.
-			# This function is currently not used by the aRTist module,
-			# because a ::ctsimu::part keeps track of its
-			# position and orientation across frames (including drifts
-			# and deviations) and sets up the coordinate systems for each
-			# frame using the other setter functions.
-			#
-			# -> CANDIDATE FOR DELETION.
-			# 
-			# The function arguments are:
-			# - geometry:
-			#   A JSON object that contains the geometry definition
-			#   for this coordinate system, including rotations, drifts and 
-			#   translational deviations (the latter are deprecated in the file format).
-			# - world:
-			#   A ::ctsimu::coordinate_system that represents the world.
-			# - stage:
-			#   A ::ctsimu::coordinate_system that represents the stage.
-			#   Only necessary if the coordinate system will be attached to the
-			#   stage. Otherwise, the world coordinate system can be passed as an 
-			#   argument.
-			# - only_known_to_reconstruction: (default 0)
-			#   Pass 1 if the known_to_reconstruction JSON parameter must be obeyed,
-			#   so only deviations that are known to the reconstruction software
-			#   will be handled. Other deviations will be ignored.
-
-			my variable _name _center _u _v _w
-			my reset
-
-			set known_to_recon 0
-
-			# If object is placed in world coordinate system:
-			if {[json exists $geometry centre x] && [json exists $geometry centre y] && [json exists $geometry centre z]} {
-				# Object is in world coordinate system:
-				my attach_to_stage 0
-
-				# Position
-				$_center set_x [::ctsimu::get_value_in_unit "mm" $geometry {centre x}]
-				$_center set_y [::ctsimu::get_value_in_unit "mm" $geometry {centre y}]
-				$_center set_z [::ctsimu::get_value_in_unit "mm" $geometry {centre z}]
-
-				# Orientation
-				if {[json exists $geometry vector_u x] && [json exists $geometry vector_u y] && [json exists $geometry vector_u z] && [json exists $geometry vector_w x] && [json exists $geometry vector_w y] && [json exists $geometry vector_w z]} {
-					$_u set_x [::ctsimu::get_value $geometry {vector_u x}]
-					$_u set_y [::ctsimu::get_value $geometry {vector_u y}]
-					$_u set_z [::ctsimu::get_value $geometry {vector_u z}]
-					$_w set_x [::ctsimu::get_value $geometry {vector_w x}]
-					$_w set_y [::ctsimu::get_value $geometry {vector_w y}]
-					$_w set_z [::ctsimu::get_value $geometry {vector_w z}]
-				} elseif {[json exists $geometry vector_r x] && [json exists $geometry vector_r y] && [json exists $geometry vector_r z] && [json exists $geometry vector_t x] && [json exists $geometry vector_t y] && [json exists $geometry vector_t z]} {
-					$_u set_x [::ctsimu::get_value $geometry {vector_r x}]
-					$_u set_y [::ctsimu::get_value $geometry {vector_r y}]
-					$_u set_z [::ctsimu::get_value $geometry {vector_r z}]
-					$_w set_x [::ctsimu::get_value $geometry {vector_t x}]
-					$_w set_y [::ctsimu::get_value $geometry {vector_t y}]
-					$_w set_z [::ctsimu::get_value $geometry {vector_t z}]
-				} else {
-					error "Coordinate system \'$_name\' is placed in world coordinate system, but its vectors u and w (or r and t, for samples) are not properly defined (each with an x, y and z component)."
-					return
-				}
-
-				# Deviations in position (before file format version 0.9)
-				set devPosX [::ctsimu::get_value_in_unit "mm" $geometry {deviation position x}]
-				set devPosY [::ctsimu::get_value_in_unit "mm" $geometry {deviation position y}]
-				set devPosZ [::ctsimu::get_value_in_unit "mm" $geometry {deviation position z}]
-
-				if {[json exists $geometry deviation position u value] || [json exists $geometry deviation position v value] || [json exists $geometry deviation position w value]} {
-					error "Coordinate system \'$_name\': Positional deviations u, v, w not allowed for a sample that is fixed to the world coordinate system."
-					return
-				}
-			} elseif {[json exists $geometry centre u] && [json exists $geometry centre v] && [json exists $geometry centre w]} {
-				# Object is in stage coordinate system:
-				my attach_to_stage 1
-
-				# Position
-				$_center set_x [::ctsimu::get_value_in_unit "mm" $geometry {centre u}]
-				$_center set_y [::ctsimu::get_value_in_unit "mm" $geometry {centre v}]
-				$_center set_z [::ctsimu::get_value_in_unit "mm" $geometry {centre w}]
-
-				# Orientation
-				if {[json exists $geometry vector_r u] && [json exists $geometry vector_r v] && [json exists $geometry vector_r w] && [json exists $geometry vector_t u] && [json exists $geometry vector_t v] && [json exists $geometry vector_t w]} {
-					$_u set_x [::ctsimu::get_value $geometry {vector_r u}]
-					$_u set_y [::ctsimu::get_value $geometry {vector_r v}]
-					$_u set_z [::ctsimu::get_value $geometry {vector_r w}]
-					$_w set_x [::ctsimu::get_value $geometry {vector_t u}]
-					$_w set_y [::ctsimu::get_value $geometry {vector_t v}]
-					$_w set_z [::ctsimu::get_value $geometry {vector_t w}]
-				} else {
-					error "Coordinate system \'$_name\' is placed in stage coordinate system, but its vectors r and t are not properly defined (each with a u, v and w component)."
-					return
-				}
-
-				# Deviations in Position (before file format version 0.9)
-				set devPosX [::ctsimu::get_value_in_unit "mm" $geometry {deviation position u}]
-				set devPosY [::ctsimu::get_value_in_unit "mm" $geometry {deviation position v}]
-				set devPosZ [::ctsimu::get_value_in_unit "mm" $geometry {deviation position w}]
-
-				if {[json exists $geometry deviation position x] || [json exists $geometry deviation position y] || [json exists $geometry deviation position z]} {
-					error "Coordinate system \'$_name\': Positional deviations x, y, z not allowed for a sample that is placed in the stage coordinate system."
-					return
-				}
-			}
-
-			$_u to_unit_vector
-			$_w to_unit_vector
-			$_v destroy
-			set _v [$_w cross $_u]
-			$_v to_unit_vector
-
-			# Prior to file format 0.9:
-			if {[json exists $geometry deviation known_to_reconstruction]} {
-				set known_to_recon [::ctsimu::get_value_in_unit "bool" $geometry {deviation known_to_reconstruction} $known_to_recon]
-			}
-
-			# Starting with file format 0.9:
-			if {[json exists $geometry rotation known_to_reconstruction]} {
-				set known_to_recon [::ctsimu::get_value_in_unit "bool" $geometry {rotation known_to_reconstruction} $known_to_recon]
-			}
-
-			# Apply deviations in position:
-			if { ($only_known_to_reconstruction==0) || ($known_to_recon==1) } {
-				$_center set_x [expr [$_center x] + $devPosX]
-				$_center set_y [expr [$_center y] + $devPosY]
-				$_center set_z [expr [$_center z] + $devPosZ]
-			}
-
-			if { [my is_attached_to_stage] == 1 } {
-				# Move object to stage coordinate system:
-				my transform $world $stage
-			}
-
-			# Rotational deviations:
-			if { ($only_known_to_reconstruction == 0) || ($known_to_recon == 1) } {
-				# Deviations in rotation (for source, stage, detector, before file format version 0.9):
-				if {[json exists $geometry deviation rotation u]} {
-					set devRotU [::ctsimu::get_value_in_unit "rad" $geometry {deviation rotation u}]}
-
-				if {[json exists $geometry deviation rotation v]} {
-					set devRotV [::ctsimu::get_value_in_unit "rad" $geometry {deviation rotation v}]}
-
-				if {[json exists $geometry deviation rotation w]} {
-					set devRotW [::ctsimu::get_value_in_unit "rad" $geometry {deviation rotation w}]}
-
-				# Deviations in Rotation (for samples):
-				if {[json exists $geometry deviation rotation r]} {
-					set devRotU [::ctsimu::get_value_in_unit "rad" $geometry {deviation rotation r}]}
-
-				if {[json exists $geometry deviation rotation s]} {
-					set devRotV [::ctsimu::get_value_in_unit "rad" $geometry {deviation rotation s}]}
-
-				if {[json exists $geometry deviation rotation t]} {
-					set devRotW [::ctsimu::get_value_in_unit "rad" $geometry {deviation rotation t}]}
-
-
-				# Deviations in rotation (for source, stage, detector, starting with file format version 0.9):
-				if {[json exists $geometry rotation u]} {
-					set devRotU [::ctsimu::get_value_in_unit "rad" $geometry {rotation u}]}
-
-				if {[json exists $geometry rotation v]} {
-					set devRotV [::ctsimu::get_value_in_unit "rad" $geometry {rotation v}]}
-
-				if {[json exists $geometry rotation w]} {
-					set devRotW [::ctsimu::get_value_in_unit "rad" $geometry {rotation w}]}
-
-				# Deviations in rotation (for samples):
-				if {[json exists $geometry rotation r]} {
-					set devRotU [::ctsimu::get_value_in_unit "rad" $geometry {rotation r}]}
-
-				if {[json exists $geometry rotation s]} {
-					set devRotV [::ctsimu::get_value_in_unit "rad" $geometry {rotation s}]}
-
-				if {[json exists $geometry rotation t]} {
-					set devRotW [::ctsimu::get_value_in_unit "rad" $geometry {rotation t}]}
-
-
-				# Apply rotations:
-
-				# Rotations around w (or sample t) axis:
-				$_u rotate $_w $devRotW
-				$_v rotate $_w $devRotW
-
-				# Rotations around v (or sample s) axis:
-				$_u rotate $_v $devRotV
-				$_w rotate $_v $devRotV
-				
-				# Rotations around u (or sample r) axis:
-				$_v rotate $_u $devRotU
-				$_w rotate $_u $devRotU
 			}
 		}
 	}
@@ -771,9 +584,24 @@ namespace eval ::ctsimu {
 
 		return $T
 	}
+	
+	proc change_reference_frame_of_direction { vec csFrom csTo } {
+		# Return vector direction, given in csFrom, in terms of csTo.
+		# csFrom and csTo must be in the same reference coordinate system.
+
+		# Rotation matrix to rotate base vectors into csTo:
+		set R [::ctsimu::basis_transform_matrix $csFrom $csTo]
+
+		# Perform rotation:
+		set vecInTo [$R multiply_vector $vec]
+		$R destroy
+
+		return $vecInTo
+	}
 
 	proc change_reference_frame_of_point { point csFrom csTo } {
 		# Return point's coordinates, given in csFrom, in terms of csTo.
+		# csFrom and csTo must be in the same reference coordinate system.
 
 		# Rotation matrix to rotate base vectors into csTo:
 		set R [::ctsimu::basis_transform_matrix $csFrom $csTo]

@@ -24,9 +24,9 @@ CTSimU defines a [JSON-based file format](https://bamresearch.github.io/ctsimu-s
 
 ### Constructor
 
-* `constructor { unit { standard 0 } }`
+* `constructor { { native_unit "" } { standard 0 } }`
 
-    When a parameter object is constructed, is must be assigned a valid native `unit` to enable the JSON parser to convert the drift values from the JSON file, if necessary. Valid drift units are:
+    When a parameter object is constructed, is must be assigned a valid `native_unit` to enable the JSON parser to convert the drift values from the JSON file, if necessary. Valid native units are:
 
     + `""` — Unitless.
     + `"mm"`, `"rad"`, `"deg"`, `"s"`, `"mA"`, `"kV"`, `"g/cm^3"` and `"bool"`.
@@ -54,11 +54,11 @@ CTSimU defines a [JSON-based file format](https://bamresearch.github.io/ctsimu-s
 
 ### Getters
 
-* `unit` — Get the parameter's native unit.
+* `native_unit` — Get the parameter's native unit.
 * `standard_value` — Get the parameter's standard value (unaffected by any drifts).
 * `current_value` — Get the parameter's current value. Should be used after `set_frame`.
 
 ### Setters
 
-* `set_unit { unit }` — Set the parameter's native unit.
+* `set_native_unit { native_unit }` — Set the parameter's native unit.
 * `set_standard_value { value }` — Set the parameter's standard value.

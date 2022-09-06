@@ -4,21 +4,21 @@ package require rl_json
 variable BasePath [file dirname [info script]]
 source -encoding utf-8 [file join $BasePath ctsimu_drift.tcl]
 
+# Class for a parameter value, includes handling of parameter drifts.
+
 namespace eval ::ctsimu {
 	namespace import ::rl_json::*
 
 	::oo::class create parameter {
-		# Class for a parameter value, includes handling of parameter drifts.
-
-		constructor { { unit "" } { standard 0 } } {
+		constructor { { native_unit "" } { standard 0 } } {
 			my variable _standard_value
-			my variable _unit
+			my variable _native_unit
 			my variable _drifts
 
 			my variable _current_value
 
 			my set_standard_value $standard
-			my set_unit           $unit
+			my set_native_unit    $native_unit
 			set _drifts           [list]
 		}
 
@@ -46,10 +46,10 @@ namespace eval ::ctsimu {
 
 		# Getters
 		# -------------------------
-		method unit { } {
+		method native_unit { } {
 			# Get the parameter's native unit.
-			my variable _unit
-			return $_unit
+			my variable _native_unit
+			return $_native_unit
 		}
 
 		method standard_value { } {
@@ -68,10 +68,10 @@ namespace eval ::ctsimu {
 		# Setters
 		# -------------------------
 
-		method set_unit { unit } {
+		method set_native_unit { native_unit } {
 			# Set the parameter's native unit.
-			my variable _unit
-			set _unit $unit
+			my variable _native_unit
+			set _native_unit $native_unit
 		}
 
 		method set_standard_value { value } {
@@ -89,10 +89,10 @@ namespace eval ::ctsimu {
 		}
 
 		method get_total_drift_value_for_frame { frame nFrames { only_drifts_known_to_reconstruction 0 } } {
-			my variable _current_value _standard_value _drifts _unit
+			my variable _current_value _standard_value _drifts _native_unit
 			set total_drift 0
 
-			if { $_unit == "string" } {
+			if { $_native_unit == "string" } {
 				# A string-type parameter can only be one string,
 				# nothing is added, and the _drifts array should only
 				# contain one element. Otherwise, the last drift is the
@@ -133,25 +133,25 @@ namespace eval ::ctsimu {
 			# Generates a ctsimu::drift object
 			# (from a JSON object that defines a drift)
 			# and adds it to its internal list of drifts to handle.
-			my variable _unit _drifts
-			set d [ctsimu::drift new $_unit]
+			my variable _native_unit _drifts
+			set d [ctsimu::drift new $_native_unit]
 			$d set_from_json $json_drift_obj
 			lappend _drifts $d
 		}
 
 		method set_from_json { json_parameter_object } {
 			# Set up this parameter from a JSON parameter object.
-			# The proper `_unit` must be set up correctly before
+			# The proper `_native_unit` must be set up correctly before
 			# running this function.
 			my reset
-			my variable _current_value _standard_value _unit _drifts
+			my variable _current_value _standard_value _native_unit _drifts
 
 			set success 0
 
 			# Value, automatically converted to parameter's native unit:
 			if { [json exists $json_parameter_object value] } {
 				if { ![object_value_is_null $json_parameter_object] } {
-					my set_standard_value [::ctsimu::in_native_unit $_unit $json_parameter_object]
+					my set_standard_value [::ctsimu::in_native_unit $_native_unit $json_parameter_object]
 					set success 1
 				} else {
 					set success 0
@@ -209,12 +209,12 @@ namespace eval ::ctsimu {
 		}
 
 		method set_frame { frame nFrames { only_drifts_known_to_reconstruction 0 } } {
-			my variable _current_value _standard_value _unit
+			my variable _current_value _standard_value _native_unit
 			set new_value $_standard_value
 
 			set total_drift [my get_total_drift_value_for_frame $frame $nFrames $only_drifts_known_to_reconstruction]
 
-			if { $_unit == "string" } {
+			if { $_native_unit == "string" } {
 				set new_value $total_drift
 			} else {
 				set new_value [expr $new_value + $total_drift]

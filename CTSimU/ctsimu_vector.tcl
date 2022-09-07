@@ -291,6 +291,8 @@ namespace eval ::ctsimu {
 				}
 				return $dotprod
 			} else {
+				puts "Myself: [my print]"
+				puts "Other:  [$other print]"
 				error "::ctsimu::vector::dot: Cannot calculate dot product of vectors of different dimensions."
 			}
 		}

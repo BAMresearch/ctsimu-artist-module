@@ -14,13 +14,11 @@ source -encoding utf-8 [file join $BasePath ctsimu_scenevector.tcl]
 # which means they can change over time.
 
 namespace eval ::ctsimu {
-	namespace import ::rl_json::*
-	
 	set valid_axes [list z y x w v u t s r]
 	set valid_axis_strings [list "r" "s" "t" "u" "v" "w" "x" "y" "z"]
 	set valid_world_axis_designations [list "x" "y" "z"]
-	set valid_world_stage_designations [list "u" "v" "w"]
-	set valid_world_sample_designations [list "r" "s" "t"]
+	set valid_stage_axis_designations [list "u" "v" "w"]
+	set valid_sample_axis_designations [list "r" "s" "t"]
 
 	::oo::class create deviation {
 		constructor { } {
@@ -177,7 +175,7 @@ namespace eval ::ctsimu {
 			my variable _axis _pivot
 			
 			# Set up the deviation from a JSON deviation structure.
-			if { [json exists $json_obj type] } {
+			if { [::ctsimu::json_exists $json_obj type] } {
 				my set_type [::ctsimu::get_value $json_obj {type} ""]
 			} else {
 				error "A deviation must provide a \"type\": either \"rotation\" or \"translation\"."
@@ -185,8 +183,8 @@ namespace eval ::ctsimu {
 			}
 			
 			# Transformation axis:
-			if { [json exists $json_obj axis] } {
-				if { [json type $json_obj axis] == "string" } {
+			if { [::ctsimu::json_exists $json_obj axis] } {
+				if { [::ctsimu::json_type $json_obj axis] == "string" } {
 					set axis [::ctsimu::get_value $json_obj {axis}]
 					if { [lsearch -exact $::ctsimu::valid_axis_strings $axis] >= 0 } {
 						my set_axis $axis
@@ -194,7 +192,7 @@ namespace eval ::ctsimu {
 						error "The deviation \"axis\" string is incorrect: must be any of {$::ctsimu::valid_axis_strings} or a free vector definition."
 						return 0
 					}
-				} elseif { [json type $json_obj axis] == "object" } {
+				} elseif { [::ctsimu::json_type $json_obj axis] == "object" } {
 					# free vector definition
 					if { [$_axis set_from_json [::ctsimu::extract_json_object $json_obj {axis}]] } {
 						# Success
@@ -215,7 +213,7 @@ namespace eval ::ctsimu {
 			# Set a standard pivot which refers to the object's center:
 			$_pivot set_simple 0 0 0
 			$_pivot set_reference [$_axis reference]
-			if { [json exists $json_obj pivot] } {
+			if { [::ctsimu::json_exists $json_obj pivot] } {
 				# If another pivot is defined in the
 				# JSON file, take this one instead...
 				if { [$_pivot set_from_json [::ctsimu::extract_json_object $json_obj {pivot}]] } {

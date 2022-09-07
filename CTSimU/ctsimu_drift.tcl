@@ -8,8 +8,6 @@ source -encoding utf-8 [file join $BasePath ctsimu_helpers.tcl]
 # for a given number of frames, including interpolation.
 
 namespace eval ::ctsimu {
-	namespace import ::rl_json::*
-
 	::oo::class create drift {
 		constructor { native_unit } {
 			# Should the recon projection matrices follow the drift,
@@ -99,23 +97,23 @@ namespace eval ::ctsimu {
 
 			# Get JSON unit
 			set jsonUnit ""
-			if { [json exists $json_object unit] } {
-				if { ![json isnull $json_object unit] } {
-					set jsonUnit [json get $json_object unit]
+			if { [::ctsimu::json_exists $json_object {unit}] } {
+				if { ![::ctsimu::json_isnull $json_object {unit}] } {
+					set jsonUnit [::ctsimu::get_value $json_object {unit} "null"]
 				}
 			}
 
 			# Get drift value(s)
-			if { [json exists $json_object value] } {
-				if { ![json isnull $value value] } {
-					set jsonValueType [json type $json_object value]
+			if { [::ctsimu::json_exists $json_object value] } {
+				if { ![::ctsimu::json_isnull $value value] } {
+					set jsonValueType [::ctsimu::json_type $json_object value]
 
 					if {$jsonValueType == "number"} {
-						set jsonValue [json type $json_object value]
+						set jsonValue [::ctsimu::get_value $json_object {value}]
 						lappend _trajectory [::ctsimu::json_convert_to_native_unit $_native_unit $jsonValue]
 					} elseif {$jsonValueType == "array"} {
 						set jsonValueArray [::ctsimu::extract_json_object $json_object {value}]
-						json foreach value $jsonValueArray {
+						::rl_json::json foreach value $jsonValueArray {
 							lappend _trajectory [::ctsimu::convert_to_native_unit $jsonUnit $_native_unit $value]
 						}
 					}

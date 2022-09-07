@@ -17,8 +17,6 @@ source -encoding utf-8 [file join $BasePath ctsimu_coordinate_system.tcl]
 # not to pass any deviations to the reconstruction.
 
 namespace eval ::ctsimu {
-	namespace import ::rl_json::*
-
 	::oo::class create part {
 		constructor { { name "" } } {
 			# Is this object attached to the stage coordinate sytem?
@@ -58,6 +56,11 @@ namespace eval ::ctsimu {
 			my variable _name
 			set _name ""
 			my set_name $name
+			
+			# A general list of properties
+			# (all of them are of type ::ctsimu::parameter)
+			my variable _properties
+			set _properties [list]
 		}
 
 		destructor {
@@ -74,7 +77,13 @@ namespace eval ::ctsimu {
 			foreach dev $_deviations {
 				$dev destroy
 			}
-			set _deviations [list]		
+			set _deviations [list]
+			
+			# Delete all existing properties:
+			my variable _properties
+			foreach {key property} $_properties {
+				$property destroy
+			}
 		}
 
 		method reset { } {
@@ -94,6 +103,13 @@ namespace eval ::ctsimu {
 				$dev destroy
 			}
 			set _deviations [list]
+			
+			# Delete all existing properties:
+			my variable _properties
+			foreach {key property} $_properties {
+				$property destroy
+			}
+			set _properties [list]
 		}
 
 		# Getters
@@ -101,6 +117,12 @@ namespace eval ::ctsimu {
 		method name { } {
 			my variable _name
 			return $_name
+		}
+		
+		method get { property } {
+			# Get a property value from the _properties dict
+			my variable _properties
+			return [dict get $_properties $property]
 		}
 		
 		method is_attached_to_stage { } {
@@ -112,6 +134,43 @@ namespace eval ::ctsimu {
 		
 		# Setters
 		# -------------------------
+		method set { property value { native_unit "" }} {
+			# Set a simple property value in
+			# the _properties dict by setting the
+			# respective parameter's standard value.
+			my variable _properties
+			
+			# Check if the property already exists:
+			if {[dict exists $_properties $property]} {
+				# Already exists in dict.
+				# Get parameter, reset it and set its standard value:
+				set parameter [my get property]
+				$parameter reset
+				$parameter set_native_unit $native_unit
+				$parameter set_standard_value $value
+			} else {
+				# Create new parameter with value:
+				set parameter [::ctsimu::parameter new $native_unit $value]
+				dict set _properties $property $parameter
+			}
+		}
+		
+		method set_parameter { property parameter } {
+			# Set a property value in the _properties dict
+			my variable _properties
+			
+			# Check if the property already exists:
+			if {[dict exists $_properties $property]} {
+				# Already exists in dict.
+				# Get parameter, reset it and set its standard value:
+				set old_parameter [my get property]
+				$old_parameter destroy
+			}
+			
+			# Set new property parameter:
+			dict set _properties $property $parameter
+		}
+		
 		method set_name { name } {
 			my variable _name
 			set _name $name
@@ -148,12 +207,13 @@ namespace eval ::ctsimu {
 
 			my variable _center _vector_u _vector_w
 			my variable _deviations
+			my variable _name
 			
 			# Try to set up the parameter from world coordinate notation (x, y, z).
 			# We also have to support legacy spelling of "centre" ;-)
-			if { ([json exists $geometry center x] || [json exists $geometry centre x]) && \
-				 ([json exists $geometry center y] || [json exists $geometry centre y]) && \
-				 ([json exists $geometry center z] || [json exists $geometry centre z]) } {
+			if { ([::ctsimu::json_exists $geometry {center x}] || [::ctsimu::json_exists $geometry {centre x}]) && \
+				 ([::ctsimu::json_exists $geometry {center y}] || [::ctsimu::json_exists $geometry {centre y}]) && \
+				 ([::ctsimu::json_exists $geometry {center z}] || [::ctsimu::json_exists $geometry {centre z}]) } {
 				# *******************************
 				#           Part is in
 				#     WORLD COORDINATE SYSTEM
@@ -164,24 +224,26 @@ namespace eval ::ctsimu {
 
 				# Center
 				# ---------------
-				if { $_center set_from_json [::ctsimu::extract_json_object_from_possible_keys $geometry [list {center} {centre}]] } {
-					error "Part \'$_name\': failed setting the object center from the JSON file."
+				if { [$_center set_from_json [::ctsimu::extract_json_object_from_possible_keys $geometry [list {center} {centre}]]] } {
+					# success
+				} else {
+					error "Part \'$_name\': failed setting the object center from the JSON file. Geometry: $geometry"
 					return 0
 				}
 
 				# Orientation
 				# ---------------
 				# Vectors can be either u, w (for source, stage, detector) or r, t (for samples).
-				if { [$_vector_u set_from_json [::ctsimu::extract_json_object_from_possible_keys $geometry [list {vector_u x} {vector_r x}]]] && \
-					 [$_vector_w set_from_json [::ctsimu::extract_json_object_from_possible_keys $geometry [list {vector_w x} {vector_t x}]]] } {
+				if { [$_vector_u set_from_json [::ctsimu::extract_json_object_from_possible_keys $geometry [list {vector_u} {vector_r}]]] && \
+					 [$_vector_w set_from_json [::ctsimu::extract_json_object_from_possible_keys $geometry [list {vector_w} {vector_t}]]] } {
 					# success
 				} else {
 					error "Part \'$_name\' is placed in world coordinate system, but its vectors u and w (or r and t, for samples) are not properly defined (each with an x, y and z component)."
 					return 0
 				}
-			} elseif { ([json exists $geometry center u] || [json exists $geometry centre u]) && \
-				       ([json exists $geometry center v] || [json exists $geometry centre v]) && \
-				       ([json exists $geometry center w] || [json exists $geometry centre w]) } {
+			} elseif { ([::ctsimu::json_exists $geometry {center u}] || [::ctsimu::json_exists $geometry {centre u}]) && \
+				       ([::ctsimu::json_exists $geometry {center v}] || [::ctsimu::json_exists $geometry {centre v}]) && \
+				       ([::ctsimu::json_exists $geometry {center w}] || [::ctsimu::json_exists $geometry {centre w}]) } {
 				# *******************************
 				#           Part is in
 				#     STAGE COORDINATE SYSTEM
@@ -193,6 +255,8 @@ namespace eval ::ctsimu {
 				# Center
 				# ---------------
 				if { $_center set_from_json [::ctsimu::extract_json_object_from_possible_keys $geometry [list {center} {centre}]] } {
+					# success
+				} else {
 					error "Part \'$_name\': failed setting the object center from the JSON file."
 					return 0
 				}
@@ -213,13 +277,13 @@ namespace eval ::ctsimu {
 			# *******************************
 			#     DEVIATIONS
 			# *******************************
-			if {[json exists $geometry deviations]} {
-				set jsonType [json type $geometry deviations]
+			if {[::ctsimu::json_exists $geometry deviations]} {
+				set jsonType [::ctsimu::json_type $geometry deviations]
 				if { $jsonType == "array"} {
 					# Go over all elements in the deviations array
 					# and add them to this part's list of deviations.
 					set jsonDevArray [::ctsimu::extract_json_object $geometry {deviations}]
-					json foreach jsonDev $jsonDevArray {
+					::rl_json::json foreach jsonDev $jsonDevArray {
 						set dev [::ctsimu::deviation new]
 						if { [$dev set_from_json $jsonDev] } {
 							lappend _deviations $dev
@@ -239,9 +303,9 @@ namespace eval ::ctsimu {
 			# Support for legacy deviations, prior to
 			# file format version 0.9:
 			# ------------------------------------------
-			if {[json exists $geometry deviation]} {
+			if {[::ctsimu::json_exists $geometry deviation]} {
 				set known_to_recon 1
-				if {[json exists $geometry deviation known_to_reconstruction]} {
+				if {[::ctsimu::json_exists $geometry {deviation known_to_reconstruction}]} {
 					set known_to_recon [::ctsimu::get_value_in_unit "bool" $geometry {deviation known_to_reconstruction}]
 				}
 
@@ -252,7 +316,7 @@ namespace eval ::ctsimu {
 					# have not been part of the legacy file formats
 					# prior to version 0.9, but we still add them here
 					# because now we easily can... ;-)
-					if {[json exists $geometry deviation position $axis]} {
+					if {[::ctsimu::json_exists $geometry {deviation position $axis}]} {
 						set pos_dev [::ctsimu::deviation new]
 						$pos_dev set_type "translation"
 						$pos_dev set_axis "$axis"
@@ -270,7 +334,7 @@ namespace eval ::ctsimu {
 					# for x, y, z (zy'x''), just because we can.
 					# The list ::ctsimu::valid_axes is already in the
 					# correct order for legacy rotations.
-					if {[json exists $geometry deviation rotation $axis]} {
+					if {[::ctsimu::json_exists $geometry {deviation rotation $axis}]} {
 						set rot_dev [::ctsimu::deviation new]
 						$rot_dev set_type "rotation"
 						$rot_dev set_axis "$axis"
@@ -328,11 +392,11 @@ namespace eval ::ctsimu {
 			set vector_u_drift [$_vector_u drift_vector $frame $nFrames $only_known_to_reconstruction]
 			set vector_w_drift [$_vector_w drift_vector $frame $nFrames $only_known_to_reconstruction]
 
-			if { ([$vector_u_drift length] > 0) || ([$vector_v_drift length] > 0)} {
+			if { ([$vector_u_drift length] > 0) || ([$vector_w_drift length] > 0)} {
 				set new_u [[$cs u] get_copy]
 				set new_w [[$cs w] get_copy]
-				$new_u add $vector_drift_u
-				$new_w add $vector_drift_w
+				$new_u add $vector_u_drift 
+				$new_w add $vector_w_drift 
 
 				set new_center [[$cs center] get_copy]
 				$cs make_from_vectors $new_center $new_u $new_w [$cs is_attached_to_stage]
@@ -341,7 +405,7 @@ namespace eval ::ctsimu {
 			
 			$center_drift destroy
 			$vector_u_drift destroy
-			$vector_v_drift destroy
+			$vector_w_drift destroy
 		}
 		
 		method set_frame { world stage frame nFrames w_rotation_in_rad } {

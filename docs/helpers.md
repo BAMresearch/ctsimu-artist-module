@@ -48,6 +48,7 @@ Unit conversion functions take a JSON object that must contain a `value` and a `
 * `in_mA { value unit }` — Converts a current to mA.
 * `in_kV { value unit }` — Converts a voltage to kV.
 * `in_g_per_cm3 { value unit }` — Converts a mass density to g/cm³.
+* `in_lp_per_mm { value unit }` — Converts a resolution to lp/mm.
 * `from_bool { value }` — Converts `true` to `1` and `false` to `0`.
 * `convert_SNR_FWHM { SNR_or_FWHM intensity }` — Converts between SNR and Gaussian FWHM for a given intensity (i.e., more generally, the given distribution's mean value).
 * `convert_to_native_unit { given_unit native_unit value }` — Checks which native unit is requested, converts JSON `value` accordingly. Possible native units are `"mm"`, `"rad"`, `"deg"`, `"s"`, `"mA"`, `"kV"`, `"g/cm^3"`, `"bool"` and `"string"`.

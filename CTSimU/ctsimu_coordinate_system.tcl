@@ -7,8 +7,6 @@ source -encoding utf-8 [file join $BasePath ctsimu_deviation.tcl]
 # Class for a coordinate system with three basis vectors.
 
 namespace eval ::ctsimu {
-	namespace import ::rl_json::*
-
 	::oo::class create coordinate_system {
 		constructor { { name "" } } {
 			# Define center and direction vectors u, v, w and initialize to world coordinate system.
@@ -482,7 +480,7 @@ namespace eval ::ctsimu {
 							# Therefore, the axis is a ::ctsimu::scenevector, which can
 							# give us the translation vector for the current frame:
 							set translation_axis [[$deviation axis] in_world "direction" \
-									$world [self] $world \
+									$world [self object] $world \
 									$frame $nFrames $only_known_to_reconstruction]
 									
 							my translate_along_axis $translation_axis $value
@@ -492,7 +490,7 @@ namespace eval ::ctsimu {
 							# Object is in stage coordinate system.
 							# --------------------------------------
 							set translation_axis [[$deviation axis] in_stage "direction" \
-									$world $stage [self] \
+									$world $stage [self object] \
 									$frame $nFrames $only_known_to_reconstruction]
 									
 							my translate_along_axis $translation_axis $value
@@ -508,10 +506,10 @@ namespace eval ::ctsimu {
 							# Object in world coordinate system.
 							# --------------------------------------
 							set rotation_axis [[$deviation axis] in_world "direction" \
-									$world [self] $world \
+									$world [self object] $world \
 									$frame $nFrames $only_known_to_reconstruction]
 							set pivot_point [[$deviation pivot] in_world "point" \
-									$world [self] $world \
+									$world [self object] $world \
 									$frame $nFrames $only_known_to_reconstruction]
 									
 							my rotate_around_pivot_point $rotation_axis $value $pivot_point
@@ -522,10 +520,10 @@ namespace eval ::ctsimu {
 							# Object is in stage coordinate system.
 							# --------------------------------------
 							set rotation_axis [[$deviation axis] in_stage "direction" \
-									$world $stage [self] \
+									$world $stage [self object] \
 									$frame $nFrames $only_known_to_reconstruction]
 							set pivot_point [[$deviation pivot] in_stage "point" \
-									$world $stage [self] \
+									$world $stage [self object] \
 									$frame $nFrames $only_known_to_reconstruction]
 									
 							my rotate_around_pivot_point $rotation_axis $value $pivot_point
@@ -559,7 +557,7 @@ namespace eval ::ctsimu {
 		set to_w [$csTo w]
 
 		# Create a 3x3 transformation matrix:
-		set T [::ctsimu::matrix 3 3]
+		set T [::ctsimu::matrix new 3 3]
 
 		# Row 0:
 		$T set_element 0 0 [$to_u dot $from_u]
@@ -610,8 +608,8 @@ namespace eval ::ctsimu {
 		# Calculate translation vector that moves the 'to' center to the origin of 'from':
 		set translation_centerTo_to_centerFrom [[$csTo center] to [$csFrom center]]
 
-		# Calculate position of 'point' center as seen from 'from' if 'to' were at 'from's origin:
-		set new_center_in_from [[$point center] to $translation_centerTo_to_centerFrom]
+		# Calculate position of 'point' as seen from 'from' if 'to' were at 'from's origin:
+		set new_center_in_from [$point to $translation_centerTo_to_centerFrom]
 
 		# Rotate 'my' center into csTo and thus make it 'my' new center:
 		set pointInTo [$R multiply_vector $new_center_in_from]

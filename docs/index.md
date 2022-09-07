@@ -9,6 +9,9 @@ Main CTSimU module file which takes care of sourcing all other files. When using
 ### [`ctsimu_scenario.tcl`](scenario.md)
 A class to manage and set up a complete CTSimU scenario.
 
+### `ctsimu_detector.tcl`
+A class for the detector.
+
 ### [`ctsimu_part.tcl`](part.md)
 Parts are objects in the scene: detector, source, stage and samples.
 

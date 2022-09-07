@@ -7,8 +7,6 @@ source -encoding utf-8 [file join $BasePath ctsimu_drift.tcl]
 # Class for a parameter value, includes handling of parameter drifts.
 
 namespace eval ::ctsimu {
-	namespace import ::rl_json::*
-
 	::oo::class create parameter {
 		constructor { { native_unit "" } { standard 0 } } {
 			my variable _standard_value
@@ -40,7 +38,7 @@ namespace eval ::ctsimu {
 			foreach drift $_drifts {
 				$drift destroy
 			}
-
+			
 			set _current_value $_standard_value
 		}
 
@@ -76,8 +74,9 @@ namespace eval ::ctsimu {
 
 		method set_standard_value { value } {
 			# Set the parameter's standard value.
-			my variable _standard_value
+			my variable _standard_value _current_value
 			set _standard_value $value
+			set _current_value $value
 		}
 
 		# General
@@ -149,9 +148,9 @@ namespace eval ::ctsimu {
 			set success 0
 
 			# Value, automatically converted to parameter's native unit:
-			if { [json exists $json_parameter_object value] } {
-				if { ![object_value_is_null $json_parameter_object] } {
-					my set_standard_value [::ctsimu::in_native_unit $_native_unit $json_parameter_object]
+			if { [::ctsimu::json_exists $json_parameter_object value] } {
+				if { ![::ctsimu::object_value_is_null $json_parameter_object] } {
+					my set_standard_value [::ctsimu::json_convert_to_native_unit $_native_unit $json_parameter_object]
 					set success 1
 				} else {
 					set success 0
@@ -161,14 +160,14 @@ namespace eval ::ctsimu {
 			set _current_value $_standard_value
 
 			# Drifts:
-			if { [json exists $json_parameter_object drift] } {
-				if { ![json isnull $json_parameter_object drift] } {
+			if { [::ctsimu::json_exists $json_parameter_object drift] } {
+				if { ![::ctsimu::json_isnull $json_parameter_object drift] } {
 					set jsonDrifts [::ctsimu::extract_json_object $json_parameter_object drifts]
-					set jsonType [json type $jsonDrifts]
+					set jsonType [::ctsimu::json_type $jsonDrifts]
 
 					if {$jsonType == "array"} {
 						# an array of drift objects
-						json foreach jsonDriftObj $jsonDrifts {
+						::rl_json::json foreach jsonDriftObj $jsonDrifts {
 							my add_drift $jsonDriftObj
 						}
 					} elseif {$jsonType == "object"} {
@@ -183,8 +182,8 @@ namespace eval ::ctsimu {
 		}
 
 		method set_from_key { json_object key_sequence } {
-			if { [json exists $json_object $key_sequence] } {
-				if { [my set_from_json [json extract $json_object $key_sequence]] } {
+			if { [::ctsimu::json_exists $json_object $key_sequence] } {
+				if { [my set_from_json [::ctsimu::extract_json_object $json_object $key_sequence]] } {
 					return 1
 				}
 			}

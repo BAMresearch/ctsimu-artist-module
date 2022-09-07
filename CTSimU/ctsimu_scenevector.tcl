@@ -15,8 +15,6 @@ source -encoding utf-8 [file join $BasePath ctsimu_parameter.tcl]
 # or, in general, the coordinate system vectors.
 
 namespace eval ::ctsimu {
-	namespace import ::rl_json::*
-
 	::oo::class create scenevector {
 		constructor { { native_unit "" } } {
 			my variable _c0; # 1st vector component
@@ -123,12 +121,12 @@ namespace eval ::ctsimu {
 			set v2 [$_c2 standard_value]
 			
 			# Build a vector:
-			set v [::ctsimu::vector new [list $v0 $v1 v2]]
+			set v [::ctsimu::vector new [list $v0 $v1 $v2]]
 			
 			return $v
 		}
 		
-		method drift_vector { frame nFrames { only_drifts_known_to_reconstruction 0 } } {
+		method drift_vector { frame nFrames { only_known_to_reconstruction 0 } } {
 			# Create a ::ctsimu::vector that represents
 			# only the drift values for the given
 			# frame number.
@@ -143,7 +141,7 @@ namespace eval ::ctsimu {
 			set v2 [$_c0 get_total_drift_value_for_frame $frame $nFrames $only_known_to_reconstruction]
 			
 			# Build a vector:
-			set v [::ctsimu::vector new [list $v0 $v1 v2]]
+			set v [::ctsimu::vector new [list $v0 $v1 $v2]]
 			
 			return $v
 		}
@@ -159,7 +157,7 @@ namespace eval ::ctsimu {
 			set v2 [$_c2 get_value_for_frame $frame $nFrames $only_known_to_reconstruction]
 			
 			# Build a vector:
-			set v [::ctsimu::vector new [list $v0 $v1 v2]]
+			set v [::ctsimu::vector new [list $v0 $v1 $v2]]
 			
 			return $v
 		}
@@ -385,9 +383,9 @@ namespace eval ::ctsimu {
 			# object that describes a three-component vector.
 			my variable _c0 _c1 _c2
 			
-			if { [json exists $json_object x] && \
-				 [json exists $json_object y] && \
-				 [json exists $json_object z] } {
+			if { [::ctsimu::json_exists $json_object x] && \
+				 [::ctsimu::json_exists $json_object y] && \
+				 [::ctsimu::json_exists $json_object z] } {
 				 	my set_reference "world"
 				 	if { [$_c0 set_from_key $json_object {x}] && \
 				 	     [$_c1 set_from_key $json_object {y}] && \
@@ -396,9 +394,9 @@ namespace eval ::ctsimu {
 				 	     	return 1
 				 	     }
 			} elseif {
-				 [json exists $json_object u] && \
-				 [json exists $json_object v] && \
-				 [json exists $json_object w] } {
+				 [::ctsimu::json_exists $json_object u] && \
+				 [::ctsimu::json_exists $json_object v] && \
+				 [::ctsimu::json_exists $json_object w] } {
 				 	my set_reference "stage"
 				 	if { [$_c0 set_from_key $json_object {u}] && \
 				 	     [$_c1 set_from_key $json_object {v}] && \
@@ -407,9 +405,9 @@ namespace eval ::ctsimu {
 				 	     	return 1
 				 	     }
 			} elseif {
-				 [json exists $json_object r] && \
-				 [json exists $json_object s] && \
-				 [json exists $json_object t] } {
+				 [::ctsimu::json_exists $json_object r] && \
+				 [::ctsimu::json_exists $json_object s] && \
+				 [::ctsimu::json_exists $json_object t] } {
 				 	my set_reference "sample"
 				 	if { [$_c0 set_from_key $json_object {r}] && \
 				 	     [$_c1 set_from_key $json_object {s}] && \

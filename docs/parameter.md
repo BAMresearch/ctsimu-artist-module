@@ -26,11 +26,7 @@ CTSimU defines a [JSON-based file format](https://bamresearch.github.io/ctsimu-s
 
 * `constructor { { native_unit "" } { standard 0 } }`
 
-    When a parameter object is constructed, is must be assigned a valid `native_unit` to enable the JSON parser to convert the drift values from the JSON file, if necessary. Valid native units are:
-
-    + `""` — Unitless.
-    + `"mm"`, `"rad"`, `"deg"`, `"s"`, `"mA"`, `"kV"`, `"g/cm^3"` and `"bool"`.
-    + `"string"` — Special type for string parameters such as spectrum file names.
+    When a parameter object is constructed, is must be assigned a valid `native_unit` to enable the JSON parser to convert the drift values from the JSON file, if necessary. See the documentation on [native units](native_units.md) for a complete list of valid strings.
 
     Optionally, a `standard` value can be passed to the constructor. The standard value is the "actual" `value` defined for this parameter in the JSON file. If a JSON object is used to set up this parameter, the `standard` value provided in the constructor is overwritten by the `value` given in the JSON file.
 

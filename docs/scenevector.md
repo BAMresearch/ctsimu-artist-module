@@ -5,10 +5,14 @@ Useful for vectors that can change due to drifts, such as rotation axis and pivo
 
 ## Methods of the `::ctsimu::scenevector` class
 
+### Constructor
+
+* `constructor { { native_unit "" } }` — Because a `::ctsimu::scenevector` is just a collection of three parameters, a `native_unit` for those parameters can be assigned. For example, the center location of a coordinate system should be described in `"mm"`. See the documentation on [native units](native_units.md) for a complete list of valid strings.
+
 ### General
 
 * `standard_vector` — Creates a `::ctsimu::vector` that represents this vector without any drifts.
-* `drift_vector { frame nFrames { only_drifts_known_to_reconstruction 0 } }` — Creates a `::ctsimu::vector` that represents only the drift values for the given `frame` number (out of a total of `nFrames`). Can later be added to the standard value to get the resulting vector respecting all drifts.
+* `drift_vector { frame nFrames { only_known_to_reconstruction 0 } }` — Creates a `::ctsimu::vector` that represents only the drift values for the given `frame` number (out of a total of `nFrames`). Can later be added to the standard value to get the resulting vector respecting all drifts.
 * `vector_for_frame { frame nFrames { only_known_to_reconstruction 0 } }` — Create and return a `::ctsimu::vector` for the given frame, respecting all drifts.
 
 ### Conversion Functions

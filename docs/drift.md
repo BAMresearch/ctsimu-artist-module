@@ -7,11 +7,7 @@ This submodule provides a general class to handle the drift of an arbitrary para
 
 * `constructor { native_unit }`
 
-    When a drift object is constructed, is must be assigned a valid `native_unit` to enable the JSON parser to convert the drift values from the JSON file, if necessary. Valid native units are:
-
-    + `""` — Unitless.
-    + `"mm"`, `"rad"`, `"deg"`, `"s"`, `"mA"`, `"kV"`, `"g/cm^3"` and `"bool"`.
-    + `"string"` — Special type for string parameters such as spectrum file names.
+    When a drift object is constructed, is must be assigned a valid `native_unit` to enable the JSON parser to convert the drift values from the JSON file, if necessary. See the documentation on [native units](native_units.md) for a complete list of valid strings.
 
 ### General
 

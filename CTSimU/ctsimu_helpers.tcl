@@ -72,6 +72,18 @@ namespace eval ::ctsimu {
 
 		return $fail_value
 	}
+	
+	proc json_exists { dictionary keys } {
+		return [json exists $dictionary {*}$keys]
+	}
+	
+	proc json_type { dictionary keys } {
+		return [json type $dictionary {*}$keys]
+	}
+	
+	proc json_isnull { dictionary keys } {
+		return [json isnull $dictionary {*}$keys]
+	}
 
 	proc extract_json_object { dictionary keys } {
 		# Get the JSON sub-object that is located
@@ -88,7 +100,7 @@ namespace eval ::ctsimu {
 		# key sequence in the given list of key_sequences.
 		# The first sequence that exists will
 		# return an extracted JSON object.
-		foreach keyseq $key_sequences {
+		foreach keys $key_sequences {
 			if [json exists $dictionary {*}$keys] {
 				return [json extract $dictionary {*}$keys]
 			}
@@ -208,6 +220,22 @@ namespace eval ::ctsimu {
 
 		error "Not a valid unit of density: \'$unit\'"
 	}
+	
+	proc in_lp_per_mm { value unit } {
+		# Converts a resolution to line pairs per millimeter.
+		if {$value != "null"} {
+			switch $unit {
+				"lp/mm" {return $value}
+				"lp/cm" {return [expr $value * 0.1]}
+				"lp/dm" {return [expr $value * 0.01]}
+				"lp/m"  {return [expr $value * 0.001]}
+			}
+		} else {
+			return "null"
+		}
+
+		error "Not a valid unit for resolution: \'$unit\'"
+	}
 
 	proc from_bool { value } {
 		# Converts true to 1 and false to 0.
@@ -234,23 +262,26 @@ namespace eval ::ctsimu {
 		} else {
 			if { $native_unit == "mm" } {
 				# internal lengths are always in mm
-				return [::ctsimu::in_mm $value $unit]
+				return [::ctsimu::in_mm $value $given_unit]
 			} elseif { $native_unit == "s" } {
 				# internal time durations are always in s
-				return [::ctsimu::in_s $value $unit]
+				return [::ctsimu::in_s $value $given_unit]
 			} elseif { $native_unit == "deg" } {
-				return [::ctsimu::in_deg $value $unit]
+				return [::ctsimu::in_deg $value $given_unit]
 			} elseif { $native_unit == "rad" } {
-				return [::ctsimu::in_rad $value $unit]
+				return [::ctsimu::in_rad $value $given_unit]
 			} elseif { $native_unit == "mA" } {
 				# internal currents are always in mA
-				return [::ctsimu::in_mA $value $unit]
+				return [::ctsimu::in_mA $value $given_unit]
 			} elseif { $native_unit == "kV" } {
 				# internal voltages are always in kV
-				return [::ctsimu::in_kV $value $unit]
+				return [::ctsimu::in_kV $value $given_unit]
 			} elseif { $native_unit == "g/cm^3" } {
 				# internal mass densities are always in g/cm^3
-				return [::ctsimu::in_g_per_cm3 $value $unit]
+				return [::ctsimu::in_g_per_cm3 $value $given_unit]
+			} elseif { $native_unit == "lp/mm" } {
+				# internal resolution (or MTF frequency) is in lp/mm
+				return [::ctsimu::in_lp_per_mm $value $given_unit]
 			} elseif { $native_unit == "bool" } {
 				return [::ctsimu::from_bool $value]
 			}

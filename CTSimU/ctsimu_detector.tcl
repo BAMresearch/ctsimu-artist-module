@@ -9,24 +9,20 @@ source -encoding utf-8 [file join $BasePath ctsimu_part.tcl]
 
 namespace eval ::ctsimu {
 	::oo::class create detector {
+		variable _detector; # private detector as a ::ctsimu::part
+
 		constructor { } {
 			# The ::ctsimu::part that represents the detector:
-			my variable _detector
 			set _detector [::ctsimu::part new "Detector"]
-			
 			my reset
 		}
 
 		destructor {
-			my variable _detector
 			$_detector destroy
 		}
 
 		method reset { } {
-			my variable _detector
-			
 			# Standard settings:
-			
 			$_detector reset
 			$_detector attach_to_stage 0
 			
@@ -79,16 +75,12 @@ namespace eval ::ctsimu {
 		}
 
 		method set_from_json { jobj world stage } {
-			my variable _detector
-			
 			# Import the geometry from the JSON object.
 			# The JSON object should contain the complete content
 			# from the JSON file.
 			set detectorGeometry [::ctsimu::extract_json_object $jobj {geometry detector}]
 
 			$_detector set_geometry $detectorGeometry $world $stage
-			
-			
 		}
 	}
 }

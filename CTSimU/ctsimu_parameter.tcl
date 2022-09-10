@@ -8,13 +8,12 @@ source -encoding utf-8 [file join $BasePath ctsimu_drift.tcl]
 
 namespace eval ::ctsimu {
 	::oo::class create parameter {
+		variable _standard_value; # value without drifts
+		variable _native_unit
+		variable _drifts;         # list of drift objects
+		variable _current_value;  # value at current frame (obeying drifts)
+
 		constructor { { native_unit "" } { standard 0 } } {
-			my variable _standard_value
-			my variable _native_unit
-			my variable _drifts
-
-			my variable _current_value
-
 			my set_standard_value $standard
 			my set_native_unit    $native_unit
 			set _drifts           [list]
@@ -22,7 +21,6 @@ namespace eval ::ctsimu {
 
 		destructor {
 			# Delete all existing drifts:
-			my variable _drifts
 			foreach drift $_drifts {
 				$drift destroy
 			}
@@ -32,9 +30,6 @@ namespace eval ::ctsimu {
 
 		method reset { } {
 			# Delete all drifts and set the parameter's current value to the standard value.
-			my variable _current_value _standard_value _drifts
-
-			# Delete all existing drifts:
 			foreach drift $_drifts {
 				$drift destroy
 			}
@@ -46,20 +41,17 @@ namespace eval ::ctsimu {
 		# -------------------------
 		method native_unit { } {
 			# Get the parameter's native unit.
-			my variable _native_unit
 			return $_native_unit
 		}
 
 		method standard_value { } {
 			# Get the parameter's standard value (unaffected by drifts).
-			my variable _standard_value
 			return $_standard_value
 		}
 
 		method current_value { } {
 			# Get the parameter's current value.
 			# Should be used after `set_frame`.
-			my variable _current_value
 			return $_current_value
 		}
 
@@ -68,13 +60,11 @@ namespace eval ::ctsimu {
 
 		method set_native_unit { native_unit } {
 			# Set the parameter's native unit.
-			my variable _native_unit
 			set _native_unit $native_unit
 		}
 
 		method set_standard_value { value } {
 			# Set the parameter's standard value.
-			my variable _standard_value _current_value
 			set _standard_value $value
 			set _current_value $value
 		}
@@ -88,7 +78,6 @@ namespace eval ::ctsimu {
 		}
 
 		method get_total_drift_value_for_frame { frame nFrames { only_drifts_known_to_reconstruction 0 } } {
-			my variable _current_value _standard_value _drifts _native_unit
 			set total_drift 0
 
 			if { $_native_unit == "string" } {
@@ -132,7 +121,6 @@ namespace eval ::ctsimu {
 			# Generates a ctsimu::drift object
 			# (from a JSON object that defines a drift)
 			# and adds it to its internal list of drifts to handle.
-			my variable _native_unit _drifts
 			set d [ctsimu::drift new $_native_unit]
 			$d set_from_json $json_drift_obj
 			lappend _drifts $d
@@ -143,8 +131,6 @@ namespace eval ::ctsimu {
 			# The proper `_native_unit` must be set up correctly before
 			# running this function.
 			my reset
-			my variable _current_value _standard_value _native_unit _drifts
-
 			set success 0
 
 			# Value, automatically converted to parameter's native unit:
@@ -208,7 +194,6 @@ namespace eval ::ctsimu {
 		}
 
 		method set_frame { frame nFrames { only_drifts_known_to_reconstruction 0 } } {
-			my variable _current_value _standard_value _native_unit
 			set new_value $_standard_value
 
 			set total_drift [my get_total_drift_value_for_frame $frame $nFrames $only_drifts_known_to_reconstruction]

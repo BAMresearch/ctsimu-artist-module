@@ -5,9 +5,12 @@ source -encoding utf-8 [file join $BasePath ctsimu_vector.tcl]
 
 namespace eval ::ctsimu {
 	::oo::class create matrix {
+		variable _rows;   # row vectors that contain the data
+		variable _n_cols; # number of columns
+		variable _n_rows; # number of rows
+
 		constructor { nCols nRows } {
 			# Create a matrix with the given number of rows and columns.
-			my variable _rows _n_cols _n_rows
 			set _n_cols $nCols
 			set _n_rows $nRows
 
@@ -25,7 +28,6 @@ namespace eval ::ctsimu {
 
 		destructor {
 			# Destroy stored row vectors that contain the matrix data.
-			my variable _rows			
 			foreach vec $_rows {
 				$vec destroy
 			}
@@ -33,8 +35,6 @@ namespace eval ::ctsimu {
 		
 		method print { } {
 			# Return a printable string for this matrix.
-			my variable _rows _n_cols _n_rows
-
 			set s "\["
 			set row 0
 			for { set row 0 } { $row < $_n_rows} { incr row } {
@@ -53,19 +53,16 @@ namespace eval ::ctsimu {
 
 		method n_rows { } {
 			# Return number of rows
-			my variable _n_rows
 			return $_n_rows
 		}
 
 		method n_cols { } {
 			# Return number of columns
-			my variable _n_cols
 			return $_n_cols
 		}
 		
 		method size { } {
 			# Get the total number of matrix elements (n_cols * n_rows).
-			my variable _n_rows _n_cols
 			return [expr $_n_rows*$_n_cols]
 		}
 		
@@ -81,13 +78,11 @@ namespace eval ::ctsimu {
 		
 		method get_row_vector { row_index } {
 			# Return the vector of the requested row index.
-			my variable _rows _n_rows
 			return [lindex $_rows $row_index]
 		}
 		
 		method get_col_vector { col_index } {
 			# Return a new vector object for the requested column index.
-			my variable _rows
 			set column_vector [::ctsimu::vector new]
 			foreach row $_rows {
 				$column_vector add_element [$row element $col_index]
@@ -100,8 +95,6 @@ namespace eval ::ctsimu {
 		# -------------------------
 		method set_element { col_index row_index value } {
 			# Set matrix element in given column and row to value.
-			my variable _n_cols _n_rows _rows
-
 			if { $_n_rows > $row_index } {
 				if { $_n_cols > $col_index } {
 					[lindex $_rows $row_index] set_element $col_index $value
@@ -115,7 +108,6 @@ namespace eval ::ctsimu {
 
 		method set_row { index row_vector } {
 			# Set row at index to another row_vector.
-			my variable _n_cols _n_rows _rows
 			if {$_n_rows > $index} {
 				if {[$row_vector size] == $_n_cols} {
 					[lindex $_rows $index] destroy
@@ -130,7 +122,6 @@ namespace eval ::ctsimu {
 		
 		method set_col { index col_vector } {
 			# Set column at index to another col_vector.
-			my variable _n_cols _n_rows _rows
 			if {$_n_cols > $index} {
 				if {[$col_vector size] == $_n_rows} {
 					for {set row 0} {$row < $_n_rows} {incr row} {
@@ -146,7 +137,6 @@ namespace eval ::ctsimu {
 
 		method add_row { row_vector } {
 			# Add another row (must be a vector with _n_cols elements)
-			my variable _n_rows _n_cols _rows
 			if {[$row_vector size] == $_n_cols} {
 				lappend _rows $row_vector
 				set _n_rows [expr $_n_rows + 1]
@@ -157,7 +147,6 @@ namespace eval ::ctsimu {
 
 		method add_col { col_vector } {
 			# Add another column (must be a vector with _n_rows elements)
-			my variable _n_rows _n_cols _rows
 			if {[$col_vector size] == $_n_rows} {
 				for { set r 0 } { $r < $_n_rows} { incr r } {
 					[lindex $_rows $r] add_element [$col_vector element $r]
@@ -170,7 +159,6 @@ namespace eval ::ctsimu {
 
 		method multiply_vector { col_vector } {
 			# Return the result of Matrix*Vector
-			my variable _n_cols _n_rows _rows
 			set vecNElements [$col_vector size]
 			if {$_n_cols == $vecNElements} {
 				set result [::ctsimu::vector new]

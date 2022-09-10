@@ -8,10 +8,15 @@ source -encoding utf-8 [file join $BasePath ctsimu_deviation.tcl]
 
 namespace eval ::ctsimu {
 	::oo::class create coordinate_system {
-		constructor { { name "" } } {
-			# Define center and direction vectors u, v, w and initialize to world coordinate system.
-			my variable _name _center _u _v _w _attachedToStage
+		variable _name
+		variable _center
+		variable  _u
+		variable  _v
+		variable  _w
+		variable  _attachedToStage
 
+		constructor { { name "" } } {
+			# Initialize center and direction vectors u, v, w to empty vectors.
 			my attach_to_stage 0
 
 			set _name ""
@@ -33,8 +38,6 @@ namespace eval ::ctsimu {
 
 		method reset { } {
 			# Resets the coordinate system to a standard world coordinate system
-			my variable _center _u _v _w _attachedToStage
-
 			$_center set_values [list 0 0 0]
 			$_u      set_values [list 1 0 0]
 			$_v      set_values [list 0 1 0]
@@ -45,8 +48,6 @@ namespace eval ::ctsimu {
 
 		method print { } {
 			# Generates a human-readable info string.
-			my variable _center _u _v _w
-
 			set s "Center: "
 			append s [$_center print]
 
@@ -64,7 +65,6 @@ namespace eval ::ctsimu {
 
 		method make_unit_coordinate_system { } {
 			# Make coordinate system base unit vectors.
-			my variable _u _v _w
 			$_u to_unit_vector
 			$_v to_unit_vector
 			$_w to_unit_vector
@@ -102,7 +102,6 @@ namespace eval ::ctsimu {
 		# -------------------------
 		method get_copy { { new_name 0 } } {
 			# Return a copy of this coordinate system.
-			my variable _center _u _v _w
 			set C [::ctsimu::coordinate_system new]
 
 			$C set_center [$_center get_copy]
@@ -120,70 +119,58 @@ namespace eval ::ctsimu {
 		}
 
 		method name { } {
-			my variable _name
 			return $_name
 		}
 
 		method center { } {
-			my variable _center
 			return $_center
 		}
 
 		method u { } {
-			my variable _u
 			return $_u
 		}
 
 		method v { } {
-			my variable _v
 			return $_v
 		}
 
 		method w { } {
-			my variable _w
 			return $_w
 		}
 
 		method is_attached_to_stage { } {
 			# Return the 'attached to stage' property.
-			my variable _attachedToStage
 			return $_attachedToStage
 		}
 
 		# Setters
 		# -------------------------
 		method set_name { name } {
-			my variable _name
 			set _name $name
 		}
 
 		method set_center { c } {
-			my variable _center
 			$_center destroy
 			set _center $c
 		}
 
 		method set_u { u } {
-			my variable _u
 			$_u destroy
 			set _u $u
 		}
 
 		method set_v { v } {
-			my variable _v
 			$_v destroy
 			set _v $v
 		}
 
 		method set_w { w } {
-			my variable _w
 			$_w destroy
 			set _w $w
 		}
 
 		method attach_to_stage { attached } {
 			# 0: not attached, 1: attached to stage.
-			my variable _attachedToStage
 			set _attachedToStage $attached
 		}
 
@@ -191,13 +178,11 @@ namespace eval ::ctsimu {
 		# -------------------------
 		method translate { translation_vector } {
 			# Shift center by given translation vector.
-			my variable _center
 			$_center add $translation_vector
 		}
 		
 		method translate_along_axis { axis distance } {
 			# Shift center along `axis` by given `distance`.
-			my variable _center
 			set t [$axis get_unit_vector]
 			$t scale $distance
 			my translate $t
@@ -227,19 +212,16 @@ namespace eval ::ctsimu {
 		
 		method translate_u { du } {
 			# Translate coordinate system in u direction by distance du.
-			my variable _u
 			my translate_along_axis $_u du
 		}
 		
 		method translate_v { dv } {
 			# Translate coordinate system in v direction by distance dv.
-			my variable _v
 			my translate_along_axis $_v dv
 		}
 		
 		method translate_w { dw } {
 			# Translate coordinate system in w direction by distance dw.
-			my variable _w
 			my translate_along_axis $_w dw
 		}
 		
@@ -249,7 +231,6 @@ namespace eval ::ctsimu {
 			# as the axis vector is assumed to be attached to
 			# the center of the coordinate system.
 			if {$angle_in_rad != 0} {
-				my variable _u _v _w
 				set R [::ctsimu::rotation_matrix $axis $angle_in_rad]
 				$_u transform_by_matrix $R
 				$_v transform_by_matrix $R
@@ -264,8 +245,6 @@ namespace eval ::ctsimu {
 			# as the axis of rotation is assumed to be attached to the
 			# pivot point.
 			# axis and pivot_point must be given as ::ctsimu::vector objects.
-
-			my variable _center
 
 			# Move coordinate system such that pivot point is at world origin:
 			$_center subtract $pivot_point
@@ -309,7 +288,6 @@ namespace eval ::ctsimu {
 		method rotate_around_u { angle_in_rad } {
 			# Rotate coordinate system around u axis by angle.
 			if {$angle_in_rad != 0} {
-				my variable _u _v _w
 				set R [::ctsimu::rotation_matrix $_u $angle_in_rad]
 				$_v transform_by_matrix $R
 				$_w transform_by_matrix $R
@@ -320,7 +298,6 @@ namespace eval ::ctsimu {
 		method rotate_around_v { angle_in_rad } {
 			# Rotate coordinate system around v axis by angle.
 			if {$angle_in_rad != 0} {
-				my variable _u _v _w
 				set R [::ctsimu::rotation_matrix $_v $angle_in_rad]
 				$_u transform_by_matrix $R
 				$_w transform_by_matrix $R
@@ -331,7 +308,6 @@ namespace eval ::ctsimu {
 		method rotate_around_w { angle_in_rad } {
 			# Rotate coordinate system around w axis by angle.
 			if {$angle_in_rad != 0} {
-				my variable _u _v _w
 				set R [::ctsimu::rotation_matrix $_w $angle_in_rad]
 				$_u transform_by_matrix $R
 				$_v transform_by_matrix $R
@@ -421,8 +397,6 @@ namespace eval ::ctsimu {
 		method change_reference_frame { csFrom csTo } {
 			# Transform this coordinate system from the csFrom reference frame
 			# to the csTo reference frame. Result will be in terms of csTo.
-
-			my variable _center _u _v _w
 
 			# Rotate basis vectors into csTo:
 			set R [::ctsimu::basis_transform_matrix $csFrom $csTo]; # rotation matrix

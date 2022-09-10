@@ -10,17 +10,20 @@ source -encoding utf-8 [file join $BasePath ctsimu_detector.tcl]
 
 namespace eval ::ctsimu {
 	::oo::class create scenario {
+		variable _running
+		variable _batch_is_running
+		variable _json_loaded_successfully
+		variable _settings;  # dictionary with simulation settings
+
+		variable _cs_world
+		variable _detector
+
 		constructor { } {
 			# State
-			my variable _running
-			my variable _batch_is_running
-			my variable _json_loaded_successfully
-
 			my _set_run_status       0
 			my _set_batch_run_status 0
 
 			# Settings
-			my variable _settings;  # dictionary with simulation settings
 			set _settings [dict create]
 
 			# Standard settings
@@ -32,22 +35,17 @@ namespace eval ::ctsimu {
 			my set create_clfdk_config_file 1
 
 			# Initialize a world coordinate system:
-			my variable _cs_world
 			set _cs_world  [::ctsimu::coordinate_system new "World"]
 			$_cs_world reset
 			
 			# Objects in the scene:
-			my variable _detector
 			set _detector [::ctsimu::detector new]
 
 			my reset
 		}
 
 		destructor {
-			my variable _cs_world
 			$_cs_world destroy
-			
-			my variable _detector
 			$_detector destroy
 		}
 
@@ -69,51 +67,42 @@ namespace eval ::ctsimu {
 			my set n_flat_avg            20
 			my set flat_field_ideal       0
 
-			my variable _detector
 			$_detector reset
 		}
 
 		# Getters
 		method get { setting } {
 			# Get a settings value from the settings dict
-			my variable _settings
 			return [dict get $_settings $setting]
 		}
 
 		method is_running { } {
-			my variable _running
 			return $_running
 		}
 
 		method batch_is_running { } {
-			my variable _batch_is_running
 			return $_batch_is_running
 		}
 
 		method json_loaded_successfully { } {
-			my variable _json_loaded_successfully
 			return $_json_loaded_successfully
 		}
 
 		# Setters
 		method set { setting value } {
 			# Set a settings value in the settings dict
-			my variable _settings
 			dict set _settings $setting $value
 		}
 
 		method _set_run_status { status } {
-			my variable _running
 			set _running $status
 		}
 
 		method _set_batch_run_status { status } {
-			my variable _batch_is_running
 			set _batch_is_running $status
 		}
 
 		method _set_json_load_status { status } {
-			my variable _json_loaded_successfully
 			set _json_loaded_successfully $status
 		}
 
@@ -129,8 +118,6 @@ namespace eval ::ctsimu {
 		method create_projection_counter_format { nProjections } {
 			# Sets the number format string to get the correct
 			# number of digits in the consecutive projection file names.
-			my variable projection_counter_format
-
 			set digits 4
 
 			# For anything bigger than 10000 projections (0000 ... 9999) we need more filename digits.
@@ -144,7 +131,6 @@ namespace eval ::ctsimu {
 		}
 
 		method load_json_scene { json_filename } {
-			my variable _cs_world
 			my reset
 
 			set jsonfiledir [file dirname "$json_filename"]
@@ -156,7 +142,6 @@ namespace eval ::ctsimu {
 			
 			# Detector
 			# ------------
-			my variable _detector
 			$_detector set_from_json $jsonstring $_cs_world $_cs_world
 		}
 	}

@@ -21,13 +21,13 @@ namespace eval ::ctsimu {
 	set valid_sample_axis_designations [list "r" "s" "t"]
 
 	::oo::class create deviation {
-		constructor { } {
-			my variable _type;  # "rotation" or "translation"
-			my variable _axis;  # rotation axis or translation direction
-			my variable _pivot; # pivot point for rotations
-			my variable _amount
-			my variable _known_to_reconstruction
-			
+		variable _type;  # "rotation" or "translation"
+		variable _axis;  # rotation axis or translation direction
+		variable _pivot; # pivot point for rotations
+		variable _amount
+		variable _known_to_reconstruction
+
+		constructor { } {			
 			# The axis and pivot point are ::ctsimu::scenevector
 			# objects that can handle vector drifts and
 			# conversion between coordinate systems:
@@ -40,13 +40,13 @@ namespace eval ::ctsimu {
 		}
 
 		destructor {
-			my variable _amount
+			$_axis destroy
+			$_pivot destroy
 			$_amount destroy
 		}
 
 		method reset { } {
 			# Delete all drifts and set the parameter's current value to the standard value.
-			my variable _amount _type _axis
 			$_amount destroy
 
 			my set_type ""
@@ -58,31 +58,26 @@ namespace eval ::ctsimu {
 		# -------------------------
 		method type { } {
 			# Get the transformation type ("rotation" or "translation").
-			my variable _type
 			return $_type
 		}		
 
 		method axis { } {
 			# Get the transformation axis.
-			my variable _axis
 			return $_axis
 		}
 		
 		method pivot { } {
 			# Get the pivot point.
-			my variable _pivot
 			return $_pivot
 		}
 		
 		method amount { } {
 			# Amount of the deviation.
-			my variable _amount
 			return $_amount
 		}
 		
 		method native_unit { } {
 			# Returns the native unit of the deviation's amount.
-			my variable _amount
 			return [$_amount native_unit]
 		}
 		
@@ -90,7 +85,6 @@ namespace eval ::ctsimu {
 			# Returns whether this deviation must be considered during a
 			# reconstruction (1) or not (0). This parameter is used
 			# when calculating projection matrices.
-			my variable _known_to_reconstruction
 			return $_known_to_reconstruction
 		}
 
@@ -98,8 +92,6 @@ namespace eval ::ctsimu {
 		# -------------------------
 		method set_type { type } {
 			# Sets the transformation type ("rotation" or "translation").
-			my variable _type _amount
-			
 			if { ($type == "rotation") || ($type == "translation") } {
 				set _type $type
 
@@ -118,8 +110,6 @@ namespace eval ::ctsimu {
 			# Sets the deviation's transformation axis.
 			# Can be: "x", "y", "z", "u", "v", "w", "r", "s", "t"
 			# or a ::ctsimu::scenevector.
-			my variable _axis
-			
 			if { [lsearch -exact $::ctsimu::valid_world_axis_designations $axis] >= 0 } {
 				# Given axis is "x", "y" or "z"
 				# -> vector in world coordinate system
@@ -150,14 +140,12 @@ namespace eval ::ctsimu {
 		method set_pivot { pivot } {
 			# Set the pivot point for rotations.
 			# Expects a ::ctsimu::scenevector.
-			my variable _pivot
 			set _pivot pivot
 		}
 		
 		method set_known_to_reconstruction { known } {
 			# Sets the "known to reconstruction" attribute to
 			# true (known = 1) or false (known = 0).
-			my variable _known_to_reconstruction
 			set _known_to_reconstruction $known
 		}
 		
@@ -167,13 +155,10 @@ namespace eval ::ctsimu {
 			# 
 			# This function is usually not called from the outside,
 			# but used by `set_from_json`.
-			my variable _amount
 			$_amount set_from_json $json_obj
 		}
 		
 		method set_from_json { json_obj } {
-			my variable _axis _pivot
-			
 			# Set up the deviation from a JSON deviation structure.
 			if { [::ctsimu::json_exists $json_obj type] } {
 				my set_type [::ctsimu::get_value $json_obj {type} ""]

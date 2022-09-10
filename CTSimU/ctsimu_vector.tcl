@@ -2,8 +2,9 @@ package require TclOO
 
 namespace eval ::ctsimu {
 	::oo::class create vector {
+		variable _values
+
 		constructor { { valueList {} } } {
-			my variable _values
 			my set_values $valueList
 		}
 
@@ -13,8 +14,6 @@ namespace eval ::ctsimu {
 
 		method print { } {
 			# Return a printable string for this vector.
-			my variable _values
-
 			set s "("
 			set i 0
 			foreach v $_values {
@@ -28,7 +27,6 @@ namespace eval ::ctsimu {
 
 		method size { } {
 			# Return number of vector elements.
-			my variable _values
 			return [llength $_values]
 		}
 		
@@ -50,7 +48,6 @@ namespace eval ::ctsimu {
 		# to improve speeds during calculations. Maybe add later...?
 		method element { i } {
 			# Return vector element at position i.
-			my variable _values
 			if {[my size] > $i} {
 				return [lindex $_values $i]
 			} else {
@@ -61,7 +58,6 @@ namespace eval ::ctsimu {
 
 		method get_values { } {
 			# Return list of all vector elements.
-			my variable _values
 			return $_values
 		}
 
@@ -91,7 +87,6 @@ namespace eval ::ctsimu {
 		# when stored in the vector.
 		method set_values { l } {
 			# Set vector elements to given value list.
-			my variable _values
 			set _values $l
 			
 			# Convert all elements to double to avoid problems:
@@ -102,8 +97,6 @@ namespace eval ::ctsimu {
 		
 		method set { x {y "none"} {z "none"} {w "none"} } {
 			# Make a vector with three components (x, y, z).
-			my variable _values
-			
 			set _values [list [expr double($x)]]
 			if {$y != "none"} {
 				my add_element $y
@@ -120,13 +113,11 @@ namespace eval ::ctsimu {
 
 		method add_element { value } {
 			# Append another element (i.e. dimension) to the vector with the given value.
-			my variable _values
 			lappend _values [expr double($value)]
 		}
 
 		method set_element { i value } {
 			# Set vector element at index i to the given value.
-			my variable _values
 			if {[my size] > $i} {
 				lset _values $i [expr double($value)]
 			}
@@ -234,7 +225,6 @@ namespace eval ::ctsimu {
 
 		method sum { } {
 			# Return sum of vector elements
-			my variable _values
 			set sum 0.0
 			foreach v $_values {
 				set sum [expr $sum + double($v)]
@@ -244,7 +234,6 @@ namespace eval ::ctsimu {
 
 		method length { } {
 			# This vector's absolute length
-			my variable _values
 			set sqSum 0.0
 			foreach v $_values {
 				set sqSum [expr $sqSum + double($v)*double($v)]

@@ -9,21 +9,21 @@ source -encoding utf-8 [file join $BasePath ctsimu_helpers.tcl]
 
 namespace eval ::ctsimu {
 	::oo::class create drift {
+		# Should the recon projection matrices follow the drift,
+		# therefore compensate it during the reconstruction?
+		variable _known_to_reconstruction
+
+		# Interpolate between values if number of drift
+		# positions does not match number of frames?
+		variable _interpolation
+
+		# List of drift values:
+		variable _trajectory
+
+		# Physical (internal) unit for all list values:
+		variable _native_unit
+
 		constructor { native_unit } {
-			# Should the recon projection matrices follow the drift,
-			# therefore compensate it during the reconstruction?
-			my variable _known_to_reconstruction
-
-			# Interpolate between values if number of drift
-			# positions does not match number of frames?
-			my variable _interpolation
-
-			# List of drift values:
-			my variable _trajectory
-
-			# Physical (internal) unit for all list values:
-			my variable _native_unit
-
 			my reset
 			my set_native_unit $native_unit
 		}
@@ -43,7 +43,6 @@ namespace eval ::ctsimu {
 			# Returns whether this drift must be considered during a
 			# reconstruction (1) or not (0). This parameter is used
 			# when calculating projection matrices.
-			my variable _known_to_reconstruction
 			return $_known_to_reconstruction
 		}
 
@@ -52,13 +51,11 @@ namespace eval ::ctsimu {
 			# drift values (if the number of drift values does not match the number
 			# of frames). If no interpolation takes place, there will be discrete
 			# steps of drift values (and possibly sudden changes).
-			my variable _interpolation
 			return $_interpolation
 		}
 
 		method native_unit { } {
 			# Returns the native_unit for the drift values.
-			my variable _native_unit
 			return $_native_unit
 		}
 
@@ -67,20 +64,17 @@ namespace eval ::ctsimu {
 		method set_known_to_reconstruction { known } {
 			# Sets the "known to reconstruction" attribute to
 			# true (known = 1) or false (known = 0).
-			my variable _known_to_reconstruction
 			set _known_to_reconstruction $known
 		}
 
 		method set_interpolation { intpol } {
 			# Activates linear interpolation between drift values
 			# (intpol = 1) or deactivates it (intpol = 0).
-			my variable _interpolation
 			set _interpolation $intpol
 		}
 
 		method set_native_unit { native_unit } {
 			# Sets the unit of the drift values.
-			my variable _native_unit
 			set _native_unit $native_unit
 
 			if { $_native_unit == "string" } {
@@ -91,7 +85,6 @@ namespace eval ::ctsimu {
 
 		method set_from_json { json_object } {
 			# Sets the drift from a given JSON drift object.
-			my variable _trajectory _native_unit
 			my reset
 			set success 0
 
@@ -132,8 +125,6 @@ namespace eval ::ctsimu {
 			# drift values, but also for frame numbers outside the
 			# expected range: 0 < frame > nFrames.
 			# Note that the frame number starts at 0.
-			my variable _interpolation _trajectory
-
 			set nTrajectoryPoints [llength $_trajectory]
 
 			if { $nTrajectoryPoints > 1 } {

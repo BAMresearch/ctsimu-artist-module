@@ -16,28 +16,28 @@ source -encoding utf-8 [file join $BasePath ctsimu_parameter.tcl]
 
 namespace eval ::ctsimu {
 	::oo::class create scenevector {
+		variable _c0; # 1st vector component
+		variable _c1; # 2nd vector component
+		variable _c2; # 3rd vector component
+
+		# reference coordinate system string:
+		# "world", "local", "sample"
+		variable _reference
+
 		constructor { { native_unit "" } } {
-			my variable _c0; # 1st vector component
-			my variable _c1; # 2nd vector component
-			my variable _c2; # 3rd vector component
-			
 			set _c0 [::ctsimu::parameter new]
 			set _c1 [::ctsimu::parameter new]
 			set _c2 [::ctsimu::parameter new]
 			my set_native_unit $native_unit
 
 			# Reference coordinate system:
-			my variable _reference
 			set _reference "world"; # "local", "sample"
 		}
 
 		destructor {
-			my variable _c0 _c1 _c2
 			$_c0 destroy
 			$_c1 destroy
 			$_c2 destroy
-			
-			my variable _current_vector
 			$_current_vector destroy
 		}
 
@@ -46,7 +46,6 @@ namespace eval ::ctsimu {
 		method reference { } {
 			# Return the string that identifies
 			# the scenevector's reference coordinate system:
-			my variable _reference
 			return $_reference
 		}	
 		
@@ -55,7 +54,6 @@ namespace eval ::ctsimu {
 		method set_reference { reference } {
 			# Set the reference coordinate system.
 			# Can be "world", "local" or "stage".
-			my variable _reference
 			set valid_refs [list "world" "local" "stage"]
 			if { [lsearch -exact $valid_refs $reference] >= 0 } {
 				set _reference $reference
@@ -69,7 +67,6 @@ namespace eval ::ctsimu {
 			# Necessary for the location of points such as 
 			# the center points of coordinate systems,
 			# usually given in "mm" as native unit.
-			my variable _c0 _c1 _c2
 			$_c0 set_native_unit $native_unit
 			$_c1 set_native_unit $native_unit
 			$_c2 set_native_unit $native_unit
@@ -78,7 +75,6 @@ namespace eval ::ctsimu {
 		method set_simple { c0 c1 c2 } {
 			# Set a simple scene vector from three numbers,
 			# results in a scene vector without drifts.
-			my variable _c0 _c1 _c2
 			$_c0 set_standard_value $c0
 			$_c1 set_standard_value $c1
 			$_c2 set_standard_value $c2
@@ -94,15 +90,12 @@ namespace eval ::ctsimu {
 			# Set the `i`th vector component to
 			# `parameter` (which must be a `::ctsimu::parameter`).
 			if {$i == 0} {
-				my variable _c0
 				$_c0 destroy
 				set _c0 $parameter
 			} elseif {$i == 1} {
-				my variable _c1
 				$_c1 destroy
 				set _c1 $parameter
 			} elseif {$i == 2} {
-				my variable _c2
 				$_c2 destroy
 				set _c2 $parameter
 			}
@@ -113,8 +106,7 @@ namespace eval ::ctsimu {
 		method standard_vector { } {
 			# Create a ::ctsimu::vector that represents
 			# this vector without any drifts.
-			my variable _c0 _c1 _c2
-			
+
 			# Get vector components, respecting drifts:
 			set v0 [$_c0 standard_value]
 			set v1 [$_c1 standard_value]
@@ -133,7 +125,6 @@ namespace eval ::ctsimu {
 			# Can later be added to the standard
 			# value to get the resulting vector respecting
 			# all drifts.
-			my variable _c0 _c1 _c2
 			
 			# Get vector components, respecting drifts:
 			set v0 [$_c0 get_total_drift_value_for_frame $frame $nFrames $only_known_to_reconstruction]
@@ -149,7 +140,6 @@ namespace eval ::ctsimu {
 		method vector_for_frame { frame nFrames { only_known_to_reconstruction 0 } } {
 			# Create and return a ::ctsimu::vector
 			# for the given frame, respecting all drifts.
-			my variable _c0 _c1 _c2
 			
 			# Get vector components, respecting drifts:
 			set v0 [$_c0 get_value_for_frame $frame $nFrames $only_known_to_reconstruction]
@@ -199,7 +189,6 @@ namespace eval ::ctsimu {
 			
 			set v [my vector_for_frame $frame $nFrames $only_known_to_reconstruction]
 			
-			my variable _reference
 			if { $_reference == "world" } {
 				# Already in world.
 				return $v
@@ -272,7 +261,6 @@ namespace eval ::ctsimu {
 			
 			set v [my vector_for_frame $frame $nFrames $only_known_to_reconstruction]
 			
-			my variable _reference
 			if { $_reference == "world" } {
 				# Convert from world to local.
 				if { $point_or_direction == "point" } {
@@ -341,7 +329,6 @@ namespace eval ::ctsimu {
 			
 			set v [my vector_for_frame $frame $nFrames $only_known_to_reconstruction]
 			
-			my variable _reference
 			if { $_reference == "world" } {
 				# From world to local (i.e., the stage)...
 				# ...and a second time from world to sample
@@ -380,9 +367,7 @@ namespace eval ::ctsimu {
 		
 		method set_from_json { json_object } {
 			# Sets up the scene vector from a CTSimU JSON
-			# object that describes a three-component vector.
-			my variable _c0 _c1 _c2
-			
+			# object that describes a three-component vector.		
 			if { [::ctsimu::json_exists $json_object x] && \
 				 [::ctsimu::json_exists $json_object y] && \
 				 [::ctsimu::json_exists $json_object z] } {

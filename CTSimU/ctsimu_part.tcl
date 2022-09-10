@@ -18,69 +18,65 @@ source -encoding utf-8 [file join $BasePath ctsimu_coordinate_system.tcl]
 
 namespace eval ::ctsimu {
 	::oo::class create part {
+		variable _attachedToStage
+		variable _cs_current
+		variable _cs_recon
+		variable _center
+		variable _vector_u
+		variable _vector_w
+		variable _deviations
+		variable _name
+		variable _properties
+
 		constructor { { name "" } } {
 			# Is this object attached to the stage coordinate sytem?
-			my variable _attachedToStage
 			my attach_to_stage 0
 
 			# Coordinate system for current frame:
-			my variable _cs_current
-			set _cs_current [::ctsimu::coordinate_system new];  # current frame
+			set _cs_current [::ctsimu::coordinate_system new]
 
 			# Ghost coordinate system to use for the calculation of
 			# recon projection matrices. Those only obey drifts that are
 			# 'known_to_reconstruction':
-			my variable _cs_recon
-			set _cs_recon   [::ctsimu::coordinate_system new];  # current frame
+			set _cs_recon   [::ctsimu::coordinate_system new]
 
 			# The coordinates and orientation must be kept as
 			# ::ctsimu::scenevector objects to properly handle drifts.
 			# These are later used to assemble a coordinate
-			# system for each frame.
-			my variable _center
-			my variable _vector_u
-			my variable _vector_w
-			
+			# system for the current frame.		
 			set _center   [::ctsimu::scenevector new "mm"]
 			set _vector_u [::ctsimu::scenevector new]
 			set _vector_w [::ctsimu::scenevector new]
 
 			# Translational and rotational deviations
 			# (themselves including drifts):
-			my variable _deviations
 			set _deviations [list]
 
 			# A name for this part:
 			# The object's name will be passed on to the coordinate
 			# system via the set_name function.
-			my variable _name
 			set _name ""
 			my set_name $name
 			
 			# A general list of properties
 			# (all of them are of type ::ctsimu::parameter)
-			my variable _properties
 			set _properties [list]
 		}
 
 		destructor {
-			my variable _cs_current _cs_recon
 			$_cs_current destroy
 			$_cs_recon destroy
 			
-			my variable _center _vector_u _vector_w
 			$_center destroy
 			$_vector_u destroy
 			$_vector_w destroy
 
-			my variable _deviations
 			foreach dev $_deviations {
 				$dev destroy
 			}
 			set _deviations [list]
 			
 			# Delete all existing properties:
-			my variable _properties
 			foreach {key property} $_properties {
 				$property destroy
 			}
@@ -93,19 +89,15 @@ namespace eval ::ctsimu {
 			# Any geometrical deviations are deleted.
 			my attach_to_stage 0
 
-			my variable _cs_current _cs_recon
-
 			$_cs_current reset
 			$_cs_recon reset
 
-			my variable _deviations
 			foreach dev $_deviations {
 				$dev destroy
 			}
 			set _deviations [list]
 			
 			# Delete all existing properties:
-			my variable _properties
 			foreach {key property} $_properties {
 				$property destroy
 			}
@@ -115,19 +107,16 @@ namespace eval ::ctsimu {
 		# Getters
 		# -------------------------
 		method name { } {
-			my variable _name
 			return $_name
 		}
 		
 		method get { property } {
 			# Get a property value from the _properties dict
-			my variable _properties
 			return [dict get $_properties $property]
 		}
 		
 		method is_attached_to_stage { } {
 			# Return the 'attached to stage' property.
-			my variable _attachedToStage
 			return $_attachedToStage
 		}
 		
@@ -138,7 +127,6 @@ namespace eval ::ctsimu {
 			# Set a simple property value in
 			# the _properties dict by setting the
 			# respective parameter's standard value.
-			my variable _properties
 			
 			# Check if the property already exists:
 			if {[dict exists $_properties $property]} {
@@ -157,7 +145,6 @@ namespace eval ::ctsimu {
 		
 		method set_parameter { property parameter } {
 			# Set a property value in the _properties dict
-			my variable _properties
 			
 			# Check if the property already exists:
 			if {[dict exists $_properties $property]} {
@@ -172,7 +159,6 @@ namespace eval ::ctsimu {
 		}
 		
 		method set_name { name } {
-			my variable _name
 			set _name $name
 			my set_cs_names
 		}
@@ -181,8 +167,6 @@ namespace eval ::ctsimu {
 			# Uses this object's name to give names to the
 			# proper coordinate systems.
 			# Invoked by default by the set_name function.
-			my variable _name _cs_current _cs_recon
-
 			append cs_current_name $_name "_current"
 			$_cs_current set_name $cs_current_name
 
@@ -192,7 +176,6 @@ namespace eval ::ctsimu {
 
 		method attach_to_stage { attached } {
 			# 0: not attached, 1: attached to stage.
-			my variable _attachedToStage
 			set _attachedToStage $attached
 		}
 
@@ -204,10 +187,6 @@ namespace eval ::ctsimu {
 			# The `world` and `stage` have to be given as
 			# `::ctsimu::coordinate_system` objects.
 			my reset
-
-			my variable _center _vector_u _vector_w
-			my variable _deviations
-			my variable _name
 			
 			# Try to set up the parameter from world coordinate notation (x, y, z).
 			# We also have to support legacy spelling of "centre" ;-)
@@ -356,11 +335,6 @@ namespace eval ::ctsimu {
 			#
 			# This function is used by `set_frame` and is
 			# usually not called from outside the object.
-			my variable _center
-			my variable _vector_u
-			my variable _vector_w
-
-			my variable _deviations
 			
 			# Set up standard coordinate system at frame zero:
 			set center [$_center standard_vector]
@@ -427,9 +401,6 @@ namespace eval ::ctsimu {
 			# - w_rotation_in_rad:
 			#   Possible rotation of the object around its w axis.
 			#   Only used for the CT rotation of the sample stage.
-			
-			my variable _cs_current
-			my variable _cs_recon
 
 			# Set up the current CS obeying all drifts:
 			my set_frame_cs $_cs_current $world $stage $frame $nFrames 0 $w_rotation_in_rad

@@ -31,8 +31,14 @@ namespace eval ::ctsimu {
 			my set output_datatype          "16bit"
 			my set output_basename          "proj_"
 			my set output_folder            ""
+
+			# CERA config file options:
 			my set create_cera_config_file  1
-			my set create_clfdk_config_file 1
+			my set cera_output_datatype     "16bit"
+
+			# openCT config file options:
+			my set create_openct_config_file 1
+			my set openct_output_datatype   "16bit"
 
 			# Initialize a world coordinate system:
 			set _cs_world  [::ctsimu::coordinate_system new "World"]
@@ -57,15 +63,16 @@ namespace eval ::ctsimu {
 			my set start_angle            0
 			my set stop_angle           360
 			my set n_projections       2000
+			my set projection_counter_format "%04d"
 			my set proj_nr                0
 			my set include_final_angle    0
 			my set start_proj_nr          0
 
-			my set dark_field             0
+			my set dark_field             0; # 1=yes, 0=no
 			my set n_darks                1
 			my set n_flats                1
 			my set n_flat_avg            20
-			my set flat_field_ideal       0
+			my set flat_field_ideal       0; # 1=yes, 0=no
 
 			$_detector reset
 		}
@@ -92,6 +99,12 @@ namespace eval ::ctsimu {
 		method set { setting value } {
 			# Set a settings value in the settings dict
 			dict set _settings $setting $value
+
+			# The projection counter format (e.g. %04d) needs
+			# to be adapted to the number of projections:
+			if { $setting == {n_projections} } {
+				my create_projection_counter_format { $value }
+			}
 		}
 
 		method _set_run_status { status } {
@@ -125,9 +138,11 @@ namespace eval ::ctsimu {
 				set digits [expr int(ceil(log10($nProjections)))]
 			}
 
-			set projection_counter_format "%0"
-			append projection_counter_format $digits
-			append projection_counter_format "d"
+			set pcformat "%0"
+			append pcformat $digits
+			append pcformat "d"
+
+			my set projection_counter_format $pcformat
 		}
 
 		method load_json_scene { json_filename } {

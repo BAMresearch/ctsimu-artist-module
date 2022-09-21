@@ -1,0 +1,3 @@
+CTSimU aRTist Module VERSION
+
+This module reads and sets up the scenario from a CTSimU JSON description. With the module, it is also possible to simulate the complete CT scan as described in the JSON scenario.

@@ -10,7 +10,7 @@ proc Info {} {
 	return [dict create \
 		Name        CTSimU \
 		Description "CTSimU Scenario Loader" \
-		Version     "0.8.12" \
+		Version     "0.8.13" \
 	]
 }
 
@@ -40,7 +40,9 @@ proc SetDefaults {} {
 
 	# Recon settings
 	set GUISettings(cfgFileCERA)     1
+	set GUISettings(ceradataTypeOutput) "16bit"
 	set GUISettings(cfgFileCLFDK)    1
+	set GUISettings(clfdkdataTypeOutput) "16bit"
 }
 
 proc Settings { args } {
@@ -80,9 +82,17 @@ proc Init {} {
 	if {[dict exists $prefs cfgFileCERA]} {
 		CTSimU::setCfgFileCERA [dict get $prefs cfgFileCERA]
 	}
+	
+	if {[dict exists $prefs ceradataTypeOutput]} {
+		CTSimU::setceradataTypeOutput [dict get $prefs ceradataTypeOutput]
+	}
 
 	if {[dict exists $prefs cfgFileCLFDK]} {
 		CTSimU::setCfgFileCLFDK [dict get $prefs cfgFileCLFDK]
+	}
+	
+	if {[dict exists $prefs	clfdkdataTypeOutput]} {
+		CTSimU::setclfdkdataTypeOutput [dict get $prefs clfdkdataTypeOutput]
 	}
 
 	CTSimU::setProjectionCounterFormat 1000
@@ -451,7 +461,9 @@ proc InitGUI { parent } {
 	set reconCfgGroup   [FoldFrame $settings.frmReconCfg  -text "Reconstruction"  -padding $pad]
 	dataform $reconCfgGroup {
 		{Create CERA config file}  cfgFileCERA  bool   { }
+		{Data Type VolumeOutput} ceradataTypeOutput choice { "uint16" "16bit" "float32" "32bit"}
 		{Create OpenCT (VG, clFDK) config file}  cfgFileCLFDK  bool   { }
+		{Data Type VolumeOutput} clfdkdataTypeOutput choice { "uint16" "16bit" "float32" "32bit"}
 	}
 
 	set buttons [ttk::frame $reconCfgGroup.frmButtons]
@@ -917,9 +929,17 @@ proc fillCurrentParameters {} {
 	if { [dict exists $CTSimU::ctsimuSettings cfgFileCERA] } {
 		set GUISettings(cfgFileCERA)    [dict get $CTSimU::ctsimuSettings cfgFileCERA]
 	}
+	
+	if { [dict exists $CTSimU::ctsimuSettings  ceradataTypeOutput] } {
+		set GUISettings(ceradataTypeOutput) [dict get $CTSimU::ctsimuSettings ceradataTypeOutput]
+	}
 
 	if { [dict exists $CTSimU::ctsimuSettings cfgFileCLFDK] } {
 		set GUISettings(cfgFileCLFDK)    [dict get $CTSimU::ctsimuSettings cfgFileCLFDK]
+	}
+	
+	if { [dict exists $CTSimU::ctsimuSettings 	clfdkdataTypeOutput] } {
+		set GUISettings(clfdkdataTypeOutput) [dict get $CTSimU::ctsimuSettings clfdkdataTypeOutput]
 	}
 }
 
@@ -927,12 +947,16 @@ proc applyCurrentSettings {} {
 	# Only apply parameters defined in the settings pane
 	variable GUISettings
 	CTSimU::setCfgFileCERA $GUISettings(cfgFileCERA)
+	CTSimU::setceradataTypeOutput $GUISettings(ceradataTypeOutput)
 	CTSimU::setCfgFileCLFDK $GUISettings(cfgFileCLFDK)
+	CTSimU::setclfdkdataTypeOutput $GUISettings(clfdkdataTypeOutput)
 
 	dict set storeSettings fileFormat [CTSimU::getFileFormat]
 	dict set storeSettings dataType [CTSimU::getDataType]
 	dict set storeSettings cfgFileCERA [CTSimU::getCfgFileCERA]
+	dict set storeSettings ceradataTypeOutput [CTSimU::getceradataTypeOutput]
 	dict set storeSettings cfgFileCLFDK [CTSimU::getCfgFileCLFDK]
+	dict set storeSettings clfdkdataTypeOutput [CTSimU::getclfdkdataTypeOutput]
 
 	Preferences::Set CTSimU Settings $storeSettings
 }
@@ -1423,20 +1447,40 @@ namespace eval ::CTSimU {
 		variable ctsimuSettings
 		dict set ctsimuSettings cfgFileCERA $cfgFileCERA
 	}
+	
+	proc setceradataTypeOutput { ceradataTypeOutput } {
+		variable ctsimuSettings
+		dict set ctsimuSettings ceradataTypeOutput $ceradataTypeOutput
+	}
 
 	proc setCfgFileCLFDK { cfgFileCLFDK } {
 		variable ctsimuSettings
 		dict set ctsimuSettings cfgFileCLFDK $cfgFileCLFDK
+	}
+	
+	proc setclfdkdataTypeOutput { clfdkdataTypeOutput } {
+		variable ctsimuSettings
+		dict set ctsimuSettings clfdkdataTypeOutput $clfdkdataTypeOutput
 	}
 
 	proc getCfgFileCERA { } {
 		variable ctsimuSettings
 		return [dict get $ctsimuSettings cfgFileCERA]
 	}
+	
+	proc getceradataTypeOutput { } {
+		variable ctsimuSettings
+		return [dict get $ctsimuSettings ceradataTypeOutput]
+	}
 
 	proc getCfgFileCLFDK { } {
 		variable ctsimuSettings
 		return [dict get $ctsimuSettings cfgFileCLFDK]
+	}
+	
+	proc getclfdkdataTypeOutput { } {
+		variable ctsimuSettings
+		return [dict get $ctsimuSettings clfdkdataTypeOutput]
 	}
 
 	proc setFileFormat { fileFormat } {
@@ -2543,18 +2587,23 @@ namespace eval ::CTSimU {
 				dict set ctsimuSettings ffRescaleFactor 60000
 
 				# If linear interpolation is used instead of GVmin and GVmax:
-				set GVatMaxInput 0
-				set GVatNoInput 0
+				set GVatMaxInput 0.0
+				set GVatNoInput 0.0
 				if { ($factor != "null") && ($offset != "null")} {
 					aRTist::Info { "Factor: $factor, Offset: $offset, maxInput: $maxinput" }
 
 					# The factor must be converted to describe
 					# an energy density characteristics in aRTist:
-					set factor [expr $factor * $pixelarea]
+					set physical_pixel_area [expr { $pixelSizeX * $pixelSizeY * 1e-6 }]
+					set factor [expr double($factor) * double($physical_pixel_area)]
 
 					if { $factor != 0 } {
-						set GVatMaxInput [expr $factor * $maxinput + $offset]
-						set GVatNoInput [expr $offset]
+						set GVatMaxInput [expr double($factor) * double($maxinput) + double($offset)]
+						set GVatNoInput [expr double($offset)]
+
+						aRTist::Info { "New Factor (scaled by pixel area): $factor, pixel area: $physical_pixel_area" }
+						aRTist::Info { "GVatNoInput: $GVatNoInput" }
+						aRTist::Info { "GVatMaxInput: $GVatMaxInput" }
 
 						# generate linear amplification curve
 						dict set detector Characteristic 0.0 $GVatNoInput
@@ -2635,7 +2684,7 @@ namespace eval ::CTSimU {
 						set percentage [expr round(100*$step/$nsteps)]
 						showInfo "Calculating SNR characteristics: $percentage%"
 
-						set intensity    [expr {$mininput * $factor**$step}]
+						set intensity    [expr {$mininput * double($factor)**$step}]
 						set NSR2         [expr {$NSR2_structure + $NSR2_quantum * $refinput / $intensity}]
 						set SNR          [expr {sqrt(1.0 / $NSR2)}]
 						dict set detector Noise $intensity $SNR
@@ -4170,8 +4219,11 @@ namespace eval ::CTSimU {
 		setupProjection $projNr 1
 
 		set Scale [vtkImageShiftScale New]
-		$Scale SetOutputScalarTypeToUnsignedInt
-		$Scale ClampOverflowOn
+		switch  $ctsimuSettings {
+			float { $Scale SetOutputScalarTypeToFloat }
+			32bit { $Scale SetOutputScalarTypeToUnsignedInt }
+		}
+		#$Scale ClampOverflowOn
 
 		update
 		if {[dict get $ctsimuSettings running] == 0} {return}
@@ -4204,7 +4256,7 @@ namespace eval ::CTSimU {
 			}
 
 			if {[dict get $ctsimuSettings fileFormat] == "raw"} {
-				::Image::SaveRawFile $convtmp $currFile true . "" 0
+				::Image::SaveRawFile $convtmp $currFile true . "" 0.0
 			} else {
 				::Image::SaveTIFF $convtmp $currFile true . NoCompression
 			}
@@ -4672,7 +4724,7 @@ MidpointZ = 0 # $midpointZ
 VoxelSizeX = $voxelsizeU
 VoxelSizeY = $voxelsizeU
 VoxelSizeZ = $voxelsizeV
-Datatype = float
+OutputDatatype = $ceradataTypeOutput
 
 [CustomKeys]
 NumProjections = $N
@@ -4723,6 +4775,13 @@ GlobalI0Value = $globalI0
 			set scanDirection "CW"
 		} else {
 			set scanDirection "CCW"
+		}
+		
+		set ceraDataTypOutput [dict get $ctsimuSettings ceradataTypeOutput]
+		if { $ceraDataTypOutput == "16bit" } {
+			set ceradataTypeOutput "uint16"
+		} else {
+			set ceradataTypeOutput "float"
 		}
 
 		# Cropping doesn't work this way and might not even be necessary?
@@ -4969,93 +5028,53 @@ GlobalI0Value = $globalI0
 		set vgiTemplate {\{volume1\}
 [representation]
 size = $nSizeX $nSizeY $nSizeZ
-mirror = 0 0 0 0 
-resamplemode = not activated
-indexedcolormode = false
-datatype = float
-datarange = -1 1
-bitsperelement = 32
+datatype = $ceradataTypeOutput
+datarange = $datarangelow $datarangeupper
+bitsperelement = $bits
 [file1]
-RegionOfInterestStart = 0 0 0 
-RegionOfInterestEnd = $roiEndX $roiEndY $roiEndZ
-Endian = little
 SkipHeader = 0
 FileFormat = raw
 Size = $nSizeX $nSizeY $nSizeZ
-Mirror = 0 0 $zMirror 
 Name = $volumeFilename
-Datatype = float
-datarange = -1 1
-BitsPerElement = 32
-[description]
-text = $name
+Datatype = $ceradataTypeOutput
+datarange = $datarangelow $datarangeupper
+BitsPerElement = $bits
 \{volumeprimitive12\}
-[wallthicknessinfo]
-detected = false
-thickness = -1
-numberintervals = 1
-tolerance = -1
-detectmode = 3D
-backgroundmax = 0
-materialmin = -1
-calibrated = false
-processed = false
 [geometry]
-clipplane1 = -1 0 0 $roiEndZ
-clipbox =  0 0 0 $roiEndX $roiEndY $roiEndZ
-position = 0 0 0 
-status = visible
-relativeposition = 0 0 0 
 resolution = $voxelsizeU $voxelsizeU $voxelsizeV
-center = 0.0 0.0 0.0
-scale = 1 1 1 
-rotate = 1 0 0 0 1 0 0 0 1 
 unit = mm
 [volume]
 volume = volume1
 [description]
-text = $name
-[segment1]
-opacityvalue = -0.00018309057 6.1035155e-05 1.999939 
-status = activated
-redvalue = 255 255 
-bluex = 1.4901161e-08 250.00001 
-greenvalue = 255 255 
-description = Segment 1
-opacityx = 1.4901161e-08 70.999998 250.00001 
-redx = 1.4901161e-08 250.00001 
-greenx = 1.4901161e-08 250.00001 
-bluevalue = 255 255 
-[processinfo]
-minimumdefectsize = 0
-maximumdefectsize = 0
-logarithmicsizemapping = false
-[defectinfo]
-detected = false
-numberruns = 1
-centerartifactsignored = false
-defectmaxsize2d = 0
-defectmaxsize3d = 0
-background = 0
-detectmode = 3D
-beamartifactsignored = false
-qualitymapused = false
-material = 0
-quality = 1
-calibrated = false
-circularartifactsignored = false
-neighborhoodcheck = false
-defectminsize2d = 0
-defectminsize3d = 0
-processed = false
-algorithm = default
-[measurementinfo]
-formheaderpreferedorientation = 1 0 0 0 1 0 0 0 1 
-formheaderdate = 2007-06-24
-{{default}}
-[version]
-release = VGStudioMax 1.2.1 (build 357)
-}
+text = $name}
+		set ceraDataTypOutput [dict get $ctsimuSettings ceradataTypeOutput]
+		if { $ceraDataTypOutput == "16bit" } {
+			set ceradataTypeOutput "unsigned integer"
+		} else {
+			set ceradataTypeOutput "float"
+		}
+		
+		set bits [dict get $ctsimuSettings ceradataTypeOutput]
+		if { $bits == "16bit" } {
+			set bits "16"
+		} else {
+			set bits "32"
+		}
+		
+		set datarangelow [dict get $ctsimuSettings ceradataTypeOutput]
+		if { $datarangelow == "16bit" } {
+			set datarangelow "0"
+		} else {
+			set datarangelow "-1"
+		}
+		
+		set datarangeupper [dict get $ctsimuSettings ceradataTypeOutput]
+		if { $datarangeupper == "16bit" } {
+			set datarangeupper "-1"
+		} else {
+			set datarangeupper "1"
+		}
+		
 		set nu $::Xsetup(DetectorPixelX)
 		set nv $::Xsetup(DetectorPixelY)
 		set psu $::Xsetup_private(DGdx)

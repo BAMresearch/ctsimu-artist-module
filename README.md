@@ -5,9 +5,9 @@ This is a module for the radiographic simulator [aRTist](http://artist.bam.de/) 
 
 ## Installation
 
-Drag and drop the .artp file into your aRTist window to install the module.
-
-The module relies on the `rl_json` extension, which comes by default since aRTist 2.10.2.
+1. Download the aRTist package file (`CTSimU-<version>.artp`) for the latest [Release](https://github.com/BAMresearch/ctsimu-artist-module/releases).
+2. Drag and drop the `.artp` file into your aRTist window to install the module.
+   The module relies on the `rl_json` extension, which comes by default since aRTist 2.10.2.
 
 ## Known Limitations
 
@@ -26,6 +26,8 @@ The `deploy.sh` script can be used to create an `.artp` file for aRTist for a ce
 For example:
 
 	./deploy.sh 0.8.13
+
+Note: the aRTist package file (`.artp`) should not be part of the git repository. Instead, it can be uploaded to Github as a file attachment to a new release.
 
 ## Version History
 

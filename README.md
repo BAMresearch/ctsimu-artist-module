@@ -1,13 +1,13 @@
-# CTSimU JSON Loader, Ver. 0.8.12
+# CTSimU JSON Loader, Ver. 0.8.13
 
 This is a module for the radiographic simulator [aRTist](http://artist.bam.de/) which reads and sets up the scenario from a [CTSimU JSON description](https://bamresearch.github.io/ctsimu-scenarios/). With the module, it is also possible to simulate the complete CT scan as described in the JSON scenario.
 
 
 ## Installation
 
-Drag and drop the .artp file into your aRTist window to install the module.
-
-The module relies on the `rl_json` extension, which comes by default since aRTist 2.10.2.
+1. Download the aRTist package file (`CTSimU-<version>.artp`) for the latest [Release](https://github.com/BAMresearch/ctsimu-artist-module/releases).
+2. Drag and drop the `.artp` file into your aRTist window to install the module.
+   The module relies on the `rl_json` extension, which comes by default since aRTist 2.10.2.
 
 ## Known Limitations
 
@@ -17,7 +17,24 @@ The module relies on the `rl_json` extension, which comes by default since aRTis
 + Parallel beam geometries are not supported.
 + External focal spot profile images are not being loaded yet.
 
+## Deploying a new version
+
+The `deploy.sh` script can be used to create an `.artp` file for aRTist for a certain version number. The new version number is passed as an argument:
+
+	./deploy.sh version
+
+For example:
+
+	./deploy.sh 0.8.13
+
+Note: the aRTist package file (`.artp`) should not be part of the git repository. Instead, it can be uploaded to Github as a file attachment to a new release.
+
 ## Version History
+
+### 0.8.13
++ Added options for recon volume data type (`uint16`, `float32`).
++ Cleaned up VGI output.
++ Physical pixel size is used in factor/offset detector grey value method, instead of iSRb-scaled pixel area from the DetectorCalc module.
 
 ### 0.8.12
 + Added new function: insertBatchJob, to allow better control of batch job parameters.

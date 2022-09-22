@@ -10,7 +10,7 @@ proc Info {} {
 	return [dict create \
 		Name        CTSimU \
 		Description "CTSimU Scenario Loader" \
-		Version     "0.8.13" \
+		Version     "0.8.14" \
 	]
 }
 
@@ -1700,12 +1700,13 @@ namespace eval ::CTSimU {
 
 	proc SetPerJSONDefaults {} {
 		variable ctsimuSettings
-		dict set ctsimuSettings includeFinalAngle 0
-		dict set ctsimuSettings takeDarkField     0
-		dict set ctsimuSettings nFlatFrames       1
-		dict set ctsimuSettings nFlatAvg         20
-		dict set ctsimuSettings ffIdeal           0
-		dict set ctsimuSettings startProjNr       0
+		dict set ctsimuSettings includeFinalAngle   0
+		dict set ctsimuSettings takeDarkField       0
+		dict set ctsimuSettings nFlatFrames         1
+		dict set ctsimuSettings nFlatAvg           20
+		dict set ctsimuSettings ffIdeal             0
+		dict set ctsimuSettings startProjNr         0
+		dict set ctsimuSettings primary_energies    0
 	}
 
 	proc makeCoordinateSystemFromVectors { centre u w attachedToStage } {
@@ -2376,9 +2377,32 @@ namespace eval ::CTSimU {
 		set pcount [string trim "$pixelCountX $pixelCountY"]
 		if { $pcount != "" } { dict set detector Global PixelCount $pcount }
 
+		# Primary energy mode:
+		if { [ dict get $ctsimuSettings primary_energies ] == 1 } {
+			aRTist::Info { "Primary energy mode." }
+			dict set detector Global UnitOut {primary energy (J)}
+			set GVatMin "null"
+			set GVatMax "null"
+			set factor 1
+			set offset 0
+			set SNR "null"
+			set FWHM "null"
+			set SRb "null"
+			set integrationTime 1
+			set ::Xdetector(AutoD) off
+			set ::Xdetector(Scale) $integrationTime
+			set ::Xdetector(NrOfFrames) 1
+			set bitDepth 32
+			set maxGVfromDetector [expr pow(2, $bitDepth)-1]
+			set detectorType "real"
+			dict set ctsimuSettings nFlatFrames 0
+			dict set ctsimuSettings nFlatAvg 1
+			dict set ctsimuSettings ffIdeal 0
+		}
+
 		if { $SRb == "null" } { set SRb 0 }
 
-		dict set detector Unsharpness Resolution [expr {2.0 * $SRb * 0.6830822016}]
+		dict set detector Unsharpness Resolution [expr {2.0 * $SRb}]
 		dict set detector Unsharpness LRUnsharpness 0
 		dict set detector Unsharpness LRRatio 0
 
@@ -2667,7 +2691,7 @@ namespace eval ::CTSimU {
 
 				dict set detector Quantization ValueMin 0
 				dict set detector Quantization ValueMax $maxGVfromDetector
-				dict set detector Quantization ValueQuantum 1.0
+				dict set detector Quantization ValueQuantum 0
 
 				dict set detector Sensitivity $sensitivitytext
 
@@ -3786,6 +3810,10 @@ namespace eval ::CTSimU {
 							set ::Xsetup_private(DGdy) $detPixelSizeV
 						}
 
+						if [json exists $scene simulation aRTist primary_energies] {
+							dict set ctsimuSettings primary_energies [from_bool [json get $scene simulation aRTist primary_energies]]
+						}
+
 						set scintillatorMaterialID ""
 						if [json exists $scene detector scintillator material_id] {
 							set scintillatorMaterialID [getMaterialID [json get $scene detector scintillator material_id]]
@@ -3796,7 +3824,7 @@ namespace eval ::CTSimU {
 							set scintillatorThickness [in_mm [json extract $scene detector scintillator thickness]]
 						}
 
-						set integrationTime 0
+						set integrationTime 1
 						if [json exists $scene detector integration_time value] {
 							set integrationTime [in_s [json extract $scene detector integration_time]]
 							set ::Xdetector(AutoD) off
@@ -3934,21 +3962,22 @@ namespace eval ::CTSimU {
 						FileIO::OpenAnyGUI $detectorFilePath
 
 						# Long Range Unsharpness:
-						if [json exists $scene simulation aRTist long_range_unsharpness] {
-							set longrange_unsharpness_extension  [in_mm [json extract $scene simulation aRTist long_range_unsharpness extension]]
-							set longrange_unsharpness_ratio      [getValue $scene {simulation aRTist long_range_unsharpness ratio value}]
+						if { [ dict get $ctsimuSettings primary_energies ] != 1 } {
+							if [json exists $scene simulation aRTist long_range_unsharpness] {
+								set longrange_unsharpness_extension  [in_mm [json extract $scene simulation aRTist long_range_unsharpness extension]]
+								set longrange_unsharpness_ratio      [getValue $scene {simulation aRTist long_range_unsharpness ratio value}]
 
-							if { $longrange_unsharpness_ratio != "null" } {
-								set ::Xdetector(LRRatio) $longrange_unsharpness_ratio
-							}
+								if { $longrange_unsharpness_ratio != "null" } {
+									set ::Xdetector(LRRatio) $longrange_unsharpness_ratio
+								}
 
-							if { $longrange_unsharpness_extension != "null" } {
-								set ::Xdetector(LRUnsharpness) $longrange_unsharpness_extension
-								set ::Xdetector(UnsharpnessOn) 1
-								::XDetector::UnsharpnessOverrideSet
+								if { $longrange_unsharpness_extension != "null" } {
+									set ::Xdetector(LRUnsharpness) $longrange_unsharpness_extension
+									set ::Xdetector(UnsharpnessOn) 1
+									::XDetector::UnsharpnessOverrideSet
+								}
 							}
 						}
-
 
 						# Drift files.
 						if {[json exists $scene drift]} {
@@ -4219,11 +4248,13 @@ namespace eval ::CTSimU {
 		setupProjection $projNr 1
 
 		set Scale [vtkImageShiftScale New]
-		switch  $ctsimuSettings {
-			float { $Scale SetOutputScalarTypeToFloat }
-			32bit { $Scale SetOutputScalarTypeToUnsignedInt }
+		if {[dict get $ctsimuSettings dataType] == "32bit"} {
+			$Scale SetOutputScalarTypeToFloat
+			$Scale ClampOverflowOff
+		} else {
+			$Scale SetOutputScalarTypeToUnsignedInt
+			$Scale ClampOverflowOn
 		}
-		#$Scale ClampOverflowOn
 
 		update
 		if {[dict get $ctsimuSettings running] == 0} {return}

@@ -102,7 +102,7 @@ namespace eval ::ctsimu {
 					$_amount set_native_unit "mm"
 				}
 			} else {
-				error "$type is not a valid deviation type. Valid types are: \"rotation\" and \"translation\"."
+				::ctsimu::fail "$type is not a valid deviation type. Valid types are: \"rotation\" and \"translation\"."
 			}
 		}
 
@@ -163,7 +163,7 @@ namespace eval ::ctsimu {
 			if { [::ctsimu::json_exists $json_obj type] } {
 				my set_type [::ctsimu::get_value $json_obj {type} ""]
 			} else {
-				error "A deviation must provide a \"type\": either \"rotation\" or \"translation\"."
+				::ctsimu::fail "A deviation must provide a \"type\": either \"rotation\" or \"translation\"."
 				return 0
 			}
 			
@@ -174,7 +174,7 @@ namespace eval ::ctsimu {
 					if { [lsearch -exact $::ctsimu::valid_axis_strings $axis] >= 0 } {
 						my set_axis $axis
 					} else {
-						error "The deviation \"axis\" string is incorrect: must be any of {$::ctsimu::valid_axis_strings} or a free vector definition."
+						::ctsimu::fail "The deviation \"axis\" string is incorrect: must be any of {$::ctsimu::valid_axis_strings} or a free vector definition."
 						return 0
 					}
 				} elseif { [::ctsimu::json_type $json_obj axis] == "object" } {
@@ -182,15 +182,15 @@ namespace eval ::ctsimu {
 					if { [$_axis set_from_json [::ctsimu::extract_json_object $json_obj {axis}]] } {
 						# Success
 					} else {
-						error "Error setting up deviation axis from JSON file. Vector definition seems to be incorrect."
+						::ctsimu::fail "::ctsimu::fail setting up deviation axis from JSON file. Vector definition seems to be incorrect."
 						return 0
 					}
 				} else {
-					error "Error setting up deviation axis from JSON file."
+					::ctsimu::fail "::ctsimu::fail setting up deviation axis from JSON file."
 					return 0
 				}
 			} else {
-				error "A deviation must provide an \"axis\": any of {$::ctsimu::valid_axis_strings}"
+				::ctsimu::fail "A deviation must provide an \"axis\": any of {$::ctsimu::valid_axis_strings}"
 				return 0
 			}
 			
@@ -204,7 +204,7 @@ namespace eval ::ctsimu {
 				if { [$_pivot set_from_json [::ctsimu::extract_json_object $json_obj {pivot}]] } {
 					# Success
 				} else {
-					error "Error setting up deviation's pivot point from JSON file. Vector definition seems to be incorrect."
+					::ctsimu::fail "::ctsimu::fail setting up deviation's pivot point from JSON file. Vector definition seems to be incorrect."
 					return 0
 				}
 			}

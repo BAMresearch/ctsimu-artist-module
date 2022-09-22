@@ -158,6 +158,8 @@ namespace eval ::ctsimu {
 			# Detector
 			# ------------
 			$_detector set_from_json $jsonstring $_cs_world $_cs_world
+
+			return 1
 		}
 	}
 }

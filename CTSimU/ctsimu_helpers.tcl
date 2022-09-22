@@ -6,10 +6,45 @@ source -encoding utf-8 [file join $BasePath ctsimu_matrix.tcl]
 
 namespace eval ::ctsimu {
 	namespace import ::rl_json::*
+
+	proc fail { message } {
+		# Handles errors
+		if { [info exists aRTist ] } {
+			aRTist::Error { $message }
+		}
+
+		error $message
+	}
+
+	proc warn { message } {
+		#aRTist::Warning { $message }
+		if { [info exists aRTist ] } {
+			aRTist::Warning { $message }
+		}
+
+		puts "Warning: $message"
+	}
+
+	proc message { message } {
+		if { [info exists aRTist ] } {
+			aRTist::Info { $message }
+		}
+
+		puts "$message"
+	}
+
+	proc is_valid { value valid_list } {
+		foreach valid $valid_list {
+			if { $value == $valid }	{
+				return 1
+			}
+		}
+
+		return 0
+	}
 	
 	# Checkers for valid JSON data
 	# -----------------------------
-
 	proc value_is_null { value } {
 		# Checks if a specific value is set to `null`.
 		if {$value == "null"} {
@@ -130,7 +165,7 @@ namespace eval ::ctsimu {
 			return "null"
 		}
 
-		error "Not a valid unit of length: \'$unit\'"
+		::ctsimu::fail "Not a valid unit of length: \'$unit\'"
 	}
 
 	proc in_rad { value unit } {
@@ -144,7 +179,7 @@ namespace eval ::ctsimu {
 			return "null"
 		}
 
-		error "Not a valid unit for an angle: \'$unit\'"
+		::ctsimu::fail "Not a valid unit for an angle: \'$unit\'"
 	}
 
 	proc in_deg { value unit } {
@@ -158,7 +193,7 @@ namespace eval ::ctsimu {
 			return "null"
 		}
 
-		error "Not a valid unit for an angle: \'$unit\'"
+		::ctsimu::fail "Not a valid unit for an angle: \'$unit\'"
 	}
 
 	proc in_s { value unit } {
@@ -174,7 +209,7 @@ namespace eval ::ctsimu {
 			return "null"
 		}
 
-		error "Not a valid unit of time: \'$unit\'"
+		::ctsimu::fail "Not a valid unit of time: \'$unit\'"
 	}
 
 	proc in_mA { value unit } {
@@ -189,7 +224,7 @@ namespace eval ::ctsimu {
 			return "null"
 		}
 
-		error "Not a valid unit of current: \'$unit\'"
+		::ctsimu::fail "Not a valid unit of current: \'$unit\'"
 	}
 
 	proc in_kV { value unit } {
@@ -204,7 +239,7 @@ namespace eval ::ctsimu {
 			return "null"
 		}
 
-		error "Not a valid unit of voltage: \'$unit\'"
+		::ctsimu::fail "Not a valid unit of voltage: \'$unit\'"
 	}
 
 	proc in_g_per_cm3 { value unit } {
@@ -218,7 +253,7 @@ namespace eval ::ctsimu {
 			return "null"
 		}
 
-		error "Not a valid unit of density: \'$unit\'"
+		::ctsimu::fail "Not a valid unit of density: \'$unit\'"
 	}
 	
 	proc in_lp_per_mm { value unit } {
@@ -234,7 +269,7 @@ namespace eval ::ctsimu {
 			return "null"
 		}
 
-		error "Not a valid unit for resolution: \'$unit\'"
+		::ctsimu::fail "Not a valid unit for resolution: \'$unit\'"
 	}
 
 	proc from_bool { value } {
@@ -287,7 +322,7 @@ namespace eval ::ctsimu {
 			}
 		}
 
-		error "Native unit $native_unit is incompatible with the given unit $given_unit."
+		::ctsimu::fail "Native unit $native_unit is incompatible with the given unit $given_unit."
 		return 0
 	}
 
@@ -311,7 +346,7 @@ namespace eval ::ctsimu {
 
 			return [::ctsimu::convert_to_native_unit $unit $native_unit $value]
 		} else {
-			error "Trying to convert a value to $native_unit, but no value+unit pair is provided from JSON object."
+			::ctsimu::fail "Trying to convert a value to $native_unit, but no value+unit pair is provided from JSON object."
 		}
 	}
 

@@ -28,11 +28,14 @@ Each part has its own coordinate system, and a parallel "ghost" coordinate syste
 
 ### Getters
 
+* `get { property }` — Returns the property value from the internal properties dictionary. The returned object is usually a `::ctsimu::parameter`.
 * `name` — Returns the name of the part.
 * `is_attached_to_stage` — Returns `1` if the part is attached to the stage coordinate system, or `0` if the world coordinate system is the reference.
 
 ### Setters
 
+* `set { property value { native_unit "undefined" }}` — Set a simple property value in the internal properties dictionary. The standard value of the `::ctsimu::parameter` object that is identified by the `property` key is set to `value`.
+* `set_parameter { property parameter }` — Sets the object in the internal properties dictionary that is identified by the `property` key to the given `parameter` (should be a `::ctsimu::parameter` object). If there is already an entry under the given `property` key, this old parameter object will be deleted.
 * `set_name { name }` — Set the `name` of the part.
 * `set_cs_names { }` — Uses this object's name to give names to its proper coordinate systems. Invoked by default by the `set_name` function.
 * `attach_to_stage { attached }` — Set `1` if the part is attached to the stage coordinate system, or `0` if the world coordinate system is the reference.

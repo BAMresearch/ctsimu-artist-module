@@ -99,10 +99,10 @@ namespace eval ::ctsimu {
 				if { $_n_cols > $col_index } {
 					[lindex $_rows $row_index] set_element $col_index $value
 				} else {
-					error "::ctsimu::matrix::set_element: Cannot set element at column index $col_index for a matrix that only has $_n_cols columns."
+					::ctsimu::fail "::ctsimu::matrix::set_element: Cannot set element at column index $col_index for a matrix that only has $_n_cols columns."
 				}
 			} else {
-				error "::ctsimu::matrix::set_element: Cannot set element at row index $row_index for a matrix that only has $_n_rows rows."
+				::ctsimu::fail "::ctsimu::matrix::set_element: Cannot set element at row index $row_index for a matrix that only has $_n_rows rows."
 			}
 		}
 
@@ -113,10 +113,10 @@ namespace eval ::ctsimu {
 					[lindex $_rows $index] destroy
 					lset _rows $index $row_vector
 				} else {
-					error "::ctsimu::matrix::set_row: Cannot set row vector with [$row_vector size] elements for a matrix that has $_n_cols columns."
+					::ctsimu::fail "::ctsimu::matrix::set_row: Cannot set row vector with [$row_vector size] elements for a matrix that has $_n_cols columns."
 				}
 			} else {
-				error "::ctsimu::matrix::set_row: Cannot set row at index $index for a matrix that only has $_n_rows rows."
+				::ctsimu::fail "::ctsimu::matrix::set_row: Cannot set row at index $index for a matrix that only has $_n_rows rows."
 			}
 		}
 		
@@ -128,10 +128,10 @@ namespace eval ::ctsimu {
 						my set_element $index $row [$col_vector element $row]
 					}
 				} else {
-					error "::ctsimu::matrix::set_col: Cannot set column vector with [$col_vector size] elements for a matrix that has $_n_rows rows."
+					::ctsimu::fail "::ctsimu::matrix::set_col: Cannot set column vector with [$col_vector size] elements for a matrix that has $_n_rows rows."
 				}
 			} else {
-				error "::ctsimu::matrix::set_col: Cannot set column at index $index for a matrix that only has $_n_cols columns."
+				::ctsimu::fail "::ctsimu::matrix::set_col: Cannot set column at index $index for a matrix that only has $_n_cols columns."
 			}
 		}
 
@@ -141,7 +141,7 @@ namespace eval ::ctsimu {
 				lappend _rows $row_vector
 				set _n_rows [expr $_n_rows + 1]
 			} else {
-				error "::ctsimu::matrix::add_row: Cannot add row vector with [$row_vector size] elements to a matrix that has $_n_cols columns."
+				::ctsimu::fail "::ctsimu::matrix::add_row: Cannot add row vector with [$row_vector size] elements to a matrix that has $_n_cols columns."
 			}
 		}
 
@@ -153,7 +153,7 @@ namespace eval ::ctsimu {
 				}
 				set _n_cols [expr $_n_cols + 1]
 			} else {
-				error "::ctsimu::matrix::add_col: Cannot add column vector with [$col_vector size] elements to a matrix that has $_n_rows rows."
+				::ctsimu::fail "::ctsimu::matrix::add_col: Cannot add column vector with [$col_vector size] elements to a matrix that has $_n_rows rows."
 			}
 		}
 
@@ -167,7 +167,7 @@ namespace eval ::ctsimu {
 				}
 				return $result
 			} else {
-				error "::ctsimu::matrix::multiply_vector: Cannot multiply matrix with $nCol columns and $nRow rows with vector of $vecNElements rows."
+				::ctsimu::fail "::ctsimu::matrix::multiply_vector: Cannot multiply matrix with $nCol columns and $nRow rows with vector of $vecNElements rows."
 			}
 		}
 	}

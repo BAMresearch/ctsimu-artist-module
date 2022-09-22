@@ -22,9 +22,14 @@ namespace eval ::ctsimu {
 		}
 
 		method reset { } {
-			# Standard settings:
+			# Reset to standard settings.
+
+			# Reset the 'part' that coordinates the coordinate system:
 			$_detector reset
 			$_detector attach_to_stage 0
+
+			# Declare all detector parameters and theirs native units.
+			# --------------------------------------------------------
 			
 			# General properties:
 			$_detector set model            "" "string"
@@ -35,7 +40,7 @@ namespace eval ::ctsimu {
 			$_detector set pitch_u          0.1 "mm"
 			$_detector set pitch_v          0.1 "mm"
 			$_detector set bit_depth        16
-			$_detector set integration_time 0.5 "s"
+			$_detector set integration_time 1.0 "s"
 			$_detector set dead_time        0.0 "s"
 			$_detector set image_lag        0.0
 			
@@ -79,8 +84,91 @@ namespace eval ::ctsimu {
 			# The JSON object should contain the complete content
 			# from the JSON file.
 			set detectorGeometry [::ctsimu::extract_json_object $jobj {geometry detector}]
-
 			$_detector set_geometry $detectorGeometry $world $stage
+
+			# Detector properties:
+			set detprops [::ctsimu::extract_json_object $jobj {detector}]
+
+			$_detector set model        [::ctsimu::get_value $detprops {model} ""]
+			$_detector set manufacturer [::ctsimu::get_value $detprops {manufacturer} ""]
+
+			if { ![$_detector set_property type $detprops {type} "ideal"] } {
+				::ctsimu::warn "Detector type not found or invalid. Should be \"ideal\" or \"real\". Using standard value: \"ideal\"."
+			} else {
+				# Check if the detector type is valid:
+				set value [[$_detector get type] standard_value]
+				if { ![::ctsimu::is_valid $value {"ideal" "real"}] } {
+					::ctsimu::warn "No valid detector type: $value. Should be \"ideal\" or \"real\". Using standard value: \"ideal\"."
+					$_detector set type "ideal"
+				}
+			}
+			
+			if { ![$_detector set_from_key columns $detprops {columns} 100 ""] } {
+				::ctsimu::warn "Number of detector columns not found or invalid. Using standard value."
+			}
+
+			if { ![$_detector set_from_key rows $detprops {rows} 100 ""] } {
+				::ctsimu::warn "Number of detector rows not found or invalid. Using standard value."
+			}
+
+			if { ![$_detector set_from_key pitch_u   $detprops {pixel_pitch u} 0.1 "mm"] } {
+				::ctsimu::warn "Pixel pitch in the u direction not found or invalid. Using standard value."
+			}
+
+			if { ![$_detector set_from_key pitch_v   $detprops {pixel_pitch v} 0.1 "mm"] } {
+				::ctsimu::warn "Pixel pitch in the v direction not found or invalid. Using standard value."
+			}
+			
+			if { ![$_detector set_from_key bit_depth $detprops {bit_depth} 16 ""] } {
+				::ctsimu::warn "Detector bit depth not found or invalid. Using standard value."
+			}
+
+			if { ![$_detector set_from_key integration_time $detprops {integration_time} 1 "s"] } {
+				::ctsimu::warn "Detector integration time not found or invalid. Using standard value (1 s)."
+			}
+
+			$_detector set_from_key dead_time $detprops {dead_time} 1 "s"
+			$_detector set_from_key image_lag $detprops {image_lag} 0.0
+			
+			#$_detector set gray_value_mode  "imin_imax" "string"
+				# Valid gray value modes:
+				# "imin_imax", "linear", "file"
+
+			$_detector set_from_possible_keys imin $detprops {{grey_value imin} {gray_value imin}} "null"
+			$_detector set_from_possible_keys imax $detprops {{grey_value imax} {gray_value imax}} "null"
+			$_detector set_from_possible_keys factor $detprops {{grey_value factor} {gray_value factor}} "null"
+			$_detector set_from_possible_keys offset $detprops {{grey_value offset} {gray_value offset}} "null"
+
+			$_detector set_from_possible_keys gv_characteristics_file $detprops {{grey_value intensity_characteristics_file} {gray_value intensity_characteristics_file}} "null"
+
+			$_detector set_from_possible_keys efficiency  $detprops {{grey_value efficiency} {gray_value efficiency}} "null"
+			$_detector set_from_possible_keys efficiency_characteristics_file $detprops {{grey_value efficiency_characteristics_file} {gray_value efficiency_characteristics_file}} "null"
+
+			
+			# Noise:
+			#$_detector set noise_mode       "off" "string"
+				# Valid noise modes:
+				# "off", "snr_at_imax", "file"
+			$_detector set_from_key snr_at_imax $detprops {noise snr_at_imax} "null"
+			$_detector set_from_key noise_characteristics_file $detprops {noise noise_characteristics_file} "null"
+			
+			# Unsharpness:
+			#$_detector set unsharpness_mode "off" "string"
+				# Valid unsharpness modes:
+				# "off", "basic_spatial_resolution", "mtf10freq", "mtffile"
+
+			$_detector set_from_key basic_spatial_resolution $detprops {unsharpness basic_spatial_resolution} "null"
+			$_detector set_from_key mtf10_freq $detprops {unsharpness mtf10_frequency} "null"
+			$_detector set_from_key mtf_file $detprops {unsharpness mtf} "null"
+			
+			# Bad pixel map
+			$_detector set_from_key bad_pixel_map $detprops {bad_pixel_map} "null"
+			$_detector set_property bad_pixel_map_type $detprops {bad_pixel_map type} "null"
+			
+			# Scintillator
+			$_detector set_property scintillator_material_id $detprops {scintillator material_id} "null"
+
+			::ctsimu::message "Done reading detector parameters."
 		}
 	}
 }

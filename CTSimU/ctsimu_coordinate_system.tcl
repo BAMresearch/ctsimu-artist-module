@@ -472,7 +472,7 @@ namespace eval ::ctsimu {
 							$translation_axis destroy
 						}
 					} else {
-						error "All translational deviations must be given in units of length (e.g., \"mm\")."
+						::ctsimu::fail "All translational deviations must be given in units of length (e.g., \"mm\")."
 					}
 				} elseif { [$deviation type] == "rotation" } {
 					if { [$deviation native_unit] == "rad" } {
@@ -506,7 +506,7 @@ namespace eval ::ctsimu {
 							$pivot_point destroy	
 						}
 					} else {
-						error "All rotational deviations must be given in units of angles (e.g., \"rad\")."
+						::ctsimu::fail "All rotational deviations must be given in units of angles (e.g., \"rad\")."
 					}
 				}
 			}

@@ -8,7 +8,7 @@ proc Info {} {
 	return [dict create \
 		Name        CTSimU \
 		Description "CTSimU Scenario Loader" \
-		Version     "1.0" \
+		Version     "1.0.0" \
 	]
 }
 
@@ -61,7 +61,7 @@ proc Init {} {
 	}
 
 	if {[dict exists $prefs cfgFileOpenCT]} {
-		$ctsimu_scenario create_clfdk_config_file [dict get $prefs cfgFileOpenCT]
+		$ctsimu_scenario set create_openct_config_file [dict get $prefs cfgFileOpenCT]
 	}
 	
 	if {[dict exists $prefs	openctOutputDatatype]} {
@@ -492,16 +492,30 @@ proc GUIok {} {
 	CTSimU_showProjection
 }
 
+proc loadCTSimUScene {} {
+	variable GUISettings
+	variable ns
+	variable ctsimu_scenario
+
+	applyCurrentParameters
+	aRTist::LoadEmptyProject
+#	CTSimU::setModuleNamespace $ns
+
+	set sceneState [$ctsimu_scenario load_json_scene $GUISettings(jsonfile)]
+
+	# Continue only if JSON was loaded successfully:
+	if { $sceneState == 1 } {
+		fillCurrentParameters
+#		showInfo "Scenario loaded."
+#		CTSimU_showProjection
+		Engine::RenderPreview
+		::SceneView::ViewAllCmd
+	}
+}
+
 # ----------------------------------------------
 #  Connectors between frontend and backend
 # ----------------------------------------------
-
-proc fail { message } {
-	# Main error function
-	showInfo "Error: $message"
-	aRTist::Error { $message }
-	error $message
-}
 
 proc loadedSuccessfully { } {
 	variable ctsimu_scenario
@@ -547,7 +561,7 @@ proc fillCurrentParameters {} {
 	set GUISettings(cfgFileCERA)          [$ctsimu_scenario get create_cera_config_file]
 	set GUISettings(ceraOutputDataType)   [$ctsimu_scenario get cera_output_datatype]
 
-	set GUISettings(cfgFileOpenCT)        [$ctsimu_scenario get create_clfdk_config_file]
+	set GUISettings(cfgFileOpenCT)        [$ctsimu_scenario get create_openct_config_file]
 	set GUISettings(openctOutputDataType) [$ctsimu_scenario get openct_output_datatype]
 }
 
@@ -938,7 +952,7 @@ proc CTSimU_showProjection {} {
 	variable ctsimu_scenario
 
 	applyCurrentParameters
-	setupProjection [$ctsimu_scenario getCurrentProjNr] 1
+	#setupProjection [$ctsimu_scenario getCurrentProjNr] 1
 }
 
 proc CTSimU_nextProjection {} {
@@ -974,8 +988,8 @@ proc CTSimU_startScan {} {
 
 	applyCurrentParameters
 	
-	$ctsimu_scenario setOutputFolder $GUISettings(output_folder) ""
-	$ctsimu_scenario setBasename $GUISettings(outputBaseName)
+	$ctsimu_scenario set output_folder $GUISettings(outputFolder) ""
+	$ctsimu_scenario set output_basename $GUISettings(outputBaseName)
 	startScan
 }
 

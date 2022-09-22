@@ -106,13 +106,13 @@ namespace eval ::ctsimu {
 
 		# Getters
 		# -------------------------
-		method name { } {
-			return $_name
-		}
-		
 		method get { property } {
 			# Get a property value from the _properties dict
 			return [dict get $_properties $property]
+		}
+
+		method name { } {
+			return $_name
 		}
 		
 		method is_attached_to_stage { } {
@@ -123,7 +123,7 @@ namespace eval ::ctsimu {
 		
 		# Setters
 		# -------------------------
-		method set { property value { native_unit "" }} {
+		method set { property value { native_unit "undefined" }} {
 			# Set a simple property value in
 			# the _properties dict by setting the
 			# respective parameter's standard value.
@@ -132,30 +132,98 @@ namespace eval ::ctsimu {
 			if {[dict exists $_properties $property]} {
 				# Already exists in dict.
 				# Get parameter, reset it and set its standard value:
-				set parameter [my get property]
+				set parameter [my get $property]
 				$parameter reset
-				$parameter set_native_unit $native_unit
+
+				if {$native_unit != "undefined"} {
+					$parameter set_native_unit $native_unit
+				}				
+
 				$parameter set_standard_value $value
 			} else {
 				# Create new parameter with value:
+				if {$native_unit == "undefined"} {
+					# If no native unit is specified, set to "no unit".
+					set native_unit ""
+				}	
+
 				set parameter [::ctsimu::parameter new $native_unit $value]
 				dict set _properties $property $parameter
 			}
 		}
-		
+
 		method set_parameter { property parameter } {
-			# Set a property value in the _properties dict
+			# Set an entry in the _properties dict
+			# to a given 'parameter' object.
 			
 			# Check if the property already exists:
 			if {[dict exists $_properties $property]} {
 				# Already exists in dict.
 				# Get parameter, reset it and set its standard value:
-				set old_parameter [my get property]
+				set old_parameter [my get $property]
 				$old_parameter destroy
 			}
 			
 			# Set new property parameter:
 			dict set _properties $property $parameter
+		}
+
+		method set_property { property dictionary key_sequence { fail_value 0 } { native_unit "" } } {
+			# Check if the property already exists:
+			if {![dict exists $_properties $property]} {
+				set parameter [::ctsimu::parameter new $native_unit $fail_value]
+				dict set _properties $property $parameter
+			}
+
+			set value [::ctsimu::get_value $dictionary $key_sequence "null"]
+			if { $value != "null" } {
+				my set $property $value
+				return 1
+			} else {
+				my set $property $fail_value
+				return 0
+			}
+
+			return 0
+		}
+
+		method set_from_key { property dictionary key_sequence { fail_value 0 } { native_unit "" } } {
+			# Set up a parameter object for the given
+			# property from the key sequence in the given dictionary.
+			# The object located at the key sequence must at least
+			# have a `value` property.
+
+			# Check if the property already exists:
+			if {![dict exists $_properties $property]} {
+				set parameter [::ctsimu::parameter new $native_unit $fail_value]
+				dict set _properties $property $parameter
+			}
+
+			set p [my get $property]
+			if { ![$p set_from_key $dictionary $key_sequence] } {
+				# Setting from key failed. Set to standard value.
+				my set $property $fail_value
+				return 0
+			}
+
+			return 1
+		}
+
+		method set_from_possible_keys { property dictionary key_sequences { fail_value 0 } { native_unit "" } } {
+			# Check if the property already exists:
+			if {![dict exists $_properties $property]} {
+				set parameter [::ctsimu::parameter new $native_unit $fail_value]
+				dict set _properties $property $parameter
+			}
+
+			set p [my get $property]
+			if { ![$p set_from_possible_keys $dictionary $key_sequences] } {
+				# Setting from key failed. Set to standard value.
+				my set $property $fail_value
+				return 0
+			}
+
+			return 1
 		}
 		
 		method set_name { name } {
@@ -203,21 +271,21 @@ namespace eval ::ctsimu {
 
 				# Center
 				# ---------------
-				if { [$_center set_from_json [::ctsimu::extract_json_object_from_possible_keys $geometry [list {center} {centre}]]] } {
+				if { [$_center set_from_json [::ctsimu::extract_json_object_from_possible_keys $geometry {{center} {centre}}]] } {
 					# success
 				} else {
-					error "Part \'$_name\': failed setting the object center from the JSON file. Geometry: $geometry"
+					::ctsimu::fail "Part \'$_name\': failed setting the object center from the JSON file. Geometry: $geometry"
 					return 0
 				}
 
 				# Orientation
 				# ---------------
 				# Vectors can be either u, w (for source, stage, detector) or r, t (for samples).
-				if { [$_vector_u set_from_json [::ctsimu::extract_json_object_from_possible_keys $geometry [list {vector_u} {vector_r}]]] && \
-					 [$_vector_w set_from_json [::ctsimu::extract_json_object_from_possible_keys $geometry [list {vector_w} {vector_t}]]] } {
+				if { [$_vector_u set_from_json [::ctsimu::extract_json_object_from_possible_keys $geometry {{vector_u} {vector_r}}]] && \
+					 [$_vector_w set_from_json [::ctsimu::extract_json_object_from_possible_keys $geometry {{vector_w} {vector_t}}]] } {
 					# success
 				} else {
-					error "Part \'$_name\' is placed in world coordinate system, but its vectors u and w (or r and t, for samples) are not properly defined (each with an x, y and z component)."
+					::ctsimu::fail "Part \'$_name\' is placed in world coordinate system, but its vectors u and w (or r and t, for samples) are not properly defined (each with an x, y and z component)."
 					return 0
 				}
 			} elseif { ([::ctsimu::json_exists $geometry {center u}] || [::ctsimu::json_exists $geometry {centre u}]) && \
@@ -233,10 +301,10 @@ namespace eval ::ctsimu {
 
 				# Center
 				# ---------------
-				if { $_center set_from_json [::ctsimu::extract_json_object_from_possible_keys $geometry [list {center} {centre}]] } {
+				if { [$_center set_from_json [::ctsimu::extract_json_object_from_possible_keys $geometry {{center} {centre}}]] } {
 					# success
 				} else {
-					error "Part \'$_name\': failed setting the object center from the JSON file."
+					::ctsimu::fail "Part \'$_name\': failed setting the object center from the JSON file."
 					return 0
 				}
 
@@ -248,7 +316,7 @@ namespace eval ::ctsimu {
 					 [$_vector_w set_from_json [::ctsimu::extract_json_object $geometry {vector_t}]] } {
 					# success
 				} else {
-					error "Part \'$_name\' is placed in stage system, but its vectors r and t are not properly defined (each with a u, v and w component)."
+					::ctsimu::fail "Part \'$_name\' is placed in stage system, but its vectors r and t are not properly defined (each with a u, v and w component)."
 					return 0
 				}
 			}

@@ -13,7 +13,7 @@ namespace eval ::ctsimu {
 		variable _drifts;         # list of drift objects
 		variable _current_value;  # value at current frame (obeying drifts)
 
-		constructor { { native_unit "" } { standard 0 } } {
+		constructor { { native_unit "" } { standard 0 } { jobj 0 } } {
 			my set_standard_value $standard
 			my set_native_unit    $native_unit
 			set _drifts           [list]

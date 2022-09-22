@@ -25,7 +25,7 @@ The `deploy.sh` script can be used to create an `.artp` file for aRTist for a ce
 
 For example:
 
-	./deploy.sh 0.8.13
+	./deploy.sh "0.8.13"
 
 Note: the aRTist package file (`.artp`) should not be part of the git repository. Instead, it can be uploaded to Github as a file attachment to a new release.
 

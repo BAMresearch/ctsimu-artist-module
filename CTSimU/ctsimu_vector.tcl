@@ -51,7 +51,7 @@ namespace eval ::ctsimu {
 			if {[my size] > $i} {
 				return [lindex $_values $i]
 			} else {
-				error "Vector element index $i does not exist in vector of [my size] elements."
+				::ctsimu::fail "Vector element index $i does not exist in vector of [my size] elements."
 				# return 0
 			}
 		}
@@ -158,7 +158,7 @@ namespace eval ::ctsimu {
 					my set_element $i [expr [my element $i] + [$other element $i]]
 				}
 			} else {
-				error "::ctsimu::vector::add: Cannot treat vectors of different dimensions."
+				::ctsimu::fail "::ctsimu::vector::add: Cannot treat vectors of different dimensions."
 			}
 		}
 
@@ -169,7 +169,7 @@ namespace eval ::ctsimu {
 					my set_element $i [expr [my element $i] - [$other element $i]]
 				}
 			} else {
-				error "::ctsimu::vector::subtract: Cannot treat vectors of different dimensions."
+				::ctsimu::fail "::ctsimu::vector::subtract: Cannot treat vectors of different dimensions."
 			}
 		}
 
@@ -180,7 +180,7 @@ namespace eval ::ctsimu {
 					my set_element $i [expr [my element $i] * [$other element $i]]
 				}
 			} else {
-				error "::ctsimu::vector::multiply: Cannot treat vectors of different dimensions."
+				::ctsimu::fail "::ctsimu::vector::multiply: Cannot treat vectors of different dimensions."
 			}
 		}
 
@@ -191,7 +191,7 @@ namespace eval ::ctsimu {
 					my set_element $i [expr [my element $i] / [$other element $i]]
 				}
 			} else {
-				error "::ctsimu::vector::divide: Cannot treat vectors of different dimensions."
+				::ctsimu::fail "::ctsimu::vector::divide: Cannot treat vectors of different dimensions."
 			}
 		}
 
@@ -245,7 +245,7 @@ namespace eval ::ctsimu {
 			# Return a new unit vector based on this vector.
 			set u [my get_copy]
 			if {[catch {$u to_unit_vector} errmsg]} {
-				error $errmsg
+				::ctsimu::fail $errmsg
 			}
 			return $u
 		}
@@ -256,7 +256,7 @@ namespace eval ::ctsimu {
 			if {$l != 0} {
 				my scale [expr 1.0/$l]
 			} else {
-				error "Cannot make unit vector: length is zero."
+				::ctsimu::fail "Cannot make unit vector: length is zero."
 			}
 		}
 
@@ -267,7 +267,7 @@ namespace eval ::ctsimu {
 				$diff subtract $other
 				return [$diff length]
 			} else {
-				error "::ctsimu::vector::distance: Cannot treat vectors of different dimensions."
+				::ctsimu::fail "::ctsimu::vector::distance: Cannot treat vectors of different dimensions."
 			}	
 		}
 
@@ -282,7 +282,7 @@ namespace eval ::ctsimu {
 			} else {
 				puts "Myself: [my print]"
 				puts "Other:  [$other print]"
-				error "::ctsimu::vector::dot: Cannot calculate dot product of vectors of different dimensions."
+				::ctsimu::fail "::ctsimu::vector::dot: Cannot calculate dot product of vectors of different dimensions."
 			}
 		}
 
@@ -299,7 +299,7 @@ namespace eval ::ctsimu {
 					return $v
 				}
 			} else {
-				error "::ctsimu::vector::cross: Cannot calculate cross product of vectors of different dimensions."
+				::ctsimu::fail "::ctsimu::vector::cross: Cannot calculate cross product of vectors of different dimensions."
 			}
 		}
 

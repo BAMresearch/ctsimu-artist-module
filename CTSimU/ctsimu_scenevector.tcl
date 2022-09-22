@@ -38,7 +38,6 @@ namespace eval ::ctsimu {
 			$_c0 destroy
 			$_c1 destroy
 			$_c2 destroy
-			$_current_vector destroy
 		}
 
 		# Getters
@@ -58,7 +57,7 @@ namespace eval ::ctsimu {
 			if { [lsearch -exact $valid_refs $reference] >= 0 } {
 				set _reference $reference
 			} else {
-				error "{$reference} is not a valid reference string. Should be any of: {$valid_refs}."
+				::ctsimu::fail "{$reference} is not a valid reference string. Should be any of: {$valid_refs}."
 			}
 		}
 		
@@ -199,7 +198,7 @@ namespace eval ::ctsimu {
 				} elseif { $point_or_direction == "direction" } {
 					set v_in_world [::ctsimu::change_reference_frame_of_direction $v $local $world]
 				} else {
-					error "Transformation type point_or_direction must be either \"point\" or \"direction\"."
+					::ctsimu::fail "Transformation type point_or_direction must be either \"point\" or \"direction\"."
 				}
 				$v destroy
 				return $v_in_world
@@ -216,7 +215,7 @@ namespace eval ::ctsimu {
 					set v_in_stage [::ctsimu::change_reference_frame_of_direction $v $sample $world]
 					set v_in_world [::ctsimu::change_reference_frame_of_direction $v_in_stage $local $world]
 				} else {
-					error "Transformation type point_or_direction must be either \"point\" or \"direction\"."
+					::ctsimu::fail "Transformation type point_or_direction must be either \"point\" or \"direction\"."
 				}
 				
 				$v destroy
@@ -268,7 +267,7 @@ namespace eval ::ctsimu {
 				} elseif { $point_or_direction == "direction" } {
 					set v_in_local [::ctsimu::change_reference_frame_of_direction $v $world $local]
 				} else {
-					error "Transformation type point_or_direction must be either \"point\" or \"direction\"."
+					::ctsimu::fail "Transformation type point_or_direction must be either \"point\" or \"direction\"."
 				}
 				$v destroy
 				return $v_in_local
@@ -340,7 +339,7 @@ namespace eval ::ctsimu {
 					set v_in_stage [::ctsimu::change_reference_frame_of_direction $v $world $stage]
 					set v_in_sample [::ctsimu::change_reference_frame_of_direction $v_in_stage $world $sample]
 				} else {
-					error "Transformation type point_or_direction must be either \"point\" or \"direction\"."
+					::ctsimu::fail "Transformation type point_or_direction must be either \"point\" or \"direction\"."
 				}
 				
 				$v destroy
@@ -355,7 +354,7 @@ namespace eval ::ctsimu {
 				} elseif { $point_or_direction == "direction" } {
 					set v_in_sample [::ctsimu::change_reference_frame_of_direction $v $world $sample]
 				} else {
-					error "Transformation type point_or_direction must be either \"point\" or \"direction\"."
+					::ctsimu::fail "Transformation type point_or_direction must be either \"point\" or \"direction\"."
 				}
 				$v destroy
 				return $v_in_sample

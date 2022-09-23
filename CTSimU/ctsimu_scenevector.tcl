@@ -1,5 +1,4 @@
 package require TclOO
-package require rl_json
 
 variable BasePath [file dirname [info script]]
 source -encoding utf-8 [file join $BasePath ctsimu_parameter.tcl]
@@ -54,7 +53,7 @@ namespace eval ::ctsimu {
 			# Set the reference coordinate system.
 			# Can be "world", "local" or "stage".
 			set valid_refs [list "world" "local" "stage"]
-			if { [lsearch -exact $valid_refs $reference] >= 0 } {
+			if { [::ctsimu::is_valid $reference $valid_refs] == 1 } {
 				set _reference $reference
 			} else {
 				::ctsimu::fail "{$reference} is not a valid reference string. Should be any of: {$valid_refs}."
@@ -151,7 +150,7 @@ namespace eval ::ctsimu {
 			return $v
 		}
 		
-		method in_world { point_or_direction world local sample frame nFrames { only_known_to_reconstruction 0 } } {
+		method in_world { point_or_direction local sample frame nFrames { only_known_to_reconstruction 0 } } {
 			# Create and return a ::ctsimu::vector
 			# in terms of the world coordinate system
 			# for the given frame, respecting all drifts.
@@ -163,9 +162,6 @@ namespace eval ::ctsimu {
 			#   A string that specifies whether you need
 			#   to convert point coordinates ("point") or
 			#   a direction ("direction").
-			#
-			# - world:
-			#   A ::ctsimu::coordinate_system that represents the world.
 			#
 			# - local:
 			#   A ::ctsimu::coordinate_system that represents the object's
@@ -194,9 +190,9 @@ namespace eval ::ctsimu {
 			} elseif { $_reference == "local" } {
 				# Convert from local to world.
 				if { $point_or_direction == "point" } {
-					set v_in_world [::ctsimu::change_reference_frame_of_point $v $local $world]
+					set v_in_world [::ctsimu::change_reference_frame_of_point $v $local $::ctsimu::world]
 				} elseif { $point_or_direction == "direction" } {
-					set v_in_world [::ctsimu::change_reference_frame_of_direction $v $local $world]
+					set v_in_world [::ctsimu::change_reference_frame_of_direction $v $local $::ctsimu::world]
 				} else {
 					::ctsimu::fail "Transformation type point_or_direction must be either \"point\" or \"direction\"."
 				}
@@ -209,11 +205,11 @@ namespace eval ::ctsimu {
 				# ...and a second time to transform it
 				# from the stage to the world:
 				if { $point_or_direction == "point" } {
-					set v_in_stage [::ctsimu::change_reference_frame_of_point $v $sample $world]
-					set v_in_world [::ctsimu::change_reference_frame_of_point $v_in_stage $local $world]
+					set v_in_stage [::ctsimu::change_reference_frame_of_point $v $sample $::ctsimu::world]
+					set v_in_world [::ctsimu::change_reference_frame_of_point $v_in_stage $local $::ctsimu::world]
 				} elseif { $point_or_direction == "direction" } {
-					set v_in_stage [::ctsimu::change_reference_frame_of_direction $v $sample $world]
-					set v_in_world [::ctsimu::change_reference_frame_of_direction $v_in_stage $local $world]
+					set v_in_stage [::ctsimu::change_reference_frame_of_direction $v $sample $::ctsimu::world]
+					set v_in_world [::ctsimu::change_reference_frame_of_direction $v_in_stage $local $::ctsimu::world]
 				} else {
 					::ctsimu::fail "Transformation type point_or_direction must be either \"point\" or \"direction\"."
 				}
@@ -224,7 +220,7 @@ namespace eval ::ctsimu {
 			}
 		}
 		
-		method in_local { point_or_direction world local sample frame nFrames { only_known_to_reconstruction 0 } } {
+		method in_local { point_or_direction local sample frame nFrames { only_known_to_reconstruction 0 } } {
 			# Create and return a ::ctsimu::vector
 			# in terms of the local coordinate system
 			# for the given frame, respecting all drifts.
@@ -235,9 +231,6 @@ namespace eval ::ctsimu {
 			#   A string that specifies whether you need
 			#   to convert point coordinates ("point") or
 			#   just a direction ("direction").
-			#
-			# - world:
-			#   A ::ctsimu::coordinate_system that represents the world.
 			#
 			# - local:
 			#   A ::ctsimu::coordinate_system that represents the object's
@@ -263,9 +256,9 @@ namespace eval ::ctsimu {
 			if { $_reference == "world" } {
 				# Convert from world to local.
 				if { $point_or_direction == "point" } {
-					set v_in_local [::ctsimu::change_reference_frame_of_point $v $world $local]
+					set v_in_local [::ctsimu::change_reference_frame_of_point $v $::ctsimu::world $local]
 				} elseif { $point_or_direction == "direction" } {
-					set v_in_local [::ctsimu::change_reference_frame_of_direction $v $world $local]
+					set v_in_local [::ctsimu::change_reference_frame_of_direction $v $::ctsimu::world $local]
 				} else {
 					::ctsimu::fail "Transformation type point_or_direction must be either \"point\" or \"direction\"."
 				}
@@ -279,9 +272,9 @@ namespace eval ::ctsimu {
 				# To get the sample coordinates in stage coordinates,
 				# we therefore transform to the world.
 				if { $point_or_direction == "point" } {
-					set v_in_stage [::ctsimu::change_reference_frame_of_point $v $sample $world]
+					set v_in_stage [::ctsimu::change_reference_frame_of_point $v $sample $::ctsimu::world]
 				} elseif { $point_or_direction == "direction" } {
-					set v_in_stage [::ctsimu::change_reference_frame_of_direction $v $sample $world]
+					set v_in_stage [::ctsimu::change_reference_frame_of_direction $v $sample $::ctsimu::world]
 				}
 								
 				$v destroy
@@ -289,7 +282,7 @@ namespace eval ::ctsimu {
 			}
 		}
 		
-		method in_sample { point_or_direction world stage sample frame nFrames { only_known_to_reconstruction 0 } } {
+		method in_sample { point_or_direction stage sample frame nFrames { only_known_to_reconstruction 0 } } {
 			# Create and return a ::ctsimu::vector
 			# in the sample coordinate system
 			# for the given frame, respecting all drifts.
@@ -304,9 +297,6 @@ namespace eval ::ctsimu {
 			#   A string that specifies whether you need
 			#   to convert point coordinates ("point") or
 			#   just a direction ("direction").
-			# 
-			# - world:
-			#   A ::ctsimu::coordinate_system that represents the world.
 			#
 			# - stage:
 			#   A ::ctsimu::coordinate_system that represents the local CS
@@ -333,11 +323,11 @@ namespace eval ::ctsimu {
 				# ...and a second time from world to sample
 				# because the stage is the sample's "world":
 				if { $point_or_direction == "point" } {
-					set v_in_stage [::ctsimu::change_reference_frame_of_point $v $world $stage]
-					set v_in_sample [::ctsimu::change_reference_frame_of_point $v_in_stage $world $sample]
+					set v_in_stage [::ctsimu::change_reference_frame_of_point $v $::ctsimu::world $stage]
+					set v_in_sample [::ctsimu::change_reference_frame_of_point $v_in_stage $::ctsimu::world $sample]
 				} elseif { $point_or_direction == "direction" } {
-					set v_in_stage [::ctsimu::change_reference_frame_of_direction $v $world $stage]
-					set v_in_sample [::ctsimu::change_reference_frame_of_direction $v_in_stage $world $sample]
+					set v_in_stage [::ctsimu::change_reference_frame_of_direction $v $::ctsimu::world $stage]
+					set v_in_sample [::ctsimu::change_reference_frame_of_direction $v_in_stage $::ctsimu::world $sample]
 				} else {
 					::ctsimu::fail "Transformation type point_or_direction must be either \"point\" or \"direction\"."
 				}
@@ -350,9 +340,9 @@ namespace eval ::ctsimu {
 				# the stage is the sample's world, we actually
 				# convert from world to sample.
 				if { $point_or_direction == "point" } {
-					set v_in_sample [::ctsimu::change_reference_frame_of_point $v $world $sample]
+					set v_in_sample [::ctsimu::change_reference_frame_of_point $v $::ctsimu::world $sample]
 				} elseif { $point_or_direction == "direction" } {
-					set v_in_sample [::ctsimu::change_reference_frame_of_direction $v $world $sample]
+					set v_in_sample [::ctsimu::change_reference_frame_of_direction $v $::ctsimu::world $sample]
 				} else {
 					::ctsimu::fail "Transformation type point_or_direction must be either \"point\" or \"direction\"."
 				}

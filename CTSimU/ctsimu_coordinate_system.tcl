@@ -1,5 +1,4 @@
 package require TclOO
-package require rl_json
 
 variable BasePath [file dirname [info script]]
 source -encoding utf-8 [file join $BasePath ctsimu_deviation.tcl]
@@ -10,10 +9,10 @@ namespace eval ::ctsimu {
 	::oo::class create coordinate_system {
 		variable _name
 		variable _center
-		variable  _u
-		variable  _v
-		variable  _w
-		variable  _attachedToStage
+		variable _u
+		variable _v
+		variable _w
+		variable _attachedToStage
 
 		constructor { { name "" } } {
 			# Initialize center and direction vectors u, v, w to empty vectors.
@@ -419,16 +418,14 @@ namespace eval ::ctsimu {
 			$new_center_in_from destroy
 		}
 
-		method deviate { deviation world stage { frame 0 } { nFrames 1 } { only_known_to_reconstruction 0 } } {
+		method deviate { deviation stage { frame 0 } { nFrames 1 } { only_known_to_reconstruction 0 } } {
 			# Apply a ::ctsimu::deviation to this coordinate system.
 			# The function arguments are:
 			# - deviation:
 			#   A ::ctsimu::deviation object.
-			# - world:
-			#	A ::ctsimu::coordinate_system that defines the world CS.
 			# - stage:
 			#	A ::ctsimu::coordinate_system that defines the stage CS.
-			#   Can be the same as `world` when this coordinate system is
+			#   Can be `$::ctsimu::world` when this coordinate system is
 			#   not attached to the stage.
 			# - frame: (default 0)
 			#   Number of frame for which the deviation shall be applied,
@@ -454,7 +451,7 @@ namespace eval ::ctsimu {
 							# Therefore, the axis is a ::ctsimu::scenevector, which can
 							# give us the translation vector for the current frame:
 							set translation_axis [[$deviation axis] in_world "direction" \
-									$world [self object] $world \
+									[self object] $::ctsimu::world \
 									$frame $nFrames $only_known_to_reconstruction]
 									
 							my translate_along_axis $translation_axis $value
@@ -464,7 +461,7 @@ namespace eval ::ctsimu {
 							# Object is in stage coordinate system.
 							# --------------------------------------
 							set translation_axis [[$deviation axis] in_stage "direction" \
-									$world $stage [self object] \
+									$stage [self object] \
 									$frame $nFrames $only_known_to_reconstruction]
 									
 							my translate_along_axis $translation_axis $value
@@ -480,11 +477,9 @@ namespace eval ::ctsimu {
 							# Object in world coordinate system.
 							# --------------------------------------
 							set rotation_axis [[$deviation axis] in_world "direction" \
-									$world [self object] $world \
-									$frame $nFrames $only_known_to_reconstruction]
+									[self object] $frame $nFrames $only_known_to_reconstruction]
 							set pivot_point [[$deviation pivot] in_world "point" \
-									$world [self object] $world \
-									$frame $nFrames $only_known_to_reconstruction]
+									[self object] $frame $nFrames $only_known_to_reconstruction]
 									
 							my rotate_around_pivot_point $rotation_axis $value $pivot_point
 							
@@ -494,10 +489,10 @@ namespace eval ::ctsimu {
 							# Object is in stage coordinate system.
 							# --------------------------------------
 							set rotation_axis [[$deviation axis] in_stage "direction" \
-									$world $stage [self object] \
+									$stage [self object] \
 									$frame $nFrames $only_known_to_reconstruction]
 							set pivot_point [[$deviation pivot] in_stage "point" \
-									$world $stage [self object] \
+									$stage [self object] \
 									$frame $nFrames $only_known_to_reconstruction]
 									
 							my rotate_around_pivot_point $rotation_axis $value $pivot_point
@@ -595,4 +590,8 @@ namespace eval ::ctsimu {
 
 		return $pointInTo
 	}
+
+	variable world
+	set world [::ctsimu::coordinate_system new "World"]
+	$world reset
 }

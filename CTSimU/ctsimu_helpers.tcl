@@ -36,10 +36,8 @@ namespace eval ::ctsimu {
 	proc is_valid { value valid_list } {
 		# Checks if `value` is an item in the list
 		# of valid values: `valid_list`.
-		foreach valid $valid_list {
-			if { $value == $valid }	{
-				return 1
-			}
+		if { [lsearch -exact $valid_list $value] >= 0 } {
+			return 1
 		}
 
 		return 0

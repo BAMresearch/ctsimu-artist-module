@@ -1,4 +1,5 @@
 package require TclOO
+package require fileutil
 package require rl_json
 
 variable BasePath [file dirname [info script]]

@@ -111,6 +111,14 @@ namespace eval ::ctsimu {
 			return [dict get $_properties $property]
 		}
 
+		method current_coordinate_system { } {
+			return $_cs_current
+		}
+
+		method recon_coordinate_system { } {
+			return $_cs_recon
+		}
+
 		method name { } {
 			return $_name
 		}
@@ -278,13 +286,12 @@ namespace eval ::ctsimu {
 
 		# General
 		# -------------------------
-		method set_geometry { geometry world stage } {
+		method set_geometry { geometry stage } {
 			# Sets up the part from a JSON geometry definition.
 			# `geometry` must be an `rl_json` object.
-			# The `world` and `stage` have to be given as
-			# `::ctsimu::coordinate_system` objects.
-			#  If this part is not attached to the stage,
-			# the `world` coordinate system can be passed instead.
+			# The `stage` must be given as a `::ctsimu::coordinate_system` object.
+			# If this part is not attached to the stage,
+			# the `$::ctsimu::world` coordinate system can be passed instead.
 			my reset
 			
 			# Try to set up the parameter from world coordinate notation (x, y, z).
@@ -423,10 +430,10 @@ namespace eval ::ctsimu {
 				}
 			}
 
-			my set_frame $world $stage 0 1 0
+			my set_frame $stage 0 1 0
 		}
 			
-		method set_frame_cs { cs world stage frame nFrames { only_known_to_reconstruction 0 } { w_rotation_in_rad 0 } } {
+		method set_frame_cs { cs stage frame nFrames { only_known_to_reconstruction 0 } { w_rotation_in_rad 0 } } {
 			# Set up the given coordinate system 'cs' such
 			# that it complies with the 'frame' number
 			# and all necessary drifts and deviations.
@@ -451,7 +458,7 @@ namespace eval ::ctsimu {
 			# Deviations:
 			# ------------------------------------
 			foreach deviation $_deviations {
-				$cs deviate $deviation $world $stage $frame $nFrames $only_known_to_reconstruction
+				$cs deviate $deviation $stage $frame $nFrames $only_known_to_reconstruction
 			}
 
 			# Drifts (center and vector components):
@@ -481,13 +488,11 @@ namespace eval ::ctsimu {
 			$vector_w_drift destroy
 		}
 		
-		method set_frame { world stage frame nFrames w_rotation_in_rad } {
+		method set_frame { stage frame nFrames w_rotation_in_rad } {
 			# Set up the part for the given frame number, obeying all
 			# deviations and drifts.
 			#
 			# Function arguments:
-			# - world:
-			#   A ::ctsimu::coordinate_system that represents the world.
 			# - stage:
 			#   A ::ctsimu::coordinate_system that represents the stage.
 			#   Only necessary if the coordinate system will be attached to the
@@ -503,10 +508,10 @@ namespace eval ::ctsimu {
 			#   of the sample stage.
 
 			# Set up the current CS obeying all drifts:
-			my set_frame_cs $_cs_current $world $stage $frame $nFrames 0 $w_rotation_in_rad
+			my set_frame_cs $_cs_current $stage $frame $nFrames 0 $w_rotation_in_rad
 
 			# Set up the recon CS only obeying the drifts 'known to reconstruction':
-			my set_frame_cs $_cs_recon   $world $stage $frame $nFrames 1 $w_rotation_in_rad			
+			my set_frame_cs $_cs_recon   $stage $frame $nFrames 1 $w_rotation_in_rad			
 		}
 	}
 }

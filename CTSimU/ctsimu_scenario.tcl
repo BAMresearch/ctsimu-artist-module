@@ -1,9 +1,8 @@
 package require TclOO
 package require fileutil
-package require rl_json
 
 variable BasePath [file dirname [info script]]
-source -encoding utf-8 [file join $BasePath ctsimu_detector.tcl]
+source -encoding utf-8 [file join $BasePath ctsimu_source.tcl]
 
 # A class to manage and set up a complete CTSimU scenario,
 # includes e.g. all coordinate systems, etc.
@@ -15,7 +14,8 @@ namespace eval ::ctsimu {
 		variable _json_loaded_successfully
 		variable _settings;  # dictionary with simulation settings
 
-		variable _cs_world
+		variable _source
+		variable _stage
 		variable _detector
 
 		constructor { } {
@@ -40,18 +40,17 @@ namespace eval ::ctsimu {
 			my set create_openct_config_file 1
 			my set openct_output_datatype   "float32"
 
-			# Initialize a world coordinate system:
-			set _cs_world  [::ctsimu::coordinate_system new "World"]
-			$_cs_world reset
-			
 			# Objects in the scene:
+			set _source   [::ctsimu::source new]
+			set _stage    [::ctsimu::stage new]
 			set _detector [::ctsimu::detector new]
 
 			my reset
 		}
 
 		destructor {
-			$_cs_world destroy
+			$_source destroy
+			$_stage destroy
 			$_detector destroy
 		}
 
@@ -154,10 +153,18 @@ namespace eval ::ctsimu {
 			fconfigure $jsonfile -encoding utf-8
 			set jsonstring [read $jsonfile]
 			close $jsonfile
+
+			# Stage
+			# -------------
+			$_stage set_from_json $jsonstring
+
+			# X-Ray Source
+			# -------------
+			$_source set_from_json $jsonstring [$_stage current_coordinate_system]
 			
 			# Detector
-			# ------------
-			$_detector set_from_json $jsonstring $_cs_world $_cs_world
+			# -------------
+			$_detector set_from_json $jsonstring [$_stage current_coordinate_system]
 
 			return 1
 		}

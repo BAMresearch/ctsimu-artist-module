@@ -1,5 +1,4 @@
 package require TclOO
-package require rl_json
 
 variable BasePath [file dirname [info script]]
 source -encoding utf-8 [file join $BasePath ctsimu_scenevector.tcl]
@@ -17,7 +16,7 @@ namespace eval ::ctsimu {
 	set valid_axes [list z y x w v u t s r]
 	set valid_axis_strings [list "r" "s" "t" "u" "v" "w" "x" "y" "z"]
 	set valid_world_axis_designations [list "x" "y" "z"]
-	set valid_stage_axis_designations [list "u" "v" "w"]
+	set valid_local_axis_designations [list "u" "v" "w"]
 	set valid_sample_axis_designations [list "r" "s" "t"]
 
 	::oo::class create deviation {
@@ -110,21 +109,21 @@ namespace eval ::ctsimu {
 			# Sets the deviation's transformation axis.
 			# Can be: "x", "y", "z", "u", "v", "w", "r", "s", "t"
 			# or a ::ctsimu::scenevector.
-			if { [lsearch -exact $::ctsimu::valid_world_axis_designations $axis] >= 0 } {
+			if { [::ctsimu::is_valid $axis $::ctsimu::valid_world_axis_designations] == 1 } {
 				# Given axis is "x", "y" or "z"
 				# -> vector in world coordinate system
 				$_axis set_reference "world"
 				if { $axis == "x" } { $_axis set_simple 1 0 0 }
 				if { $axis == "y" } { $_axis set_simple 0 1 0 }
 				if { $axis == "z" } { $_axis set_simple 0 0 1 }
-			} elseif { [lsearch -exact $::ctsimu::valid_stage_axis_designations $axis] >= 0 } {
+			} elseif { [::ctsimu::is_valid $axis $::ctsimu::valid_local_axis_designations] == 1 } {
 				# Given axis is "u", "v" or "w"
 				# -> vector in local coordinate system
 				$_axis set_reference "local"
 				if { $axis == "u" } { $_axis set_simple 1 0 0 }
 				if { $axis == "v" } { $_axis set_simple 0 1 0 }
 				if { $axis == "w" } { $_axis set_simple 0 0 1 }
-			} elseif { [lsearch -exact $::ctsimu::valid_sample_axis_designations $axis] >= 0 } {
+			} elseif { [::ctsimu::is_valid $axis $::ctsimu::valid_sample_axis_designations] == 1 } {
 				# Given axis is "r", "s" or "t"
 				# -> vector in sample coordinate system
 				$_axis set_reference "sample"
@@ -171,7 +170,7 @@ namespace eval ::ctsimu {
 			if { [::ctsimu::json_exists $json_obj axis] } {
 				if { [::ctsimu::json_type $json_obj axis] == "string" } {
 					set axis [::ctsimu::get_value $json_obj {axis}]
-					if { [lsearch -exact $::ctsimu::valid_axis_strings $axis] >= 0 } {
+					if { [::ctsimu::is_valid $axis $::ctsimu::valid_axis_strings] == 1 } {
 						my set_axis $axis
 					} else {
 						::ctsimu::fail "The deviation \"axis\" string is incorrect: must be any of {$::ctsimu::valid_axis_strings} or a free vector definition."

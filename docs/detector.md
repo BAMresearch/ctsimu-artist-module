@@ -12,7 +12,7 @@ A class to set up and generate a detector. Inherits from [`::ctsimu::part`](part
 ### General
 
 * `reset` — Reset detector to standard settings. Deletes all previously defined drifts, etc. Called internally before a new detector definition is loaded from a JSON file.
-* `set_from_json { jobj world stage }` — Import the detector definition and geometry from the given JSON object (`jobj`). The JSON object should contain the complete content from the scenario definition file (at least the geometry and detector sections).
+* `set_from_json { jobj stage }` — Import the detector definition and geometry from the given JSON object (`jobj`). The JSON object should contain the complete content from the scenario definition file (at least the geometry and detector sections). `stage` is the `::ctsimu::coordinate_system` that represents the stage in the world coordinate system. Necessary because the source could be attached to the stage coordinate system.
 
 ## Properties
 

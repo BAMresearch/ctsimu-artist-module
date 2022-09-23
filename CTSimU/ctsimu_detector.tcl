@@ -1,6 +1,5 @@
 package require TclOO
 package require fileutil
-package require rl_json
 
 variable BasePath [file dirname [info script]]
 source -encoding utf-8 [file join $BasePath ctsimu_part.tcl]
@@ -23,7 +22,7 @@ namespace eval ::ctsimu {
 		method reset { } {
 			# Reset to standard settings.
 
-			# Declare all detector parameters and theirs native units.
+			# Declare all detector parameters and their native units.
 			# --------------------------------------------------------
 			
 			# General properties:
@@ -73,16 +72,22 @@ namespace eval ::ctsimu {
 			# Scintillator
 			my set scintillator_material_id "" "string"
 
-			# Reset the '::ctsimu::part' that coordinates the coordinate system:
+			# Reset the '::ctsimu::part' that handles the coordinate system:
 			next; # call reset of parent class ::ctsimu::part
 		}
 
-		method set_from_json { jobj world stage } {
+		method set_from_json { jobj stage } {
 			# Import the detector definition and geometry from the JSON object.
 			# The JSON object should contain the complete content
-			# from the scenario definition file (at least the geometry and detector sections).
+			# from the scenario definition file
+			# (at least the geometry and detector sections).
+			# `stage` is the `::ctsimu::coordinate_system` that represents
+			# the stage in the world coordinate system. Necessary because
+			# the source could be attached to the stage coordinate system.
+			my reset
+
 			set detectorGeometry [::ctsimu::extract_json_object $jobj {geometry detector}]
-			my set_geometry $detectorGeometry $world $stage
+			my set_geometry $detectorGeometry $stage
 
 			# Detector properties:
 			set detprops [::ctsimu::extract_json_object $jobj {detector}]

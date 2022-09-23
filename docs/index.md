@@ -12,6 +12,14 @@ The following list provides the source order and links to the descriptions of ea
 
 	A class to manage and set up a complete CTSimU scenario.
 
+* **[`ctsimu_source.tcl`](source.md)**
+
+	A class to set up and generate an X-ray source. Inherits from [`::ctsimu::part`](part.md).
+
+* **[`ctsimu_stage.tcl`](stage.md)**
+
+	A class to set up and generate the stage. Inherits from [`::ctsimu::part`](part.md).
+
 * **[`ctsimu_detector.tcl`](detector.md)**
 
 	A class to set up and generate a detector. Inherits from [`::ctsimu::part`](part.md).

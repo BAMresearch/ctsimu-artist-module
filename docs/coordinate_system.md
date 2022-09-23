@@ -74,10 +74,9 @@ This module adds the following functions to the `::ctsimu` namespace:
 * `rotate_around_w { angle_in_rad }` — Rotate coordinate system around its w axis by `angle_in_rad`.
 * `transform { csFrom csTo }` — Relative transformation in world coordinates from `csFrom` to `csTo`, result will be in world coordinates. Assuming this CS, `csFrom` and `csTo` all three are independent coordinate systems in a common reference coordinate system (e.g. world). This function will calculate the necessary translation and rotation that would have to be done to superimpose `csFrom` onto `csTo`. This translation and rotation will, however, be applied to this CS, not to `csFrom`.
 * `change_reference_frame { csFrom csTo }` — Transform this coordinate system from the `csFrom` reference frame to the `csTo` reference frame. Result will be in terms of `csTo`. Note: both `csFrom` and `csTo` must be in the same reference coordinate system (e.g., the world coordinate system).
-* `deviate { deviation world stage { frame 0 } { nFrames 1 } { only_known_to_reconstruction 0 } }` — Apply a `::ctsimu::deviation` to this coordinate system. The function arguments are:
+* `deviate { deviation stage { frame 0 } { nFrames 1 } { only_known_to_reconstruction 0 } }` — Apply a `::ctsimu::deviation` to this coordinate system. The function arguments are:
 	- `deviation` — A `::ctsimu::deviation` object.
-	- `world` — A `::ctsimu::coordinate_system` that defines the world CS.
-	- `stage` — A `::ctsimu::coordinate_system` that defines the stage CS. Can be the same as `world` when this coordinate system is not attached to the stage.
+	- `stage` — A `::ctsimu::coordinate_system` that defines the stage CS. Can be `$::ctsimu::world` when this coordinate system is not attached to the stage.
 	- `frame` — Number of frame for which the deviation shall be applied, because deviations can be subject to drift. (Default: `0`)
 	- `nFrames` — Total number of frames in scan. (Default: `1`)
 	- `only_known_to_reconstruction` — Pass `1` if the `known_to_reconstruction` JSON parameter must be obeyed, so only deviations that are known to the reconstruction software will be handled. Other deviations will be ignored. (Default: `0`)

@@ -16,9 +16,9 @@ Each part has its own coordinate system, and a parallel "ghost" coordinate syste
 ### General
 
 * `reset` — Reset to the default (such as after the object is constructed). Will result in standard alignment with the world coordinate system. Any geometrical deviations are deleted.
-* `set_geometry { geometry world stage }` — Sets up the part from a JSON geometry definition. Here, `geometry` must be an `rl_json` object. The `world` and `stage` have to be given as `::ctsimu::coordinate_system` objects. If this part is not attached to the stage, the `world` coordinate system can be passed instead.
-* `set_frame_cs { cs world stage frame nFrames { only_known_to_reconstruction 0 } { w_rotation_in_rad 0 } }` — Set up the given coordinate system `cs`such that it complies with the `frame` number and all necessary drifts and deviations. (Assuming a total number of `nFrames`). This function is used by `set_frame` and is usually not called from outside the object.
-* `set_frame { world stage frame nFrames w_rotation_in_rad }` — Set up the part for the given frame number, obeying all deviations and drifts.
+* `set_geometry { geometry stage }` — Sets up the part from a JSON geometry definition. Here, `geometry` must be an `rl_json` object. The `stage` must be given as a `::ctsimu::coordinate_system` object. If this part is not attached to the stage, the `$::ctsimu::world` coordinate system can be passed instead.
+* `set_frame_cs { cs stage frame nFrames { only_known_to_reconstruction 0 } { w_rotation_in_rad 0 } }` — Set up the given coordinate system `cs`such that it complies with the `frame` number and all necessary drifts and deviations. (Assuming a total number of `nFrames`). This function is used by `set_frame` and is usually not called from outside the object.
+* `set_frame { stage frame nFrames w_rotation_in_rad }` — Set up the part for the given frame number, obeying all deviations and drifts.
 	
 	- `world:` A `::ctsimu::coordinate_system` that represents the world.
 	- `stage:` A `::ctsimu::coordinate_system` that represents the stage. Only necessary if the coordinate system will be attached to the stage. Otherwise, the world coordinate system can be passed as an argument.
@@ -29,6 +29,8 @@ Each part has its own coordinate system, and a parallel "ghost" coordinate syste
 ### Getters
 
 * `get { property }` — Returns the property value from the internal properties dictionary. The returned object is usually a `::ctsimu::parameter`.
+* `current_coordinate_system` — Returns the current `::ctsimu::coordinate_system` of the part.
+* `recon_coordinate_system` — Returns the current recon `::ctsimu::coordinate_system` of the part.
 * `name` — Returns the name of the part.
 * `is_attached_to_stage` — Returns `1` if the part is attached to the stage coordinate system, or `0` if the world coordinate system is the reference.
 

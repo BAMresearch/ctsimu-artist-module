@@ -4,7 +4,7 @@ The main class for a complete CT scan scenario. This class keeps everything toge
 ## Methods of the `::ctsimu::scenario` class
 
 * `get { setting }` — Get the value of a settings parameter. See table below.
-* `set { setting value }` — Set the `settings` parameter to the given `value`. See table below.
+* `set { setting value }` — Set the `setting` parameter to the given `value`. See table below.
 * `reset` — Reset scenario to standard settings.
 * `load_json_scene { json_filename }` — Loads a CTSimU scenario from the given JSON file.
 
@@ -25,7 +25,7 @@ The main class for a complete CT scan scenario. This class keeps everything toge
 * `set_basename_from_json { json_filename }` — Extracts the base name of a JSON file and sets the `output_basename` setting accordingly.
 * `create_projection_counter_format { nProjections }` — Sets the number format string to get the correct number of digits in the consecutive projection file names.
 
-## Settings paramters
+## Settings parameters
 
 The class keeps a `_settings` dictionary to store simulation-related settings. The methods `get` and `set` are used to retrieve and manipulate the settings.
 
@@ -52,5 +52,6 @@ The following table gives an overview of the currently used keys and their meani
 | `n_flat_avg`          | Number of frame averages for a flat field image.                    |
 | `flat_field_ideal`    | Generate an ideal (noise-free) flat field image? (`0` or `1`)       |
 | `create_cera_config_file` | If a reconstruction configuration file for SIEMENS CERA shall be created for the simulated projection images. |
+| `cera_output_datatype` | Data type of the CERA reconstruction volume: `uint16` or `float32`. |
 | `create_clfdk_config_file` | If a reconstruction configuration file for BAM clFDK shall be created for the simulated projection images. |
-
+| `openct_output_datatype` | Data type of the OpenCT reconstruction volume: `uint16` or `float32`. |

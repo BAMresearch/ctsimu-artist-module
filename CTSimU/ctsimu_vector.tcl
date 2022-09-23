@@ -1,5 +1,8 @@
 package require TclOO
 
+variable BasePath [file dirname [info script]]
+source -encoding utf-8 [file join $BasePath ctsimu_helpers.tcl]
+
 namespace eval ::ctsimu {
 	::oo::class create vector {
 		variable _values
@@ -256,7 +259,7 @@ namespace eval ::ctsimu {
 			if {$l != 0} {
 				my scale [expr 1.0/$l]
 			} else {
-				::ctsimu::fail "Cannot make unit vector: length is zero."
+				::ctsimu::fail "::ctsimu::vector::to_unit_vector: Cannot make unit vector: length is zero."
 			}
 		}
 

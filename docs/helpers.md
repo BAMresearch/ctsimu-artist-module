@@ -22,6 +22,17 @@ CTSimU defines a [JSON-based file format](https://bamresearch.github.io/ctsimu-s
 
 ## Functions
 
+### Logging System
+The module uses its own little logging system that invokes aRTist's logging system if available. If aRTist is not available, messages are simply printed on the console.
+
+* `fail { message }` — Handles error messages.
+* `warn { message }` — Handles warning messages.
+* `note { message }` — Handles information messages.
+
+### Checkers
+
+* `is_valid { value valid_list }` — Checks if `value` is an item in the list `valid_list`. Returns `1` on success, `0` if `value` is not in the list of valid values.
+
 ### Checkers for valid JSON data
 
 * `value_is_null { value }` — Checks if a specific value is set to `null`.

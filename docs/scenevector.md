@@ -17,15 +17,23 @@ Useful for vectors that can change due to drifts, such as rotation axis and pivo
 
 ### Conversion Functions
 
-The following functions all generate and return new vector objects for a specific reference coordinate system, and a specific `frame` out of a total of `nFrames` in the CT scan, obeying any specified vector drifts.
+The following functions all generate and return new `::ctsimu::vector` objects for a specific reference coordinate system, and a specific `frame` out of a total of `nFrames` in the CT scan, obeying any specified vector drifts.
 
 The first parameter of each function, **`point_or_direction`**, must be a string that is either `"point"` (if your scene vector represents a point coordinate that needs to be transformed) or `"direction"` (if the vector denotes a general direction in space).
 
-**`world`** must be a `::ctsimu::coordinate_system` that represents the world coordinate system, **`local`** would be the object's local coordinate system (in terms of the world coordinate system), and **`sample`** the object's sample coordinate system (in terms of the stage coordinate system). In some cases, it is not necessary to provide all three coordinate system (such as when transforming the scene vector from stage to world). Unnecessary coordinate systems can be set to `0` or you can pass the world coordinate system instead. 
+**`world`** must be a `::ctsimu::coordinate_system` that represents the world coordinate system, **`local`** would be the object's local coordinate system (in terms of the world coordinate system), and **`sample`** the object's sample coordinate system (in terms of the stage coordinate system). In many cases, it is not necessary to provide all three coordinate systems (such as when transforming the scene vector from stage to world). Unnecessary coordinate systems can be set to `0` or you can pass the world coordinate system instead. 
 
 For scene vectors that refer to a sample coordinate system, the `local` coordinate system must be the stage coordinate system if the sample is attached to the stage, or `[self]` if it is located in the world coordinate system (in this case, `sample` would be the world CS as well).
 
-* `in_world { point_or_direction world local sample frame nFrames { only_known_to_reconstruction 0 } }` — Create and return a `::ctsimu::vector` in terms of the world coordinate system.
+* `in_world { point_or_direction world local sample frame nFrames { only_known_to_reconstruction 0 } }` — Create and return a `::ctsimu::vector` in terms of the world coordinate system. Function arguments:
+	- `point_or_direction` — A string that specifies whether you need to convert point coordinates (`"point"`) or
+	  a direction (`"direction"`).
+	- `world` — A `::ctsimu::coordinate_system` that represents the world.	
+	- `local` — A `::ctsimu::coordinate_system` that represents the object's local CS in terms of world coordinates.	
+	- `sample` — A `::ctsimu::coordinate_system` that represents the sample in terms of the stage coordinate system. If you don't want to convert from a sample vector, it doesn't matter what you pass here (pass `0`).
+	- `frame` — The number of the current frame.	
+	- `nFrames` — The total number of frames.	
+	- `only_known_to_reconstruction` — Only handle drifts that are known to the recon software.
 * `in_local { point_or_direction world local sample frame nFrames { only_known_to_reconstruction 0 } }` — Create and return a `::ctsimu::vector` in terms of the local coordinate system.
 * `in_sample { point_or_direction world stage sample frame nFrames { only_known_to_reconstruction 0 } }` — Create and return a `::ctsimu::vector` in terms of the sample coordinate system.
 

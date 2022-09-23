@@ -558,8 +558,9 @@ namespace eval ::ctsimu {
 	}
 	
 	proc change_reference_frame_of_direction { vec csFrom csTo } {
-		# Return vector direction, given in csFrom, in terms of csTo.
-		# csFrom and csTo must be in the same reference coordinate system.
+		# Returns the direction of vector `vec`, given in `csFrom`,
+		# in terms of `csTo` (simple multiplication with the basis transform matrix).
+		# `csFrom` and `csTo` must be in the same reference coordinate system.
 
 		# Rotation matrix to rotate base vectors into csTo:
 		set R [::ctsimu::basis_transform_matrix $csFrom $csTo]

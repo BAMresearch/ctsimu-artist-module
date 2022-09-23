@@ -2,13 +2,12 @@ package require TclOO
 package require rl_json
 
 variable BasePath [file dirname [info script]]
-source -encoding utf-8 [file join $BasePath ctsimu_matrix.tcl]
 
 namespace eval ::ctsimu {
 	namespace import ::rl_json::*
 
 	proc fail { message } {
-		# Handles errors
+		# Handles error messages.
 		if { [info exists aRTist ] } {
 			aRTist::Error { $message }
 		}
@@ -17,7 +16,7 @@ namespace eval ::ctsimu {
 	}
 
 	proc warn { message } {
-		#aRTist::Warning { $message }
+		# Handles warning messages.
 		if { [info exists aRTist ] } {
 			aRTist::Warning { $message }
 		}
@@ -25,7 +24,8 @@ namespace eval ::ctsimu {
 		puts "Warning: $message"
 	}
 
-	proc message { message } {
+	proc note { message } {
+		# Handles information messages.
 		if { [info exists aRTist ] } {
 			aRTist::Info { $message }
 		}
@@ -34,6 +34,8 @@ namespace eval ::ctsimu {
 	}
 
 	proc is_valid { value valid_list } {
+		# Checks if `value` is an item in the list
+		# of valid values: `valid_list`.
 		foreach valid $valid_list {
 			if { $value == $valid }	{
 				return 1

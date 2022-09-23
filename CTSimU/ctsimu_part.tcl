@@ -153,15 +153,16 @@ namespace eval ::ctsimu {
 		}
 
 		method set_parameter { property parameter } {
-			# Set an entry in the _properties dict
-			# to a given 'parameter' object.
+			# Sets the object in the internal properties dictionary
+			# that is identified by the `property` key to the given
+			# `parameter` (should be a `::ctsimu::parameter` object).
+			# If there is already an entry under the given `property` key,
+			# this old parameter object will be deleted.
 			
 			# Check if the property already exists:
 			if {[dict exists $_properties $property]} {
-				# Already exists in dict.
-				# Get parameter, reset it and set its standard value:
-				set old_parameter [my get $property]
-				$old_parameter destroy
+				# Already exists in dict. Get it and destroy it:
+				[my get $property] destroy
 			}
 			
 			# Set new property parameter:
@@ -169,17 +170,37 @@ namespace eval ::ctsimu {
 		}
 
 		method set_property { property dictionary key_sequence { fail_value 0 } { native_unit "" } } {
+			# Sets the value for the parameter that is identified
+			# by the `property` key in the internal properties dictionary.
+			# The new value is taken from the given JSON `dictionary`,
+			# and located by the given `key_sequence`. Optionally,
+			# a `fail_value` can be specified if the value cannot be
+			# found at the given `key_sequence`. Also, a `native_unit`
+			# can be provided in case the `property` does not yet exist
+			# in the internal properties dictionary. In this case,
+			# a new `::ctsimu::parameter` is created for the `property`
+			# and given the `native_unit`. If the parameter already
+			# exists in the internal properties dictionary,
+			# it is reset (i.e., all drifts are deleted).
+
 			# Check if the property already exists:
 			if {![dict exists $_properties $property]} {
+				# If not, create a new parameter object
+				# and insert it into the _properties dictionary:
 				set parameter [::ctsimu::parameter new $native_unit $fail_value]
 				dict set _properties $property $parameter
 			}
 
+			# Extract the value and set it as standard value:
 			set value [::ctsimu::get_value $dictionary $key_sequence "null"]
 			if { $value != "null" } {
+				# Getting the value succeeded. Set and return 1.
 				my set $property $value
 				return 1
 			} else {
+				# Getting the value failed or it is
+				# not defined in the JSON file. Use
+				# the fail_value instead and return 0.
 				my set $property $fail_value
 				return 0
 			}
@@ -189,19 +210,23 @@ namespace eval ::ctsimu {
 
 		method set_from_key { property dictionary key_sequence { fail_value 0 } { native_unit "" } } {
 			# Set up a parameter object for the given
-			# property from the key sequence in the given dictionary.
+			# `property` from the `key_sequence` in the given `dictionary`.
 			# The object located at the key sequence must at least
-			# have a `value` property.
+			# have a `value` property. Optionally, a `fail_value`
+			# can be specified if the value cannot be found at the
+			# given `key_sequence` or is set to `null`.
 
 			# Check if the property already exists:
 			if {![dict exists $_properties $property]} {
+				# If not, create a new parameter object
+				# and insert it into the _properties dictionary:
 				set parameter [::ctsimu::parameter new $native_unit $fail_value]
 				dict set _properties $property $parameter
 			}
 
 			set p [my get $property]
 			if { ![$p set_from_key $dictionary $key_sequence] } {
-				# Setting from key failed. Set to standard value.
+				# Setting from key failed. Set to fail value.
 				my set $property $fail_value
 				return 0
 			}
@@ -210,6 +235,10 @@ namespace eval ::ctsimu {
 		}
 
 		method set_from_possible_keys { property dictionary key_sequences { fail_value 0 } { native_unit "" } } {
+			# Like `set_from_key`, but a list of multiple possible
+			# `key_sequences` can be provided. Uses the first sequence that matches
+			# or the `fail_value` if nothing matches.
+
 			# Check if the property already exists:
 			if {![dict exists $_properties $property]} {
 				set parameter [::ctsimu::parameter new $native_unit $fail_value]
@@ -254,6 +283,8 @@ namespace eval ::ctsimu {
 			# `geometry` must be an `rl_json` object.
 			# The `world` and `stage` have to be given as
 			# `::ctsimu::coordinate_system` objects.
+			#  If this part is not attached to the stage,
+			# the `world` coordinate system can be passed instead.
 			my reset
 			
 			# Try to set up the parameter from world coordinate notation (x, y, z).
@@ -467,8 +498,9 @@ namespace eval ::ctsimu {
 			# - nFrames:
 			#   Total number of frames in the CT scan.
 			# - w_rotation_in_rad:
-			#   Possible rotation of the object around its w axis.
-			#   Only used for the CT rotation of the sample stage.
+			#   Possible rotation angle of the object around its w axis
+			#   for the given frame. Only used for the CT rotation
+			#   of the sample stage.
 
 			# Set up the current CS obeying all drifts:
 			my set_frame_cs $_cs_current $world $stage $frame $nFrames 0 $w_rotation_in_rad

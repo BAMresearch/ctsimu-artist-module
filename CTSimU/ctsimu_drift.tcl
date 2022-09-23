@@ -2,7 +2,7 @@ package require TclOO
 package require rl_json
 
 variable BasePath [file dirname [info script]]
-source -encoding utf-8 [file join $BasePath ctsimu_helpers.tcl]
+source -encoding utf-8 [file join $BasePath ctsimu_matrix.tcl]
 
 # A general class to handle the drift of an arbitrary parameter
 # for a given number of frames, including interpolation.

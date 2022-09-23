@@ -162,7 +162,7 @@ namespace eval ::ctsimu {
 			# - point_or_direction:
 			#   A string that specifies whether you need
 			#   to convert point coordinates ("point") or
-			#   just a direction ("direction").
+			#   a direction ("direction").
 			#
 			# - world:
 			#   A ::ctsimu::coordinate_system that represents the world.

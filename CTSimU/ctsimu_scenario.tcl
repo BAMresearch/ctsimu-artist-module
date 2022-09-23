@@ -28,17 +28,17 @@ namespace eval ::ctsimu {
 
 			# Standard settings
 			my set output_fileformat        "tiff"
-			my set output_datatype          "16bit"
+			my set output_datatype          "uint16"
 			my set output_basename          "proj_"
 			my set output_folder            ""
 
 			# CERA config file options:
 			my set create_cera_config_file  1
-			my set cera_output_datatype     "16bit"
+			my set cera_output_datatype     "float32"
 
 			# openCT config file options:
 			my set create_openct_config_file 1
-			my set openct_output_datatype   "16bit"
+			my set openct_output_datatype   "float32"
 
 			# Initialize a world coordinate system:
 			set _cs_world  [::ctsimu::coordinate_system new "World"]

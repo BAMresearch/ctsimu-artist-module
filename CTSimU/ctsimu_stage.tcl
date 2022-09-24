@@ -32,7 +32,7 @@ namespace eval ::ctsimu {
 			# (at least the geometry section containing the stage definition).
 			my reset
 
-			set stageGeometry [::ctsimu::extract_json_object $jobj {geometry stage}]
+			set stageGeometry [::ctsimu::json_extract $jobj {geometry stage}]
 			my set_geometry $stageGeometry $::ctsimu::world
 
 			::ctsimu::note "Done reading stage parameters."

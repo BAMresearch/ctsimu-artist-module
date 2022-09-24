@@ -178,7 +178,7 @@ namespace eval ::ctsimu {
 					}
 				} elseif { [::ctsimu::json_type $json_obj axis] == "object" } {
 					# free vector definition
-					if { [$_axis set_from_json [::ctsimu::extract_json_object $json_obj {axis}]] } {
+					if { [$_axis set_from_json [::ctsimu::json_extract $json_obj {axis}]] } {
 						# Success
 					} else {
 						::ctsimu::fail "::ctsimu::fail setting up deviation axis from JSON file. Vector definition seems to be incorrect."
@@ -200,7 +200,7 @@ namespace eval ::ctsimu {
 			if { [::ctsimu::json_exists $json_obj pivot] } {
 				# If another pivot is defined in the
 				# JSON file, take this one instead...
-				if { [$_pivot set_from_json [::ctsimu::extract_json_object $json_obj {pivot}]] } {
+				if { [$_pivot set_from_json [::ctsimu::json_extract $json_obj {pivot}]] } {
 					# Success
 				} else {
 					::ctsimu::fail "::ctsimu::fail setting up deviation's pivot point from JSON file. Vector definition seems to be incorrect."
@@ -208,7 +208,7 @@ namespace eval ::ctsimu {
 				}
 			}
 			
-			my set_amount_from_json [::ctsimu::extract_json_object $json_obj {amount}]
+			my set_amount_from_json [::ctsimu::json_extract $json_obj {amount}]
 			my set_known_to_reconstruction [::ctsimu::get_value_in_unit "bool" $json_obj {known_to_reconstruction} 1]
 			
 			return 1

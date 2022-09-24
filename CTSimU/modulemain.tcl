@@ -929,21 +929,6 @@ proc runBatch { } {
 }
 
 # ----------------------------------------------
-#  Helper functions
-# ----------------------------------------------
-
-proc getOutputFolderFromJSONfilename { jsonfilename } {
-	set jsonfiledir [file dirname "$jsonfilename"]
-	return "$jsonfiledir"
-}
-
-proc getOutputBasenameFromJSONfilename { jsonfilename } {
-	set baseName [file root [file tail $jsonfilename]]
-	return $baseName
-}
-
-
-# ----------------------------------------------
 #  Scenario loading and handling
 # ----------------------------------------------
 

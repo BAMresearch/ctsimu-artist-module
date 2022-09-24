@@ -10,8 +10,8 @@ namespace eval ::ctsimu {
 	::oo::class create source {
 		superclass ::ctsimu::part
 
-		constructor { { name "Source" } } {
-			next $name; # call constructor of parent class ::ctsimu::part
+		constructor { { name "Source" } { id "S" } } {
+			next $name $id; # call constructor of parent class ::ctsimu::part
 			my reset
 		}
 
@@ -43,7 +43,7 @@ namespace eval ::ctsimu {
 			# the source could be attached to the stage coordinate system.
 			my reset
 
-			set sourceGeometry [::ctsimu::extract_json_object $jobj {geometry source}]
+			set sourceGeometry [::ctsimu::json_extract $jobj {geometry source}]
 			my set_geometry $sourceGeometry $stage
 
 			::ctsimu::note "Done reading source parameters."

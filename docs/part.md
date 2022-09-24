@@ -9,9 +9,9 @@ Each part has its own coordinate system, and a parallel "ghost" coordinate syste
 
 ### Constructor
 
-* `constructor { { name "" } }`
+* `constructor { { name "" } { id "" } }`
 
-    A name for the part can be passed as an argument to the constructor. Useful for debugging, because it appears in error messages as well.
+    A `name` for the part can be passed as an argument to the constructor. Useful for debugging, because it appears in error messages as well. The `id` designates aRTist's identifier for the object (to find it in the part list).
 
 ### General
 
@@ -33,6 +33,7 @@ Each part has its own coordinate system, and a parallel "ghost" coordinate syste
 * `current_coordinate_system` — Returns the current `::ctsimu::coordinate_system` of the part.
 * `recon_coordinate_system` — Returns the current recon `::ctsimu::coordinate_system` of the part.
 * `name` — Returns the name of the part.
+* `id` — Returns the aRTist ID of the part.
 * `is_attached_to_stage` — Returns `1` if the part is attached to the stage coordinate system, or `0` if the world coordinate system is the reference.
 
 ### Setters
@@ -43,5 +44,6 @@ Each part has its own coordinate system, and a parallel "ghost" coordinate syste
 * `set_from_key { property dictionary key_sequence { fail_value 0 } { native_unit "" } }` — Set up a parameter object for the given `property` from the `key_sequence` in the given `dictionary`. The object located at the key sequence must at least have a `value` property. Optionally, a `fail_value` can be specified if the value cannot be found at the given `key_sequence` or is set to `null`.
 * `set_from_possible_keys { property dictionary key_sequences { fail_value 0 } { native_unit "" } }` — Like `set_from_key`, but a list of multiple possible `key_sequences` can be provided. Uses the first sequence that matches or the `fail_value` if nothing matches.
 * `set_name { name }` — Set the `name` of the part.
+* `set_id { id }` — Set the aRTist `id` of the part.
 * `set_cs_names { }` — Uses this object's name to give names to its proper coordinate systems. Invoked by default by the `set_name` function.
 * `attach_to_stage { attached }` — Set `1` if the part is attached to the stage coordinate system, or `0` if the world coordinate system is the reference.

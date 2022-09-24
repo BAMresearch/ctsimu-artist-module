@@ -6,10 +6,16 @@ variable BasePath [file dirname [info script]]
 namespace eval ::ctsimu {
 	namespace import ::rl_json::*
 
+	set pi 3.1415926535897931
+
+	proc aRTist_available { } {
+		return [namespace exists ::aRTist]
+	}
+
 	proc fail { message } {
 		# Handles error messages.
-		if { [info exists aRTist ] } {
-			aRTist::Error { $message }
+		if { [::ctsimu::aRTist_available] } {
+			::aRTist::Error { $message }
 		}
 
 		error $message
@@ -17,20 +23,29 @@ namespace eval ::ctsimu {
 
 	proc warn { message } {
 		# Handles warning messages.
-		if { [info exists aRTist ] } {
-			aRTist::Warning { $message }
+		if { [::ctsimu::aRTist_available] } {
+			::aRTist::Warning { $message }
+		} else  {
+			puts "Warning: $message"
 		}
-
-		puts "Warning: $message"
 	}
 
 	proc note { message } {
 		# Handles information messages.
-		if { [info exists aRTist ] } {
-			aRTist::Info { $message }
+		if { [::ctsimu::aRTist_available] } {
+			::aRTist::Info { $message }
+		} else {
+			puts "$message"
 		}
+	}
 
-		puts "$message"
+	proc debug { message } {
+		# Handles debug messages.
+		if { [::ctsimu::aRTist_available] } {
+			::aRTist::Debug { $message }
+		} else {
+			puts "$message"
+		}
 	}
 
 	proc is_valid { value valid_list } {
@@ -43,16 +58,36 @@ namespace eval ::ctsimu {
 		return 0
 	}
 	
-	# Checkers for valid JSON data
-	# -----------------------------
 	proc read_json_file { filename } {
-		set jf [open $filename rb]
-		try {
-			set jsonstring [json decode [read $jf] utf-8]
-		} finally {
-			close $jf
+		# Read JSON file, check its validity.
+
+		# Newer version of rl_json supports decoding
+		# and validity check:
+		if { [catch {
+			# Open file in byte mode, use rl_json to decode using utf-8:
+			set jf [open $filename rb]
+			try {
+				set jsonstring [json decode [read $jf] utf-8]
+			} finally {
+				close $jf
+			}
+		} err ] } {
+			# [json decode] probably doesn't exist.
+			# Use old import method and skip validity check
+			# (it doesn't exist as well).
+			set jf [open $filename r]
+			try {
+				fconfigure $jf -encoding utf-8
+				set jsonstring [read $jf]
+			} finally {
+				close $jf
+			}
+
+			::ctsimu::debug "Old JSON import method."
+			return $jsonstring
 		}
 
+		# Check for syntax errors, find error position.
 		if { [json valid -details errordetails $jsonstring] != 1 } {
 			# Get error line number:
 			set errpos [dict get $errordetails char_ofs]
@@ -71,9 +106,12 @@ namespace eval ::ctsimu {
 			::ctsimu::fail "Syntax Error in JSON file at character position $errpos (around line $errline). [dict get $errordetails errmsg]. Try opening the JSON file in Firefox to find the mistake. Maybe a comma too much? File: $filename"
 		}
 
+		::ctsimu::debug "New JSON import method."
 		return $jsonstring
 	}
 
+	# Checkers for valid JSON data
+	# -----------------------------
 	proc value_is_null { value } {
 		# Checks if a specific value is set to `null`.
 		if {$value == "null"} {
@@ -124,7 +162,6 @@ namespace eval ::ctsimu {
 
 	# Getters
 	# -----------------------------
-
 	proc get_value { dictionary keys {fail_value 0} } {
 		# Get the specific value of the parameter that is located
 		# at the given sequence of `keys` in the JSON dictionary.
@@ -141,15 +178,15 @@ namespace eval ::ctsimu {
 		return [json exists $dictionary {*}$keys]
 	}
 	
-	proc json_type { dictionary keys } {
-		return [json type $dictionary {*}$keys]
+	proc json_type { dictionary { keys {} } } {
+		return [json type [json extract $dictionary {*}$keys]]
 	}
 	
 	proc json_isnull { dictionary keys } {
 		return [json isnull $dictionary {*}$keys]
 	}
 
-	proc extract_json_object { dictionary keys } {
+	proc json_extract { dictionary keys } {
 		# Get the JSON sub-object that is located
 		# by a given sequence of `keys` in the JSON dictionary.
 		if [json exists $dictionary {*}$keys] {
@@ -159,7 +196,7 @@ namespace eval ::ctsimu {
 		return "null"
 	}
 	
-	proc extract_json_object_from_possible_keys { dictionary key_sequences } {
+	proc json_extract_from_possible_keys { dictionary key_sequences } {
 		# Searches the JSON object for each
 		# key sequence in the given list of key_sequences.
 		# The first sequence that exists will
@@ -197,11 +234,11 @@ namespace eval ::ctsimu {
 		::ctsimu::fail "Not a valid unit of length: \'$unit\'"
 	}
 
-	proc in_rad { value unit } {
+	proc in_rad { value { unit "deg" } } {
 		# Converts an angle to radians.
 		if {$value != "null"} {
 			switch $unit {
-				"deg" {return [::Math::DegToRad $value]}
+				"deg" {return [expr double($value) * $::ctsimu::pi / 180.0]}
 				"rad" {return $value}
 			}
 		} else {
@@ -211,12 +248,12 @@ namespace eval ::ctsimu {
 		::ctsimu::fail "Not a valid unit for an angle: \'$unit\'"
 	}
 
-	proc in_deg { value unit } {
+	proc in_deg { value { unit "rad" } } {
 		# Converts an angle to degrees.
 		if {$value != "null"} {
 			switch $unit {
 				"deg" {return $value}
-				"rad" {return [::Math::RadToDeg $value]}
+				"rad" {return [expr double($value) * 180.0 / $::ctsimu::pi]}
 			}
 		} else {
 			return "null"
@@ -383,7 +420,7 @@ namespace eval ::ctsimu {
 		# Takes a sequence of JSON keys from the given dictionary where
 		# a JSON object with a value/unit pair must be located.
 		# Returns the value of this JSON object in the requested native_unit.
-		set value_unit_pair [::ctsimu::extract_json_object $dictionary $keys]
+		set value_unit_pair [::ctsimu::json_extract $dictionary $keys]
 		if {![::ctsimu::object_value_is_null_or_zero $value_unit_pair]} {
 			return [::ctsimu::json_convert_to_native_unit $native_unit $value_unit_pair]
 		}

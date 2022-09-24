@@ -106,7 +106,7 @@ namespace eval ::ctsimu {
 						set jsonValue [::ctsimu::get_value $json_object {value}]
 						lappend _trajectory [::ctsimu::json_convert_to_native_unit $_native_unit $jsonValue]
 					} elseif {$jsonValueType == "array"} {
-						set jsonValueArray [::ctsimu::extract_json_object $json_object {value}]
+						set jsonValueArray [::ctsimu::json_extract $json_object {value}]
 						::rl_json::json foreach value $jsonValueArray {
 							lappend _trajectory [::ctsimu::convert_to_native_unit $jsonUnit $_native_unit $value]
 						}

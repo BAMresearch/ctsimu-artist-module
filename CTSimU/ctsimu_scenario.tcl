@@ -164,6 +164,12 @@ namespace eval ::ctsimu {
 			# -------------
 			$_detector set_from_json $jsonstring [$_stage current_coordinate_system]
 
+
+			# Place objects in scene
+			# ------------------------
+			$_source   place_in_scene [$_stage current_coordinate_system]
+			$_detector place_in_scene [$_stage current_coordinate_system]
+
 			return 1
 		}
 	}

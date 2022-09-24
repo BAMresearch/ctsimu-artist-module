@@ -5,9 +5,9 @@ A class to set up and generate a detector. Inherits from [`::ctsimu::part`](part
 
 ### Constructor
 
-* `constructor { { name "Detector" } }`
+* `constructor { { name "Detector" } { id "D" } }`
 
-	A name for the detector can be passed as an argument to the constructor. Useful for debugging, because it appears in error messages as well. Usually, `"Detector"` is fine.
+	A name for the detector can be passed as an argument to the constructor. Useful for debugging, because it appears in error messages as well. Usually, `"Detector"` is fine. The `id` designates aRTist's identifier for the object (to find it in the part list).
 
 ### General
 

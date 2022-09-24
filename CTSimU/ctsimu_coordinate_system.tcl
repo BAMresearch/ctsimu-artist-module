@@ -146,6 +146,18 @@ namespace eval ::ctsimu {
 			return $_attachedToStage
 		}
 
+		method in_world { stageCS } {
+			# Return a copy of this coordinate system with
+			# the reference being the world coordinate system.
+			set cs [my get_copy]
+			if { [my is_attached_to_stage] == 0 } {
+				return $cs
+			} else {
+				$cs change_reference_frame $stageCS $::ctsimu::world
+				return $cs
+			}
+		}
+
 		# Setters
 		# -------------------------
 		method set_name { name } {

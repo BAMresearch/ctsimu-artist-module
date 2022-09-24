@@ -10,8 +10,8 @@ namespace eval ::ctsimu {
 	::oo::class create detector {
 		superclass ::ctsimu::part
 
-		constructor { { name "Detector" } } {
-			next $name; # call constructor of parent class ::ctsimu::part
+		constructor { { name "Detector" } { id "D" } } {
+			next $name $id; # call constructor of parent class ::ctsimu::part
 			my reset
 		}
 
@@ -86,11 +86,11 @@ namespace eval ::ctsimu {
 			# the source could be attached to the stage coordinate system.
 			my reset
 
-			set detectorGeometry [::ctsimu::extract_json_object $jobj {geometry detector}]
+			set detectorGeometry [::ctsimu::json_extract $jobj {geometry detector}]
 			my set_geometry $detectorGeometry $stage
 
 			# Detector properties:
-			set detprops [::ctsimu::extract_json_object $jobj {detector}]
+			set detprops [::ctsimu::json_extract $jobj {detector}]
 
 			my set model        [::ctsimu::get_value $detprops {model} ""]
 			my set manufacturer [::ctsimu::get_value $detprops {manufacturer} ""]
@@ -99,7 +99,7 @@ namespace eval ::ctsimu {
 				::ctsimu::warn "Detector type not found or invalid. Should be \"ideal\" or \"real\". Using standard value: \"ideal\"."
 			} else {
 				# Check if the detector type is valid:
-				set value [[my get type] standard_value]
+				set value [my get type]
 				if { ![::ctsimu::is_valid $value {"ideal" "real"}] } {
 					::ctsimu::warn "No valid detector type: $value. Should be \"ideal\" or \"real\". Using standard value: \"ideal\"."
 					my set type "ideal"
@@ -133,28 +133,44 @@ namespace eval ::ctsimu {
 			my set_from_key dead_time $detprops {dead_time} 1 "s"
 			my set_from_key image_lag $detprops {image_lag} 0.0
 			
-			#my set gray_value_mode  "imin_imax" "string"
-				# Valid gray value modes:
-				# "imin_imax", "linear", "file"
-
 			my set_from_possible_keys imin $detprops {{grey_value imin} {gray_value imin}} "null"
 			my set_from_possible_keys imax $detprops {{grey_value imax} {gray_value imax}} "null"
 			my set_from_possible_keys factor $detprops {{grey_value factor} {gray_value factor}} "null"
 			my set_from_possible_keys offset $detprops {{grey_value offset} {gray_value offset}} "null"
-
 			my set_from_possible_keys gv_characteristics_file $detprops {{grey_value intensity_characteristics_file} {gray_value intensity_characteristics_file}} "null"
 
+			# Decide on gray value mode:
+			if { [my get gv_characteristics_file] != "null" } {
+				my set gray_value_mode "file"
+				::ctsimu::note "Gray value mode: [my get gray_value_mode] ([my get gv_characteristics_file])"
+			} elseif { [my get factor] != "null" && [my get offset] != "null" } {
+				my set gray_value_mode "linear"
+				::ctsimu::note "Gray value mode: [my get gray_value_mode] (Factor: [my get factor], Offset: [my get offset])"
+			} else {
+				my set gray_value_mode "imin_imax"
+				::ctsimu::note "Gray value mode: [my get gray_value_mode] (imin: [my get imin], imax: [my get imax])"
+			}
+			
 			my set_from_possible_keys efficiency  $detprops {{grey_value efficiency} {gray_value efficiency}} "null"
 			my set_from_possible_keys efficiency_characteristics_file $detprops {{grey_value efficiency_characteristics_file} {gray_value efficiency_characteristics_file}} "null"
 
 			
 			# Noise:
-			#my set noise_mode       "off" "string"
-				# Valid noise modes:
-				# "off", "snr_at_imax", "file"
 			my set_from_key snr_at_imax $detprops {noise snr_at_imax} "null"
 			my set_from_key noise_characteristics_file $detprops {noise noise_characteristics_file} "null"
-			
+
+			# Decide on noise mode:
+			if { [my get noise_characteristics_file] != "null" } {
+				my set noise_mode "file"
+				::ctsimu::note "Noise mode: [my get noise_mode] ([my get noise_characteristics_file])"
+			} elseif { [my get snr_at_imax] != "null" } {
+				my set noise_mode "snr_at_imax"
+				::ctsimu::note "Noise mode: [my get noise_mode] ([my get snr_at_imax])"
+			} else {
+				my set noise_mode "off"
+				::ctsimu::note "Noise mode: [my get noise_mode]"
+			}
+						
 			# Unsharpness:
 			#my set unsharpness_mode "off" "string"
 				# Valid unsharpness modes:

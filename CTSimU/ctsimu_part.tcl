@@ -26,9 +26,10 @@ namespace eval ::ctsimu {
 		variable _vector_w
 		variable _deviations
 		variable _name
+		variable _id; # aRTist's id for the object
 		variable _properties
 
-		constructor { { name "" } } {
+		constructor { { name "" } { id "" } } {
 			# Is this object attached to the stage coordinate sytem?
 			my attach_to_stage 0
 
@@ -55,8 +56,10 @@ namespace eval ::ctsimu {
 			# A name for this part:
 			# The object's name will be passed on to the coordinate
 			# system via the set_name function.
-			set _name ""
 			my set_name $name
+
+			# aRTist id for the object:
+			my set_id $id
 			
 			# A general list of properties
 			# (all of them are of type ::ctsimu::parameter)
@@ -124,7 +127,13 @@ namespace eval ::ctsimu {
 			return $_cs_recon
 		}
 
+		method id { } {
+			# Get the aRTist ID of the part.
+			return $_id
+		}
+
 		method name { } {
+			# Get the name of the part.
 			return $_name
 		}
 		
@@ -273,6 +282,11 @@ namespace eval ::ctsimu {
 			my set_cs_names
 		}
 
+		method set_id { id } {
+			# Set the aRTist `id` of the part.
+			set _id $id
+		}
+
 		method set_cs_names { } {
 			# Uses this object's name to give names to the
 			# proper coordinate systems.
@@ -314,7 +328,7 @@ namespace eval ::ctsimu {
 
 				# Center
 				# ---------------
-				if { [$_center set_from_json [::ctsimu::extract_json_object_from_possible_keys $geometry {{center} {centre}}]] } {
+				if { [$_center set_from_json [::ctsimu::json_extract_from_possible_keys $geometry {{center} {centre}}]] } {
 					# success
 				} else {
 					::ctsimu::fail "Part \'$_name\': failed setting the object center from the JSON file. Geometry: $geometry"
@@ -324,8 +338,8 @@ namespace eval ::ctsimu {
 				# Orientation
 				# ---------------
 				# Vectors can be either u, w (for source, stage, detector) or r, t (for samples).
-				if { [$_vector_u set_from_json [::ctsimu::extract_json_object_from_possible_keys $geometry {{vector_u} {vector_r}}]] && \
-					 [$_vector_w set_from_json [::ctsimu::extract_json_object_from_possible_keys $geometry {{vector_w} {vector_t}}]] } {
+				if { [$_vector_u set_from_json [::ctsimu::json_extract_from_possible_keys $geometry {{vector_u} {vector_r}}]] && \
+					 [$_vector_w set_from_json [::ctsimu::json_extract_from_possible_keys $geometry {{vector_w} {vector_t}}]] } {
 					# success
 				} else {
 					::ctsimu::fail "Part \'$_name\' is placed in world coordinate system, but its vectors u and w (or r and t, for samples) are not properly defined (each with an x, y and z component)."
@@ -344,7 +358,7 @@ namespace eval ::ctsimu {
 
 				# Center
 				# ---------------
-				if { [$_center set_from_json [::ctsimu::extract_json_object_from_possible_keys $geometry {{center} {centre}}]] } {
+				if { [$_center set_from_json [::ctsimu::json_extract_from_possible_keys $geometry {{center} {centre}}]] } {
 					# success
 				} else {
 					::ctsimu::fail "Part \'$_name\': failed setting the object center from the JSON file."
@@ -355,8 +369,8 @@ namespace eval ::ctsimu {
 				# ---------------
 				# Vectors can only be r, t
 				# (because only samples can be attached to the stage).
-				if { [$_vector_u set_from_json [::ctsimu::extract_json_object $geometry {vector_r}]] && \
-					 [$_vector_w set_from_json [::ctsimu::extract_json_object $geometry {vector_t}]] } {
+				if { [$_vector_u set_from_json [::ctsimu::json_extract $geometry {vector_r}]] && \
+					 [$_vector_w set_from_json [::ctsimu::json_extract $geometry {vector_t}]] } {
 					# success
 				} else {
 					::ctsimu::fail "Part \'$_name\' is placed in stage system, but its vectors r and t are not properly defined (each with a u, v and w component)."
@@ -372,7 +386,7 @@ namespace eval ::ctsimu {
 				if { $jsonType == "array"} {
 					# Go over all elements in the deviations array
 					# and add them to this part's list of deviations.
-					set jsonDevArray [::ctsimu::extract_json_object $geometry {deviations}]
+					set jsonDevArray [::ctsimu::json_extract $geometry {deviations}]
 					::rl_json::json foreach jsonDev $jsonDevArray {
 						set dev [::ctsimu::deviation new]
 						if { [$dev set_from_json $jsonDev] } {
@@ -384,7 +398,7 @@ namespace eval ::ctsimu {
 					# Actually not supported by file system,
 					# but let's be generous.
 					set dev [::ctsimu::deviation new]
-					if { [$dev set_from_json [::ctsimu::extract_json_object $geometry {deviations}]] } {
+					if { [$dev set_from_json [::ctsimu::json_extract $geometry {deviations}]] } {
 						lappend _deviations $dev
 					}
 				}
@@ -411,7 +425,7 @@ namespace eval ::ctsimu {
 						$pos_dev set_type "translation"
 						$pos_dev set_axis "$axis"
 						$pos_dev set_known_to_reconstruction $known_to_recon
-						[$pos_dev amount] set_from_json [::ctsimu::extract_json_object $geometry {deviation position $axis}]
+						[$pos_dev amount] set_from_json [::ctsimu::json_extract $geometry {deviation position $axis}]
 						lappend _deviations $pos_dev
 					}
 					
@@ -429,7 +443,7 @@ namespace eval ::ctsimu {
 						$rot_dev set_type "rotation"
 						$rot_dev set_axis "$axis"
 						$rot_dev set_known_to_reconstruction $known_to_recon
-						[$rot_dev amount] set_from_json [::ctsimu::extract_json_object $geometry {deviation rotation $axis}]
+						[$rot_dev amount] set_from_json [::ctsimu::json_extract $geometry {deviation rotation $axis}]
 						lappend _deviations $rot_dev
 					}
 				}
@@ -517,6 +531,123 @@ namespace eval ::ctsimu {
 
 			# Set up the recon CS only obeying the drifts 'known to reconstruction':
 			my set_frame_cs $_cs_recon   $stage $frame $nFrames 1 $w_rotation_in_rad			
+		}
+
+		method place_in_scene { stageCS } {
+			# Set position and orientation of object in aRTist scene.
+
+			set coordinateSystem [[my current_coordinate_system] in_world $stageCS]
+
+			# Reset object to initial position:
+			if { [::ctsimu::aRTist_available] } {
+				::PartList::Invoke [my id] SetPosition    0 0 0
+				::PartList::Invoke [my id] SetRefPos      0 0 0
+				::PartList::Invoke [my id] SetOrientation 0 0 0
+			}
+
+			# Position
+			set posX [[$coordinateSystem center] x]
+			set posY [[$coordinateSystem center] y]
+			set posZ [[$coordinateSystem center] z]
+			::ctsimu::debug "   Centre for [my id]: [[$coordinateSystem center] print]"
+
+			if { [::ctsimu::aRTist_available] } {
+				::PartList::Invoke [my id] SetPosition $posX $posY $posZ
+				::PartList::Invoke [my id] SetRefPos   $posX $posY $posZ
+			}
+
+			# Orientation
+			set u [$coordinateSystem u]
+			set w [[$coordinateSystem u] get_copy]
+			set local_x [::ctsimu::vector new { 1 0 0 }]
+			::ctsimu::debug "   Vector u for [my id]: [[$coordinateSystem u] print]"
+			::ctsimu::debug "   Vector w for [my id]: [[$coordinateSystem w] print]"
+
+			# aRTist's detector and source coordinate systems do not match CTSimU specification:
+			# aRTist's y vector points downwards in a projection; CTSimU's points upwards.
+			# -> reverse w vector to solve this.
+			if { [my id] == "D" || [my id] == "S"} {
+				::ctsimu::debug "Treating detector or source."
+				$w invert
+			}
+
+			set wx [[$coordinateSystem w] x]
+			set wy [[$coordinateSystem w] y]
+			set wz [[$coordinateSystem w] z]
+
+			# Rotate object z axis towards w vector
+			if { !( ($wx==0 && $wy==0 && $wz==1) ) } {
+				# Rotation axis from cross product (0, 0, 1)x(wx, wy, wz)
+				set rotAxis [[$::ctsimu::world w] cross $w]
+
+				if { [$rotAxis length] == 0 } {
+					if { [$w dot [$::ctsimu::world w]] < 0} {
+						# Vectors point in opposite directions. Rotation axis is another stage CS basis vector.
+						::ctsimu::debug "   z axis of object and w axis of target coordinate system point in opposite directions. Using u axis as rotation axis."
+						$rotAxis destroy
+						set rotAxis [$u get_copy]
+					} else {
+						::ctsimu::debug "   w axis of object [my id] already points in direction z."
+					}	
+				}
+
+				if { [$rotAxis length] != 0 } {
+					set rotAxis_x [$rotAxis x]
+					set rotAxis_y [$rotAxis y]
+					set rotAxis_z [$rotAxis z]
+
+					# Rotation angle from scalar product (0, 0, 1)*(wx, wy, wz)
+					set rotAngle [[$::ctsimu::world w] angle $w]
+					set degAngle [::ctsimu::in_deg $rotAngle]
+					::ctsimu::debug "   Rotation V for object [my id] around [$rotAxis print] by angle $degAngle °."
+
+					# Perform rotation
+					if { [::ctsimu::aRTist_available] } {
+						::PartList::Invoke [my id] Rotate world $degAngle $rotAxis_x $rotAxis_y $rotAxis_z
+					}
+
+					$local_x rotate $rotAxis $rotAngle
+				}
+
+				$rotAxis destroy
+			}
+
+			# Rotate object x axis towards u vector (around now fixed w axis of the object)
+			::ctsimu::debug "   local x axis is now: [$local_x print]"
+			set rotAxisToU [$local_x cross $u]
+
+			if { [$rotAxisToU length] == 0 } {
+				if { [$u dot $local_x] < 0} {
+					# Vectors point in opposite directions. Rotation axis is stage w.
+					::ctsimu::debug "   x\' axis of object and u axis of target coordinate system point in opposite directions. Using w axis as rotation axis."
+					$rotAxisToU destroy
+					set rotAxisToU [$w get_copy]
+				} else {
+					::ctsimu::debug "   u axis of object [my id] already points in direction u."
+				}	
+			}
+
+			if { [$rotAxisToU length] != 0 } {
+				set rotAngle [$local_x angle $u]
+
+				set rotAxis_x [$rotAxisToU x]
+				set rotAxis_y [$rotAxisToU y]
+				set rotAxis_z [$rotAxisToU z]
+
+				::ctsimu::debug "   Rotation U for object [my id] around (0, 0, 1) (of object) by angle $rotAngle °."
+
+				# Perform rotation
+				if { [::ctsimu::aRTist_available] } {
+					::PartList::Invoke [my id] Rotate world [::ctsimu::in_deg $rotAngle] $rotAxis_x $rotAxis_y $rotAxis_z
+				}
+			} else {
+				::ctsimu::debug "   u axis of object [my id] already points in direction u."
+			}
+
+			$coordinateSystem destroy
+			$w destroy
+			$local_x destroy
+			$rotAxisToU destroy
 		}
 	}
 }

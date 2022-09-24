@@ -5,9 +5,9 @@ A class to set up and generate an X-ray source. Inherits from [`::ctsimu::part`]
 
 ### Constructor
 
-* `constructor { { name "Source" } }`
+* `constructor { { name "Source" } { id "S" } }`
 
-	A name for the source can be passed as an argument to the constructor. Useful for debugging, because it appears in error messages as well. Usually, `"Source"` is fine.
+	A name for the source can be passed as an argument to the constructor. Useful for debugging, because it appears in error messages as well. Usually, `"Source"` is fine. The `id` designates aRTist's identifier for the object (to find it in the part list).
 
 ### General
 

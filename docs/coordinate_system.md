@@ -39,6 +39,7 @@ This module adds the following functions to the `::ctsimu` namespace:
 * `v` — The `v` basis vector in terms of the reference coordinate system.
 * `w` — The `w` basis vector in terms of the reference coordinate system.
 * `is_attached_to_stage` — If the coordinate system is assumed to be attached to the stage (`1`) or not (`0`). If it is attached to the stage, its reference coordinate system is the stage coordinate system.
+* `in_world { stageCS }` — Return a copy of this coordinate system with the reference being the world coordinate system. The stage coordinate system must be passed as a `::ctsimu::coordinate_system`.
 
 ### Setter Functions
 

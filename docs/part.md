@@ -28,7 +28,8 @@ Each part has its own coordinate system, and a parallel "ghost" coordinate syste
 
 ### Getters
 
-* `get { property }` — Returns the property value from the internal properties dictionary. The returned object is usually a `::ctsimu::parameter`.
+* `get { property }` — Returns the current value for a given `property`.
+* `parameter { property }` — Returns the parameter object behind a given `property`.
 * `current_coordinate_system` — Returns the current `::ctsimu::coordinate_system` of the part.
 * `recon_coordinate_system` — Returns the current recon `::ctsimu::coordinate_system` of the part.
 * `name` — Returns the name of the part.

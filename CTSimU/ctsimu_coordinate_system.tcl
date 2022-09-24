@@ -64,9 +64,13 @@ namespace eval ::ctsimu {
 
 		method make_unit_coordinate_system { } {
 			# Make coordinate system base unit vectors.
-			$_u to_unit_vector
-			$_v to_unit_vector
-			$_w to_unit_vector
+			try {
+				$_u to_unit_vector
+				$_v to_unit_vector
+				$_w to_unit_vector
+			} on error { result } {
+				::ctsimu::fail "Cannot make [my name] a unit coordinate system: $result"
+			}
 		}
 
 		method make_from_vectors { center u w attached } {

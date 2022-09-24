@@ -107,7 +107,12 @@ namespace eval ::ctsimu {
 		# Getters
 		# -------------------------
 		method get { property } {
-			# Get a property value from the _properties dict
+			# Returns the current value for a given `property`.
+			return [[dict get $_properties $property] current_value]
+		}
+
+		method parameter { property } {
+			# Returns the parameter object behind a given `property`
 			return [dict get $_properties $property]
 		}
 
@@ -140,14 +145,14 @@ namespace eval ::ctsimu {
 			if {[dict exists $_properties $property]} {
 				# Already exists in dict.
 				# Get parameter, reset it and set its standard value:
-				set parameter [my get $property]
-				$parameter reset
+				set param [my parameter $property]
+				$param reset
 
 				if {$native_unit != "undefined"} {
-					$parameter set_native_unit $native_unit
+					$param set_native_unit $native_unit
 				}				
 
-				$parameter set_standard_value $value
+				$param set_standard_value $value
 			} else {
 				# Create new parameter with value:
 				if {$native_unit == "undefined"} {
@@ -155,8 +160,8 @@ namespace eval ::ctsimu {
 					set native_unit ""
 				}	
 
-				set parameter [::ctsimu::parameter new $native_unit $value]
-				dict set _properties $property $parameter
+				set param [::ctsimu::parameter new $native_unit $value]
+				dict set _properties $property $param
 			}
 		}
 
@@ -170,7 +175,7 @@ namespace eval ::ctsimu {
 			# Check if the property already exists:
 			if {[dict exists $_properties $property]} {
 				# Already exists in dict. Get it and destroy it:
-				[my get $property] destroy
+				[my parameter $property] destroy
 			}
 			
 			# Set new property parameter:
@@ -195,8 +200,8 @@ namespace eval ::ctsimu {
 			if {![dict exists $_properties $property]} {
 				# If not, create a new parameter object
 				# and insert it into the _properties dictionary:
-				set parameter [::ctsimu::parameter new $native_unit $fail_value]
-				dict set _properties $property $parameter
+				set param [::ctsimu::parameter new $native_unit $fail_value]
+				dict set _properties $property $param
 			}
 
 			# Extract the value and set it as standard value:
@@ -228,11 +233,11 @@ namespace eval ::ctsimu {
 			if {![dict exists $_properties $property]} {
 				# If not, create a new parameter object
 				# and insert it into the _properties dictionary:
-				set parameter [::ctsimu::parameter new $native_unit $fail_value]
-				dict set _properties $property $parameter
+				set param [::ctsimu::parameter new $native_unit $fail_value]
+				dict set _properties $property $param
 			}
 
-			set p [my get $property]
+			set p [my parameter $property]
 			if { ![$p set_from_key $dictionary $key_sequence] } {
 				# Setting from key failed. Set to fail value.
 				my set $property $fail_value
@@ -249,11 +254,11 @@ namespace eval ::ctsimu {
 
 			# Check if the property already exists:
 			if {![dict exists $_properties $property]} {
-				set parameter [::ctsimu::parameter new $native_unit $fail_value]
-				dict set _properties $property $parameter
+				set param [::ctsimu::parameter new $native_unit $fail_value]
+				dict set _properties $property $param
 			}
 
-			set p [my get $property]
+			set p [my parameter $property]
 			if { ![$p set_from_possible_keys $dictionary $key_sequences] } {
 				# Setting from key failed. Set to standard value.
 				my set $property $fail_value

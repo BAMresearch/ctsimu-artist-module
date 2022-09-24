@@ -34,6 +34,7 @@ The following table gives an overview of the currently used keys and their meani
 | Settings Key          | Description                                                         |
 | :-------------------- | :------------------------------------------------------------------ |
 | `json_file`           | The currently loaded CTSimU scenario description.                   |
+| `json_file_directory` | Directory of the currently loaded CTSimU scenario file.             |
 | `format_version`      | The file format version of the currently loaded scenario.           |
 | `output_fileformat`   | File format of the projection images: `raw` or `tiff`.              |
 | `output_datatype`     | Data type of the projection images: `uint16` or `float32`.          |

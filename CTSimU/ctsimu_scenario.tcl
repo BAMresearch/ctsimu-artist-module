@@ -59,6 +59,7 @@ namespace eval ::ctsimu {
 			my _set_json_load_status      0
 
 			my set json_file             ""
+			my set json_file_directory   ""
 			my set start_angle            0
 			my set stop_angle           360
 			my set n_projections       2000
@@ -147,12 +148,9 @@ namespace eval ::ctsimu {
 		method load_json_scene { json_filename } {
 			my reset
 
-			set jsonfiledir [file dirname "$json_filename"]
+			my set json_file_directory [file dirname "$json_filename"]
 
-			set jsonfile [open $json_filename r]
-			fconfigure $jsonfile -encoding utf-8
-			set jsonstring [read $jsonfile]
-			close $jsonfile
+			set jsonstring [::ctsimu::read_json_file $json_filename]
 
 			# Stage
 			# -------------

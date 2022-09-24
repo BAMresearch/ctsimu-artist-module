@@ -45,6 +45,35 @@ namespace eval ::ctsimu {
 	
 	# Checkers for valid JSON data
 	# -----------------------------
+	proc read_json_file { filename } {
+		set jf [open $filename rb]
+		try {
+			set jsonstring [json decode [read $jf] utf-8]
+		} finally {
+			close $jf
+		}
+
+		if { [json valid -details errordetails $jsonstring] != 1 } {
+			# Get error line number:
+			set errpos [dict get $errordetails char_ofs]
+			set char_counter 0
+			set line_counter 0
+			set errline 0
+			foreach line [split $jsonstring "\n"] {
+				incr line_counter
+				set char_counter [expr $char_counter + [string length $line] + 1]
+				if { $char_counter >= $errpos} {
+					set errline $line_counter
+					break
+				}
+			}
+
+			::ctsimu::fail "Syntax Error in JSON file at character position $errpos (around line $errline). [dict get $errordetails errmsg]. Try opening the JSON file in Firefox to find the mistake. Maybe a comma too much? File: $filename"
+		}
+
+		return $jsonstring
+	}
+
 	proc value_is_null { value } {
 		# Checks if a specific value is set to `null`.
 		if {$value == "null"} {

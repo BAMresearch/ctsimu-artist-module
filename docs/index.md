@@ -12,6 +12,10 @@ The following list provides the source order and links to the descriptions of ea
 
 	A class to manage and set up a complete CTSimU scenario.
 
+* **[`ctsimu_samplemanager.tcl`](samplemanager.md)**
+
+	The sample manager keeps the samples of the scene together.
+
 * **[`ctsimu_source.tcl`](source.md)**
 
 	A class to set up and generate an X-ray source. Inherits from [`::ctsimu::part`](part.md).
@@ -23,6 +27,18 @@ The following list provides the source order and links to the descriptions of ea
 * **[`ctsimu_detector.tcl`](detector.md)**
 
 	A class to set up and generate a detector. Inherits from [`::ctsimu::part`](part.md).
+
+* **[`ctsimu_sample.tcl`](sample.md)**
+
+	A generic sample. Inherits from [`::ctsimu::part`](part.md).
+
+* **[`ctsimu_materialmanager.tcl`](materialmanager.md)**
+
+	The material manager that handles all the sample materials.
+
+* **[`ctsimu_material.tcl`](material.md)**
+
+	A class for a sample material.
 
 * **[`ctsimu_part.tcl`](part.md)**
 	

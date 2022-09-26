@@ -354,8 +354,8 @@
 
 	"acquisition":
 	{
-		"start_angle": {"value":    0, "unit": "deg", "uncertainty": {"value": 0, "unit": "deg"}},
-		"stop_angle":  {"value":  360, "unit": "deg", "uncertainty": {"value": 0, "unit": "deg"}},
+		"start_angle": {"value":    2, "unit": "deg", "uncertainty": {"value": 0, "unit": "deg"}},
+		"stop_angle":  {"value":  358, "unit": "deg", "uncertainty": {"value": 0, "unit": "deg"}},
 		"direction": "CCW",
 		"scan_mode": "stop+go",
 		"scan_speed": null,

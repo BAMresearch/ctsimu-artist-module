@@ -2,7 +2,7 @@ package require TclOO
 package require fileutil
 
 variable BasePath [file dirname [info script]]
-source -encoding utf-8 [file join $BasePath ctsimu_part.tcl]
+source -encoding utf-8 [file join $BasePath ctsimu_sample.tcl]
 
 # A class for the detector.
 
@@ -21,6 +21,9 @@ namespace eval ::ctsimu {
 
 		method reset { } {
 			# Reset to standard settings.
+			
+			# Reset the '::ctsimu::part' that handles the coordinate system:
+			next; # call reset of parent class ::ctsimu::part
 
 			# Declare all detector parameters and their native units.
 			# --------------------------------------------------------
@@ -71,9 +74,6 @@ namespace eval ::ctsimu {
 			
 			# Scintillator
 			my set scintillator_material_id "" "string"
-
-			# Reset the '::ctsimu::part' that handles the coordinate system:
-			next; # call reset of parent class ::ctsimu::part
 		}
 
 		method set_from_json { jobj stage } {

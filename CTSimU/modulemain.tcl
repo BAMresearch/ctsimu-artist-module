@@ -17,10 +17,13 @@ package require rl_json
 package require csv
 package require fileutil
 
+# Source the CTSimU namespace and tell it the module namespace:
 source [file join $BasePath ctsimu_main.tcl]
-variable ctsimu_scenario;  # currently loaded CTSimU scenario
-set ctsimu_scenario [::ctsimu::scenario new]
+::ctsimu::set_module_namespace $ns
 
+# The currently loaded CTSimU scenario:
+variable ctsimu_scenario
+set ctsimu_scenario [::ctsimu::scenario new]
 
 proc Settings { args } {
 	variable GUISettings
@@ -351,7 +354,7 @@ proc InitGUI { parent } {
 		{Projections}          nProjections   integer   {}
 		{Display Projection #} projNr      integer   {}
 		{Final projection is taken at stop angle}  includeFinalAngle  bool   { }
-		{ } projBtns       buttons { "Show" CTSimU_showProjection 7 "<" CTSimU_prevProjection 3 ">" CTSimU_nextProjection 3 }
+		{ } projBtns       buttons { "Show" showProjection 7 "<" prevProjection 3 ">" nextProjection 3 }
 	}
 
 	set CTScan  [FoldFrame $model.frmCTScan -text "Simulation"     -padding $pad]
@@ -365,7 +368,7 @@ proc InitGUI { parent } {
 		{Flat field images}       nFlatFrames     integer  {}
 		{Flat frames to average}  nFlatAvg        integer  {}
 		{Flat field mode}         ffIdeal         choice   { "Regular" 0 "Ideal" 1 }
-		{ }                       scanBtn         buttons  { "Run scenario" CTSimU_startScan 12 "Stop" CTSimU_stopScan 7 }
+		{ }                       scanBtn         buttons  { "Run scenario" startScan 12 "Stop" CTSimU_stopScan 7 }
 	}
 	
 #	set infoFrame   [FoldFrame $model.frmInfo -text "Status"     -padding $pad]
@@ -489,7 +492,7 @@ proc GUIok {} {
 	variable GUISettings
 
 	loadCTSimUScene
-	CTSimU_showProjection
+	showProjection
 }
 
 proc loadCTSimUScene {} {
@@ -507,7 +510,8 @@ proc loadCTSimUScene {} {
 	if { $sceneState == 1 } {
 		fillCurrentParameters
 #		showInfo "Scenario loaded."
-#		CTSimU_showProjection
+#		showProjection
+		$ctsimu_scenario set_frame 0 1
 		Engine::RenderPreview
 		::SceneView::ViewAllCmd
 	}
@@ -932,7 +936,7 @@ proc runBatch { } {
 #  Scenario loading and handling
 # ----------------------------------------------
 
-proc CTSimU_showProjection {} {
+proc showProjection {} {
 	variable GUISettings
 	variable ctsimu_scenario
 
@@ -940,7 +944,7 @@ proc CTSimU_showProjection {} {
 	#setupProjection [$ctsimu_scenario getCurrentProjNr] 1
 }
 
-proc CTSimU_nextProjection {} {
+proc nextProjection {} {
 	variable GUISettings
 
 	applyCurrentParameters
@@ -949,10 +953,10 @@ proc CTSimU_nextProjection {} {
 	incr projNr
 	set GUISettings(projNr) $projNr
 
-	CTSimU_showProjection
+	showProjection
 }
 
-proc CTSimU_prevProjection {} {
+proc prevProjection {} {
 	variable GUISettings
 
 	applyCurrentParameters
@@ -961,10 +965,10 @@ proc CTSimU_prevProjection {} {
 	incr projNr -1
 	set GUISettings(projNr) $projNr
 
-	CTSimU_showProjection
+	showProjection
 }
 
-proc CTSimU_startScan {} {
+proc startScan {} {
 	# User starts scan with button
 
 	variable GUISettings
@@ -975,7 +979,6 @@ proc CTSimU_startScan {} {
 	
 	$ctsimu_scenario set output_folder $GUISettings(outputFolder) ""
 	$ctsimu_scenario set output_basename $GUISettings(outputBaseName)
-	startScan
 }
 
 proc CTSimU_stopScan {} {

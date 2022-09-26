@@ -35,7 +35,6 @@ The following table gives an overview of the currently used keys and their meani
 | :-------------------- | :------------------------------------------------------------------ |
 | `json_file`           | The currently loaded CTSimU scenario description.                   |
 | `json_file_directory` | Directory of the currently loaded CTSimU scenario file.             |
-| `format_version`      | The file format version of the currently loaded scenario.           |
 | `output_fileformat`   | File format of the projection images: `raw` or `tiff`.              |
 | `output_datatype`     | Data type of the projection images: `uint16` or `float32`.          |
 | `output_folder`       | Where the projection files and simulation results will be stored.   |
@@ -52,6 +51,10 @@ The following table gives an overview of the currently used keys and their meani
 | `n_flats`             | Number of flat field images to create.                              |
 | `n_flat_avg`          | Number of frame averages for a flat field image.                    |
 | `flat_field_ideal`    | Generate an ideal (noise-free) flat field image? (`0` or `1`)       |
+| `current_frame`       | Current frame number.                                               |
+| `n_frames`            | Total number of frames in scan.                                     |
+| `environment_material`| Material id for the environment.                                    |
+
 | `create_cera_config_file` | If a reconstruction configuration file for SIEMENS CERA shall be created for the simulated projection images. |
 | `cera_output_datatype` | Data type of the CERA reconstruction volume: `uint16` or `float32`. |
 | `create_clfdk_config_file` | If a reconstruction configuration file for BAM clFDK shall be created for the simulated projection images. |

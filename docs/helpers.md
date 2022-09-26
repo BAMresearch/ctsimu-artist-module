@@ -1,5 +1,5 @@
 # ::ctsimu::helpers
-Helper functions for handling CTSimU JSON objects via the rl_json extension, as well as unit conversions and other types of conversions. These functions are available directly under the ::ctsimu namespace.
+Helper functions and variables, especially for handling CTSimU JSON objects via the rl_json extension, as well as unit conversions and other types of conversions. These functions and variables are available directly under the `::ctsimu` namespace.
 
 CTSimU defines a [JSON-based file format](https://bamresearch.github.io/ctsimu-scenarios) for scenario descriptions. Its parameters typically have a structure like in the following example:
 
@@ -20,7 +20,18 @@ CTSimU defines a [JSON-based file format](https://bamresearch.github.io/ctsimu-s
       }
     }
 
+## Variables
+
+* `pi` — `3.1415926535897931`
+* `ctsimu_module_namespace` — Namespace of the CTSimU module in aRTist. Should be set from aRTist when loading the module using `::ctsimu::set_module_namespace`.
+
 ## Functions
+
+### General
+
+* `module_directory` — Returns the script directory (to access files inside the module package).
+* `aRTist_available` — To check whether the `aRTist` namespace is available.
+* `set_module_namespace { ns }` — Store reference to aRTist module namespace in `ctsimu` namespace, so that the `modulemain.tcl` can be accessed (used to show GUI status messages).
 
 ### Logging System
 The module uses its own little logging system that invokes aRTist's logging system if available. If aRTist is not available, messages are simply printed on the console.
@@ -29,6 +40,7 @@ The module uses its own little logging system that invokes aRTist's logging syst
 * `warn { message }` — Handles warning messages.
 * `note { message }` — Handles information messages.
 * `debug { message }` — Handles debug messages.
+* `status_info { message }` — Shows a status note in the module's GUI (if aRTist is available).
 
 ### Checkers
 

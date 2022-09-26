@@ -22,15 +22,14 @@ namespace eval ::ctsimu {
 		method reset { } {
 			# Reset to standard settings.
 
-			# Declare all source parameters and their native units.
-			# --------------------------------------------------------
-			
-			# General properties:
-			my set model            "" "string"
-			my set manufacturer     "" "string"
-
 			# Reset the '::ctsimu::part' that handles the coordinate system:
 			next; # call reset of parent class ::ctsimu::part
+
+			# Declare all source parameters and their native units.
+			# --------------------------------------------------------
+			# General properties:
+			my set model            "" "string"
+			my set manufacturer     "" "string"		
 		}
 
 		method set_from_json { jobj stage } {

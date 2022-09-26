@@ -7,9 +7,34 @@ namespace eval ::ctsimu {
 	namespace import ::rl_json::*
 
 	set pi 3.1415926535897931
+	set ctsimu_module_namespace 0
+
+	proc module_directory { } {
+		# Returns the script directory
+		return [ file dirname [ file normalize [ info script ] ] ]
+	}
 
 	proc aRTist_available { } {
 		return [namespace exists ::aRTist]
+	}
+
+	proc set_module_namespace { ns } {
+		# Store reference to aRTist module namespace
+		# in ctsimu namespace, so that the modulemain.tcl
+		# can be accessed (used to show GUI status messages).
+		set ::ctsimu::ctsimu_module_namespace $ns
+	}
+
+	proc status_info {  message } {
+		# Shows a status message in the GUI of the aRTist module
+		if { [::ctsimu::aRTist_available] } {
+			if { $::ctsimu::ctsimu_module_namespace != 0} {
+				${::ctsimu::ctsimu_module_namespace}::showInfo $message
+				::ctsimu::note $message
+			} else {
+				::ctsimu::warn "aRTist module namespace not available."
+			}
+		}
 	}
 
 	proc fail { message } {
@@ -359,7 +384,7 @@ namespace eval ::ctsimu {
 		if { $native_unit == "" } {
 			return $value
 		} elseif { $native_unit == "string" } {
-			return $value; # this is a string in this case, e.g. spectrum file
+			return $value; # this is a string, e.g. spectrum file
 		} else {
 			if { $native_unit == "mm" } {
 				# internal lengths are always in mm
@@ -404,11 +429,23 @@ namespace eval ::ctsimu {
 			# This is not a value/unit pair.
 			# Only convert bool $value to 1 or 0.
 			return [::ctsimu::from_bool $value_and_unit]
+		} elseif { $native_unit == "string" } {
+			if { ![json exists $value_and_unit value] } {
+				# This is already a string, not embedded in
+				# a value/unit pair.
+				return $value_and_unit
+			}			
 		}
 
-		if { [json exists $value_and_unit value] && [json exists $value_and_unit unit] } {
+		if { [json exists $value_and_unit value] } {
 			set value [json get $value_and_unit value]
-			set unit  [json get $value_and_unit unit]
+			set unit ""
+			if { [json exists $value_and_unit unit] } {
+				# The unit does not necessarily have to exist.
+				# For example, in the case of strings it is clear
+				# just from the native unit.
+				set unit  [json get $value_and_unit unit]
+			}
 
 			return [::ctsimu::convert_to_native_unit $unit $native_unit $value]
 		} else {

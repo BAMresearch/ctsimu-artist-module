@@ -37,8 +37,8 @@ CTSimU defines a [JSON-based file format](https://bamresearch.github.io/ctsimu-s
 The module uses its own little logging system that invokes aRTist's logging system if available. If aRTist is not available, messages are simply printed on the console.
 
 * `fail { message }` — Handles error messages.
-* `warn { message }` — Handles warning messages.
-* `note { message }` — Handles information messages.
+* `warning { message }` — Handles warning messages.
+* `info { message }` — Handles information messages.
 * `debug { message }` — Handles debug messages.
 * `status_info { message }` — Shows a status note in the module's GUI (if aRTist is available).
 
@@ -55,10 +55,12 @@ The module uses its own little logging system that invokes aRTist's logging syst
 
 ### Getters
 
-* `get_value { dictionary keys {fail_value 0} }` — Get the specific value of the parameter that is located at the given sequence of `keys` in the JSON dictionary. Returns the `fail_value` (standard is `0`) if the key sequence cannot be found or the value is set to `null`. Example from above:
+* `get_value { dictionary { keys {} } {fail_value 0} }` — Get the specific value of the parameter that is located at the given sequence of `keys` in the JSON dictionary. Returns the `fail_value` (standard is `0`) if the key sequence cannot be found or the value is set to `null`. Example from above:
     
     `get_value $object {center x value}` returns `10.0`
-* `json_exists { dictionary keys }` — Passthrough of `::rl_json::json exists`.
+* `json_exists { dictionary { keys {} } }` — Passthrough of `::rl_json::json exists`.
+* `json_isnull { dictionary { keys {} } }` — Passthrough of `::rl_json::json isnull`.
+* `json_exists_and_not_null { dictionary { keys {} } }` — Returns `1` if the key sequence exists and its value is not `null`. Otherwise returns `0`.
 * `json_type { dictionary { keys {} } }` — Get type of JSON item in `dictionary` located by the `keys` sequence. Passthrough of `::rl_json::json type`.
 * `json_extract { dictionary keys }` — Get the JSON sub-object that is located by a given sequence of `keys` in the JSON `dictionary`.
 * `json_extract_from_possible_keys { dictionary key_sequences }` — Searches the JSON `dictionary` for each key sequence in the given list of `key_sequences`. The first sequence that exists will return an extracted JSON object.

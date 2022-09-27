@@ -33,8 +33,15 @@ namespace eval ::ctsimu {
 			# be available.
 			set _void [::ctsimu::material new "void" "void"]
 			$_void set_density 0
-			$_void set_composition ""
+			$_void set_composition {}
 			my add_material $_void
+
+			# Also create a 'none' material for the visual
+			# stage object:
+			set _none [::ctsimu::material new "none" "none"]
+			$_none set_density 0
+			$_none set_composition {}
+			my add_material $_none
 		}
 
 		method get { material_id } {
@@ -61,14 +68,16 @@ namespace eval ::ctsimu {
 			my reset
 			::ctsimu::status_info "Reading materials..."
 
-			if { [::ctsimu::json_exists $jsonscene {materials}] } {
+			if { [::ctsimu::json_exists_and_not_null $jsonscene {materials}] } {
 				if { [::ctsimu::json_type $jsonscene {materials}] == "array" } {
 					set materials [::ctsimu::json_extract $jsonscene {materials}]
 					::rl_json::json foreach json_material $materials {
-						set new_material [::ctsimu::material new]
-						$new_material set_from_json $json_material
-						$new_material add_to_aRTist
-						my add_material $new_material
+						if { ![::ctsimu::json_isnull $json_material] } {
+							set new_material [::ctsimu::material new]
+							$new_material set_from_json $json_material
+							#$new_material add_to_aRTist
+							my add_material $new_material
+						}
 					}
 				} else {
 					::ctsimu::fail "The materials section in the JSON file is not an array."

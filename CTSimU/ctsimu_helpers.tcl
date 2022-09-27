@@ -1,5 +1,6 @@
 package require TclOO
 package require rl_json
+package require fileutil
 
 variable BasePath [file dirname [info script]]
 
@@ -8,11 +9,7 @@ namespace eval ::ctsimu {
 
 	set pi 3.1415926535897931
 	set ctsimu_module_namespace 0
-
-	proc module_directory { } {
-		# Returns the script directory
-		return [ file dirname [ file normalize [ info script ] ] ]
-	}
+	set module_directory [ file dirname [ file normalize [ info script ] ] ]
 
 	proc aRTist_available { } {
 		return [namespace exists ::aRTist]
@@ -25,14 +22,19 @@ namespace eval ::ctsimu {
 		set ::ctsimu::ctsimu_module_namespace $ns
 	}
 
+	proc set_module_directory { dir } {
+		set ::ctsimu::module_directory $dir
+		::ctsimu::debug "Setting CTSimU module directory: $dir"
+	}
+
 	proc status_info {  message } {
 		# Shows a status message in the GUI of the aRTist module
 		if { [::ctsimu::aRTist_available] } {
 			if { $::ctsimu::ctsimu_module_namespace != 0} {
 				${::ctsimu::ctsimu_module_namespace}::showInfo $message
-				::ctsimu::note $message
+				::ctsimu::info $message
 			} else {
-				::ctsimu::warn "aRTist module namespace not available."
+				::ctsimu::warning "aRTist module namespace not available."
 			}
 		}
 	}
@@ -46,7 +48,7 @@ namespace eval ::ctsimu {
 		error $message
 	}
 
-	proc warn { message } {
+	proc warning { message } {
 		# Handles warning messages.
 		if { [::ctsimu::aRTist_available] } {
 			::aRTist::Warning { $message }
@@ -55,7 +57,7 @@ namespace eval ::ctsimu {
 		}
 	}
 
-	proc note { message } {
+	proc info { message } {
 		# Handles information messages.
 		if { [::ctsimu::aRTist_available] } {
 			::aRTist::Info { $message }
@@ -69,7 +71,7 @@ namespace eval ::ctsimu {
 		if { [::ctsimu::aRTist_available] } {
 			::aRTist::Debug { $message }
 		} else {
-			puts "$message"
+			#puts "$message"
 		}
 	}
 
@@ -187,7 +189,7 @@ namespace eval ::ctsimu {
 
 	# Getters
 	# -----------------------------
-	proc get_value { dictionary keys {fail_value 0} } {
+	proc get_value { dictionary { keys {} } {fail_value 0} } {
 		# Get the specific value of the parameter that is located
 		# at the given sequence of `keys` in the JSON dictionary.
 		if [json exists $dictionary {*}$keys] {
@@ -199,18 +201,30 @@ namespace eval ::ctsimu {
 		return $fail_value
 	}
 	
-	proc json_exists { dictionary keys } {
+	proc json_exists { dictionary { keys {} } } {
 		return [json exists $dictionary {*}$keys]
 	}
-	
+
+	proc json_isnull { dictionary { keys {} } } {
+		return [json isnull $dictionary {*}$keys]
+	}
+
+	proc json_exists_and_not_null { dictionary { keys {} } } {
+		# Returns `1` if the key sequence exists and
+		# its value is not `null`. Otherwise returns `0`.
+		if { [::ctsimu::json_exists $dictionary $keys] } {
+			if { ![::ctsimu::json_isnull $dictionary $keys] } {
+				return 1
+			}
+		}
+
+		return 0
+	}
+
 	proc json_type { dictionary { keys {} } } {
 		return [json type [json extract $dictionary {*}$keys]]
 	}
 	
-	proc json_isnull { dictionary keys } {
-		return [json isnull $dictionary {*}$keys]
-	}
-
 	proc json_extract { dictionary keys } {
 		# Get the JSON sub-object that is located
 		# by a given sequence of `keys` in the JSON dictionary.

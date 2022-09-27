@@ -39,26 +39,64 @@ namespace eval ::ctsimu {
 			}
 		}
 
-		method update_scene { } {
+		method update_scene { stageCS } {
 			# Move objects in scene to match current frame number.
 			::ctsimu::status_info "Placing objects..."
 			foreach s $_samples {
 				$s place_in_scene $stageCS
+				::ctsimu::info "CS [$s name]:"
+				::ctsimu::info [[$s current_coordinate_system] print]
 			}
 		}
 
-		method load_meshes { stageCS } {
+		method set_from_json { jsonscene stageCS } {
+			::ctsimu::status_info "Reading sample information..."
+
+			if { [::ctsimu::json_exists_and_not_null $jsonscene {samples}] } {
+				if { [::ctsimu::json_type $jsonscene {samples}] == "array" } {
+					set samples [::ctsimu::json_extract $jsonscene {samples}]
+					::rl_json::json foreach json_sample $samples {
+						if { ![::ctsimu::json_isnull $json_sample] } {
+							set new_sample [::ctsimu::sample new]
+							$new_sample set_from_json $json_sample $stageCS
+							my add_sample $new_sample
+						}
+					}
+				} else {
+					::ctsimu::fail "The samples section in the JSON file is not an array."
+				}
+			} else {
+				::ctsimu::fail "JSON file does not have a samples section."
+			}
+		}
+
+		method load_meshes { stageCS jsondir material_manager } {
 			# Loads the mesh file of each part into aRTist.
 			::ctsimu::status_info "Loading surface meshes..."
 			
 			if { [::ctsimu::aRTist_available] } {
-				# Clear current part list: 
+				# Clear current part list:
 				::PartList::Clear
+
+				# Samples must be centered at (0, 0, 0) after loading:
+				set ::aRTist::LoadCentered 1
 			}
 
 			foreach s $_samples {
+				set meshfile [$s get surface_mesh_file]
+				::ctsimu::info "[$s name]: [$s get surface_mesh_file_path_is_absolute]"
+				if { ![$s get surface_mesh_file_path_is_absolute] } {
+					# If the surface mesh location is a relative path,
+					# the location of the JSON file need to be appended
+					# in front:
+					set meshfile $jsondir
+					append meshfile "/[$s get surface_mesh_file]"
+					puts "Meshfile: $meshfile"
+				}
+
+				set material_id [ [ $material_manager get [$s get material_id] ] aRTist_id ]
 				if { [::ctsimu::aRTist_available] } {
-					$s set_id [::PartList::LoadPart [$s get surface_mesh_file] "Fe" [$s name] yes]
+					$s set_id [::PartList::LoadPart $meshfile "$material_id" "[$s name]" yes]
 				}
 
 				$s place_in_scene $stageCS

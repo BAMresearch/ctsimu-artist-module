@@ -202,7 +202,7 @@ namespace eval ::ctsimu {
 			# ------------------------
 			my set environment_material [::ctsimu::get_value $jsonstring {environment material_id} "null"]
 			if { [my get environment_material] == "null" } {
-				::ctsimu::warn "No environment material found. Set to \'void\'."
+				::ctsimu::warning "No environment material found. Set to \'void\'."
 				my set environment_material "void"
 			}
 
@@ -224,17 +224,23 @@ namespace eval ::ctsimu {
 			# Place objects in scene
 			# ------------------------
 			::ctsimu::status_info "Placing objects..."
-			$_source   place_in_scene [$_stage current_coordinate_system]
-			$_detector place_in_scene [$_stage current_coordinate_system]
+			set stageCS [$_stage current_coordinate_system]
+
+			$_detector set_frame $stageCS [my get current_frame] [my get n_frames] 1
+			$_source set_frame $stageCS [my get current_frame] [my get n_frames] 1
+			
+			$_detector place_in_scene $stageCS
+			$_source place_in_scene $stageCS
 
 			# Add the stage as a sample to the sample manager
 			# so that it can be shown in the scene:
 			if { [my get show_stage] } {
-				$_sample_manager add_sample [$_stage get_sample_copy [my get environment_material]]
+				$_sample_manager add_sample [$_stage get_sample_copy]
 			}
 
-			$_sample_manager set_frame [$_stage current_coordinate_system] [my get current_frame] [my get n_frames]
-			$_sample_manager load_meshes [$_stage current_coordinate_system]
+			$_sample_manager set_from_json $jsonstring $stageCS
+			$_sample_manager set_frame $stageCS [my get current_frame] [my get n_frames]
+			$_sample_manager load_meshes $stageCS [my get json_file_directory] $_material_manager
 
 			::ctsimu::status_info "Scenario loaded."
 			return 1
@@ -243,8 +249,20 @@ namespace eval ::ctsimu {
 		method set_frame { frame { force 0 } } {
 			my set current_frame $frame
 
+			set stageCS [$_stage current_coordinate_system]
+
 			$_material_manager set_frame $frame [my get n_frames]
-			$_sample_manager set_frame [$_stage current_coordinate_system] $frame [my get n_frames]
+			$_sample_manager set_frame $stageCS $frame [my get n_frames]
+			$_sample_manager update_scene $stageCS
+			
+			$_detector set_frame $stageCS $frame [my get n_frames]
+			$_detector place_in_scene $stageCS
+
+			::ctsimu::info "CS Detector:"
+			::ctsimu::info [[$_detector current_coordinate_system] print]
+
+			$_source set_frame $stageCS $frame [my get n_frames]
+			$_source place_in_scene $stageCS
 
 			# Set environment material:
 			if { [::ctsimu::aRTist_available] } {
@@ -254,6 +272,8 @@ namespace eval ::ctsimu {
 				# a higher-density material:
 				set ::Xsetup(SpaceMaterial) [ [$_material_manager get [my get environment_material]] aRTist_id ]
 			}
+
+			::ctsimu::status_info "Done setting frame $frame."
 		}
 	}
 }

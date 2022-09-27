@@ -15,7 +15,7 @@ namespace eval ::ctsimu {
 
 			# Set the mesh file for the stage
 			# from the script location and the stage.stl file:
-			set meshfile "[::ctsimu::module_directory]/stage.stl"
+			set meshfile "$::ctsimu::module_directory/stage.stl"
 			my set surface_mesh_file $meshfile
 
 			::ctsimu::debug "Stage surface mesh file: $meshfile"
@@ -42,10 +42,10 @@ namespace eval ::ctsimu {
 			set stageGeometry [::ctsimu::json_extract $jobj {geometry stage}]
 			my set_geometry $stageGeometry $::ctsimu::world
 
-			::ctsimu::note "Done reading stage parameters."
+			::ctsimu::info "Done reading stage parameters."
 		}
 
-		method get_sample_copy { environment_material } {
+		method get_sample_copy { } {
 			# Create a sample object from this stage
 			# for the sample manager, to show it as
 			# an object in aRTist's virtual scene.
@@ -71,9 +71,9 @@ namespace eval ::ctsimu {
 			$stage_as_sample set_u $u
 			$stage_as_sample set_w $w
 
-			$stage_as_sample set material_id $environment_material
-
+			$stage_as_sample set material_id "none"
 			$stage_as_sample set surface_mesh_file [my get surface_mesh_file]
+			$stage_as_sample set surface_mesh_file_path_is_absolute 1
 
 			return $stage_as_sample
 		}

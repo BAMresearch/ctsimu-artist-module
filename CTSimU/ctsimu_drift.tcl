@@ -87,36 +87,33 @@ namespace eval ::ctsimu {
 		method set_from_json { json_object } {
 			# Sets the drift from a given JSON drift object.
 			my reset
-			set success 0
 
 			# Get JSON unit
 			set jsonUnit ""
-			if { [::ctsimu::json_exists $json_object {unit}] } {
-				if { ![::ctsimu::json_isnull $json_object {unit}] } {
-					set jsonUnit [::ctsimu::get_value $json_object {unit} "null"]
-				}
+			if { [::ctsimu::json_exists_and_not_null $json_object {unit}] } {
+				set jsonUnit [::ctsimu::get_value $json_object {unit} "null"]
 			}
 
 			# Get drift value(s)
-			if { [::ctsimu::json_exists $json_object value] } {
-				if { ![::ctsimu::json_isnull $value value] } {
-					set jsonValueType [::ctsimu::json_type $json_object value]
+			if { [::ctsimu::json_exists_and_not_null $json_object value] } {
+				set jsonValueType [::ctsimu::json_type $json_object value]
 
-					if {$jsonValueType == "number"} {
-						set jsonValue [::ctsimu::get_value $json_object {value}]
-						lappend _trajectory [::ctsimu::json_convert_to_native_unit $_native_unit $jsonValue]
-					} elseif {$jsonValueType == "array"} {
-						set jsonValueArray [::ctsimu::json_extract $json_object {value}]
-						::rl_json::json foreach value $jsonValueArray {
-							lappend _trajectory [::ctsimu::convert_to_native_unit $jsonUnit $_native_unit $value]
-						}
+				if {$jsonValueType == "number"} {
+					set jsonValue [::ctsimu::get_value $json_object {value}]
+					lappend _trajectory [::ctsimu::json_convert_to_native_unit $_native_unit $jsonValue]
+					return 1
+				} elseif {$jsonValueType == "array"} {
+					set jsonValueArray [::ctsimu::json_extract $json_object {value}]
+					::rl_json::json foreach value $jsonValueArray {
+						lappend _trajectory [::ctsimu::convert_to_native_unit $jsonUnit $_native_unit $value]
 					}
-				} else {
-					# TODO: Check if a drift file can be imported (and do import it if possible).
+					return 1
 				}
+			} else {
+				# TODO: Check if a drift file can be imported (and do import it if possible).
 			}
 
-			return $success; # 0 (unsuccessful)
+			return 0
 		}
 
 		method get_value_for_frame { frame nFrames } {

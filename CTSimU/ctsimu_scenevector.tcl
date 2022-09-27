@@ -30,7 +30,7 @@ namespace eval ::ctsimu {
 			my set_native_unit $native_unit
 
 			# Reference coordinate system:
-			set _reference "world"; # "local", "sample"
+			set _reference "world"; # "world", local", "sample"
 		}
 
 		destructor {
@@ -45,14 +45,18 @@ namespace eval ::ctsimu {
 			# Return the string that identifies
 			# the scenevector's reference coordinate system:
 			return $_reference
-		}	
+		}
+
+		method print { } {
+			return "([$_c0 current_value], [$_c1 current_value], [$_c2 current_value]) in [my reference]"
+		}
 		
 		# Setters
 		# -------------------------
 		method set_reference { reference } {
 			# Set the reference coordinate system.
-			# Can be "world", "local" or "stage".
-			set valid_refs [list "world" "local" "stage"]
+			# Can be "world", "local" or "sample".
+			set valid_refs [list "world" "local" "sample"]
 			if { [::ctsimu::is_valid $reference $valid_refs] == 1 } {
 				set _reference $reference
 			} else {
@@ -357,9 +361,9 @@ namespace eval ::ctsimu {
 		method set_from_json { json_object } {
 			# Sets up the scene vector from a CTSimU JSON
 			# object that describes a three-component vector.		
-			if { [::ctsimu::json_exists $json_object x] && \
-				 [::ctsimu::json_exists $json_object y] && \
-				 [::ctsimu::json_exists $json_object z] } {
+			if { [::ctsimu::json_exists_and_not_null $json_object x] && \
+				 [::ctsimu::json_exists_and_not_null $json_object y] && \
+				 [::ctsimu::json_exists_and_not_null $json_object z] } {
 				 	my set_reference "world"
 				 	if { [$_c0 set_from_key $json_object {x}] && \
 				 	     [$_c1 set_from_key $json_object {y}] && \
@@ -368,10 +372,10 @@ namespace eval ::ctsimu {
 				 	     	return 1
 				 	     }
 			} elseif {
-				 [::ctsimu::json_exists $json_object u] && \
-				 [::ctsimu::json_exists $json_object v] && \
-				 [::ctsimu::json_exists $json_object w] } {
-				 	my set_reference "stage"
+				 [::ctsimu::json_exists_and_not_null $json_object u] && \
+				 [::ctsimu::json_exists_and_not_null $json_object v] && \
+				 [::ctsimu::json_exists_and_not_null $json_object w] } {
+				 	my set_reference "local"
 				 	if { [$_c0 set_from_key $json_object {u}] && \
 				 	     [$_c1 set_from_key $json_object {v}] && \
 				 	     [$_c2 set_from_key $json_object {w}] } {
@@ -379,9 +383,9 @@ namespace eval ::ctsimu {
 				 	     	return 1
 				 	     }
 			} elseif {
-				 [::ctsimu::json_exists $json_object r] && \
-				 [::ctsimu::json_exists $json_object s] && \
-				 [::ctsimu::json_exists $json_object t] } {
+				 [::ctsimu::json_exists_and_not_null $json_object r] && \
+				 [::ctsimu::json_exists_and_not_null $json_object s] && \
+				 [::ctsimu::json_exists_and_not_null $json_object t] } {
 				 	my set_reference "sample"
 				 	if { [$_c0 set_from_key $json_object {r}] && \
 				 	     [$_c1 set_from_key $json_object {s}] && \
@@ -390,7 +394,8 @@ namespace eval ::ctsimu {
 				 	     	return 1
 				 	     }
 			}
-			
+
+			::ctsimu::fail "Unable to set scene vector from JSON file. A vector must be specified by the three components (x,y,z), (u,v,w) or (r,s,t)."
 			return 0
 		}
 	}

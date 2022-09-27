@@ -28,26 +28,28 @@ namespace eval ::ctsimu {
 		# General
 		# ----------
 		method add_to_aRTist { } {
-			if { [[my density] current_value] > 0} {
+			if { ([my aRTist_id] != "void") && ([my aRTist_id] != "none") } {
 				set values [dict create]
-				dict set values density [[my density] current_value]
-				dict set values composition [[my composition] current_value]
+				dict set values density [$_density current_value]
+				dict set values composition [$_composition current_value]
 				dict set values comment [my name]
+
+				::ctsimu::info "-- [my name] composition: [$_composition current_value]"
 
 				if { [::ctsimu::aRTist_available] } {
 					dict set ::Materials::MatList [my aRTist_id] $values
 				}
-			}			
+			}
 		}
 
-		method set_frame { frame nFrames } {
+		method set_frame { frame nFrames { forced 0 } } {
 			# Return a bitwise OR of both return values.
 			# If a value has changed, the return value will be 1.
 			set value_changed [expr { [$_density set_frame $frame $nFrames] || \
 			                          [$_composition set_frame $frame $nFrames] }]
 
 			# Update aRTist materials list if value has changed:
-			if { $value_changed } {
+			if { $value_changed || $forced } {
 			    my add_to_aRTist
 			}
 
@@ -64,12 +66,17 @@ namespace eval ::ctsimu {
 			# The material id for the aRTist material manager.
 			# Add 'CTSimU' as prefix to avoid overwriting existing materials.
 
-			# Check density and return "void" if density is not >0:
-			if { [[my density] current_value] <= 0} {
-				return "void"
-			}
+			if { ($_id != "void") && ($_id != "none") } {
+				# Check density and return "void" if density is not >0:
+				if { [[my density] current_value] <= 0} {
+					return "void"
+				}
 
-			return "CTSimU_[my id]"
+				return "CTSimU_[my id]"
+			}
+			
+			# Material is "void" or "none":
+			return [my id]
 		}
 
 		method name { } {
@@ -124,6 +131,8 @@ namespace eval ::ctsimu {
 			if { ![$_composition set_from_key $jsonobj {composition}] } {
 				::ctsimu::fail "Error reading composition of material [my id] ([my name])."
 			}
+
+			my set_frame 0 1 1
 		}
 	}
 }

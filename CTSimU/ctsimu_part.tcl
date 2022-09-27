@@ -302,10 +302,10 @@ namespace eval ::ctsimu {
 			# Uses this object's name to give names to the
 			# proper coordinate systems.
 			# Invoked by default by the set_name function.
-			append cs_current_name $_name "_current"
+			append cs_current_name [my name] "_current"
 			$_cs_current set_name $cs_current_name
 
-			append cs_recon_name $_name "_recon"
+			append cs_recon_name [my name] "_recon"
 			$_cs_recon set_name $cs_recon_name
 		}
 
@@ -342,11 +342,11 @@ namespace eval ::ctsimu {
 			# the `$::ctsimu::world` coordinate system can be passed instead.
 			my reset
 			
-			# Try to set up the parameter from world coordinate notation (x, y, z).
+			# Try to set up the part from world coordinate notation (x, y, z).
 			# We also have to support legacy spelling of "centre" ;-)
-			if { ([::ctsimu::json_exists $geometry {center x}] || [::ctsimu::json_exists $geometry {centre x}]) && \
-				 ([::ctsimu::json_exists $geometry {center y}] || [::ctsimu::json_exists $geometry {centre y}]) && \
-				 ([::ctsimu::json_exists $geometry {center z}] || [::ctsimu::json_exists $geometry {centre z}]) } {
+			if { ([::ctsimu::json_exists_and_not_null $geometry {center x}] || [::ctsimu::json_exists_and_not_null $geometry {centre x}]) && \
+				 ([::ctsimu::json_exists_and_not_null $geometry {center y}] || [::ctsimu::json_exists_and_not_null $geometry {centre y}]) && \
+				 ([::ctsimu::json_exists_and_not_null $geometry {center z}] || [::ctsimu::json_exists_and_not_null $geometry {centre z}]) } {
 				# *******************************
 				#           Part is in
 				#     WORLD COORDINATE SYSTEM
@@ -360,7 +360,7 @@ namespace eval ::ctsimu {
 				if { [$_center set_from_json [::ctsimu::json_extract_from_possible_keys $geometry {{center} {centre}}]] } {
 					# success
 				} else {
-					::ctsimu::fail "Part \'$_name\': failed setting the object center from the JSON file. Geometry: $geometry"
+					::ctsimu::fail "Part \'[my name]\': failed setting the object center from the JSON file."
 					return 0
 				}
 
@@ -371,12 +371,12 @@ namespace eval ::ctsimu {
 					 [$_vector_w set_from_json [::ctsimu::json_extract_from_possible_keys $geometry {{vector_w} {vector_t}}]] } {
 					# success
 				} else {
-					::ctsimu::fail "Part \'$_name\' is placed in world coordinate system, but its vectors u and w (or r and t, for samples) are not properly defined (each with an x, y and z component)."
+					::ctsimu::fail "Part \'[my name]\' is placed in world coordinate system, but its vectors u and w (or r and t, for samples) are not properly defined (each with an x, y and z component)."
 					return 0
 				}
-			} elseif { ([::ctsimu::json_exists $geometry {center u}] || [::ctsimu::json_exists $geometry {centre u}]) && \
-				       ([::ctsimu::json_exists $geometry {center v}] || [::ctsimu::json_exists $geometry {centre v}]) && \
-				       ([::ctsimu::json_exists $geometry {center w}] || [::ctsimu::json_exists $geometry {centre w}]) } {
+			} elseif { ([::ctsimu::json_exists_and_not_null $geometry {center u}] || [::ctsimu::json_exists_and_not_null $geometry {centre u}]) && \
+				       ([::ctsimu::json_exists_and_not_null $geometry {center v}] || [::ctsimu::json_exists_and_not_null $geometry {centre v}]) && \
+				       ([::ctsimu::json_exists_and_not_null $geometry {center w}] || [::ctsimu::json_exists_and_not_null $geometry {centre w}]) } {
 				# *******************************
 				#           Part is in
 				#     STAGE COORDINATE SYSTEM
@@ -390,7 +390,7 @@ namespace eval ::ctsimu {
 				if { [$_center set_from_json [::ctsimu::json_extract_from_possible_keys $geometry {{center} {centre}}]] } {
 					# success
 				} else {
-					::ctsimu::fail "Part \'$_name\': failed setting the object center from the JSON file."
+					::ctsimu::fail "Part \'[my name]\': failed setting the object center from the JSON file."
 					return 0
 				}
 
@@ -402,15 +402,18 @@ namespace eval ::ctsimu {
 					 [$_vector_w set_from_json [::ctsimu::json_extract $geometry {vector_t}]] } {
 					# success
 				} else {
-					::ctsimu::fail "Part \'$_name\' is placed in stage system, but its vectors r and t are not properly defined (each with a u, v and w component)."
+					::ctsimu::fail "Part \'[my name]\' is placed in stage system, but its vectors r and t are not properly defined (each with a u, v and w component)."
 					return 0
 				}
+			} else {
+				::ctsimu::fail "Failed to set geometry for part \'[my name]\'. Found no valid center definition in JSON file."
+				return 0
 			}
 
 			# *******************************
 			#     DEVIATIONS
 			# *******************************
-			if {[::ctsimu::json_exists $geometry deviations]} {
+			if {[::ctsimu::json_exists_and_not_null $geometry deviations]} {
 				set jsonType [::ctsimu::json_type $geometry deviations]
 				if { $jsonType == "array"} {
 					# Go over all elements in the deviations array
@@ -436,11 +439,15 @@ namespace eval ::ctsimu {
 			# Support for legacy deviations, prior to
 			# file format version 0.9:
 			# ------------------------------------------
-			if {[::ctsimu::json_exists $geometry deviation]} {
+			if {[::ctsimu::json_exists_and_not_null $geometry deviation]} {
 				set known_to_recon 1
-				if {[::ctsimu::json_exists $geometry {deviation known_to_reconstruction}]} {
+				if {[::ctsimu::json_exists_and_not_null $geometry {deviation known_to_reconstruction}]} {
 					set known_to_recon [::ctsimu::get_value_in_unit "bool" $geometry {deviation known_to_reconstruction}]
 				}
+
+				::ctsimu::info "Geometry of [my name]:"
+				::ctsimu::info "============================="
+				::ctsimu::info $geometry
 
 				foreach axis $::ctsimu::valid_axes {
 					# Deviations in position
@@ -449,15 +456,19 @@ namespace eval ::ctsimu {
 					# have not been part of the legacy file formats
 					# prior to version 0.9, but we still add them here
 					# because now we easily can... ;-)
-					if {[::ctsimu::json_exists $geometry {deviation position $axis}]} {
-						set pos_dev [::ctsimu::deviation new]
+					::ctsimu::info "Translation for axis $axis?"
+					if {[::ctsimu::json_exists_and_not_null $geometry [list deviation position $axis] ]} {
+						::ctsimu::info " -> Yes!"
+						set pos_dev [::ctsimu::deviation new "mm"]
 						$pos_dev set_type "translation"
 						$pos_dev set_axis "$axis"
 						$pos_dev set_known_to_reconstruction $known_to_recon
-						[$pos_dev amount] set_from_json [::ctsimu::json_extract $geometry {deviation position $axis}]
+						[$pos_dev amount] set_from_json [::ctsimu::json_extract $geometry [list deviation position $axis]]
 						lappend _deviations $pos_dev
 					}
-					
+				}
+
+				foreach axis $::ctsimu::valid_axes {
 					# Deviations in rotation
 					# -------------------------------------
 					# File formats prior to version 0.9 only supported
@@ -467,12 +478,14 @@ namespace eval ::ctsimu {
 					# for x, y, z (zy'x''), just because we can.
 					# The list ::ctsimu::valid_axes is already in the
 					# correct order for legacy rotations.
-					if {[::ctsimu::json_exists $geometry {deviation rotation $axis}]} {
-						set rot_dev [::ctsimu::deviation new]
+					::ctsimu::info "Rotation for axis $axis?"
+					if {[::ctsimu::json_exists_and_not_null $geometry [list deviation rotation $axis] ]} {
+						::ctsimu::info " -> Yes!"
+						set rot_dev [::ctsimu::deviation new "rad"]
 						$rot_dev set_type "rotation"
 						$rot_dev set_axis "$axis"
 						$rot_dev set_known_to_reconstruction $known_to_recon
-						[$rot_dev amount] set_from_json [::ctsimu::json_extract $geometry {deviation rotation $axis}]
+						[$rot_dev amount] set_from_json [::ctsimu::json_extract $geometry [list deviation rotation $axis]]
 						lappend _deviations $rot_dev
 					}
 				}
@@ -587,7 +600,7 @@ namespace eval ::ctsimu {
 
 			# Orientation
 			set u [$coordinateSystem u]
-			set w [[$coordinateSystem u] get_copy]
+			set w [[$coordinateSystem w] get_copy]
 			set local_x [::ctsimu::vector new { 1 0 0 }]
 			::ctsimu::debug "   Vector u for [my id]: [[$coordinateSystem u] print]"
 			::ctsimu::debug "   Vector w for [my id]: [[$coordinateSystem w] print]"
@@ -658,16 +671,17 @@ namespace eval ::ctsimu {
 
 			if { [$rotAxisToU length] != 0 } {
 				set rotAngle [$local_x angle $u]
+				set degAngle [::ctsimu::in_deg $rotAngle]
 
 				set rotAxis_x [$rotAxisToU x]
 				set rotAxis_y [$rotAxisToU y]
 				set rotAxis_z [$rotAxisToU z]
 
-				::ctsimu::debug "   Rotation U for object [my id] around (0, 0, 1) (of object) by angle $rotAngle °."
+				::ctsimu::debug "   Rotation U for object [my id] around (0, 0, 1) (of object) by angle $degAngle °."
 
 				# Perform rotation
 				if { [::ctsimu::aRTist_available] } {
-					::PartList::Invoke [my id] Rotate world [::ctsimu::in_deg $rotAngle] $rotAxis_x $rotAxis_y $rotAxis_z
+					::PartList::Invoke [my id] Rotate world $degAngle $rotAxis_x $rotAxis_y $rotAxis_z
 				}
 			} else {
 				::ctsimu::debug "   u axis of object [my id] already points in direction u."

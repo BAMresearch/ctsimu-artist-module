@@ -96,38 +96,38 @@ namespace eval ::ctsimu {
 			my set manufacturer [::ctsimu::get_value $detprops {manufacturer} ""]
 
 			if { ![my set_property type $detprops {type} "ideal"] } {
-				::ctsimu::warn "Detector type not found or invalid. Should be \"ideal\" or \"real\". Using standard value: \"ideal\"."
+				::ctsimu::warning "Detector type not found or invalid. Should be \"ideal\" or \"real\". Using standard value: \"ideal\"."
 			} else {
 				# Check if the detector type is valid:
 				set value [my get type]
 				if { ![::ctsimu::is_valid $value {"ideal" "real"}] } {
-					::ctsimu::warn "No valid detector type: $value. Should be \"ideal\" or \"real\". Using standard value: \"ideal\"."
+					::ctsimu::warning "No valid detector type: $value. Should be \"ideal\" or \"real\". Using standard value: \"ideal\"."
 					my set type "ideal"
 				}
 			}
 			
 			if { ![my set_from_key columns $detprops {columns} 100 ""] } {
-				::ctsimu::warn "Number of detector columns not found or invalid. Using standard value."
+				::ctsimu::warning "Number of detector columns not found or invalid. Using standard value."
 			}
 
 			if { ![my set_from_key rows $detprops {rows} 100 ""] } {
-				::ctsimu::warn "Number of detector rows not found or invalid. Using standard value."
+				::ctsimu::warning "Number of detector rows not found or invalid. Using standard value."
 			}
 
 			if { ![my set_from_key pitch_u   $detprops {pixel_pitch u} 0.1 "mm"] } {
-				::ctsimu::warn "Pixel pitch in the u direction not found or invalid. Using standard value."
+				::ctsimu::warning "Pixel pitch in the u direction not found or invalid. Using standard value."
 			}
 
 			if { ![my set_from_key pitch_v   $detprops {pixel_pitch v} 0.1 "mm"] } {
-				::ctsimu::warn "Pixel pitch in the v direction not found or invalid. Using standard value."
+				::ctsimu::warning "Pixel pitch in the v direction not found or invalid. Using standard value."
 			}
 			
 			if { ![my set_from_key bit_depth $detprops {bit_depth} 16 ""] } {
-				::ctsimu::warn "Detector bit depth not found or invalid. Using standard value."
+				::ctsimu::warning "Detector bit depth not found or invalid. Using standard value."
 			}
 
 			if { ![my set_from_key integration_time $detprops {integration_time} 1 "s"] } {
-				::ctsimu::warn "Detector integration time not found or invalid. Using standard value (1 s)."
+				::ctsimu::warning "Detector integration time not found or invalid. Using standard value (1 s)."
 			}
 
 			my set_from_key dead_time $detprops {dead_time} 1 "s"
@@ -142,13 +142,13 @@ namespace eval ::ctsimu {
 			# Decide on gray value mode:
 			if { [my get gv_characteristics_file] != "null" } {
 				my set gray_value_mode "file"
-				::ctsimu::note "Gray value mode: [my get gray_value_mode] ([my get gv_characteristics_file])"
+				::ctsimu::info "Gray value mode: [my get gray_value_mode] ([my get gv_characteristics_file])"
 			} elseif { [my get factor] != "null" && [my get offset] != "null" } {
 				my set gray_value_mode "linear"
-				::ctsimu::note "Gray value mode: [my get gray_value_mode] (Factor: [my get factor], Offset: [my get offset])"
+				::ctsimu::info "Gray value mode: [my get gray_value_mode] (Factor: [my get factor], Offset: [my get offset])"
 			} else {
 				my set gray_value_mode "imin_imax"
-				::ctsimu::note "Gray value mode: [my get gray_value_mode] (imin: [my get imin], imax: [my get imax])"
+				::ctsimu::info "Gray value mode: [my get gray_value_mode] (imin: [my get imin], imax: [my get imax])"
 			}
 			
 			my set_from_possible_keys efficiency  $detprops {{grey_value efficiency} {gray_value efficiency}} "null"
@@ -162,13 +162,13 @@ namespace eval ::ctsimu {
 			# Decide on noise mode:
 			if { [my get noise_characteristics_file] != "null" } {
 				my set noise_mode "file"
-				::ctsimu::note "Noise mode: [my get noise_mode] ([my get noise_characteristics_file])"
+				::ctsimu::info "Noise mode: [my get noise_mode] ([my get noise_characteristics_file])"
 			} elseif { [my get snr_at_imax] != "null" } {
 				my set noise_mode "snr_at_imax"
-				::ctsimu::note "Noise mode: [my get noise_mode] ([my get snr_at_imax])"
+				::ctsimu::info "Noise mode: [my get noise_mode] ([my get snr_at_imax])"
 			} else {
 				my set noise_mode "off"
-				::ctsimu::note "Noise mode: [my get noise_mode]"
+				::ctsimu::info "Noise mode: [my get noise_mode]"
 			}
 						
 			# Unsharpness:
@@ -187,7 +187,46 @@ namespace eval ::ctsimu {
 			# Scintillator
 			my set_property scintillator_material_id $detprops {scintillator material_id} "null"
 
-			::ctsimu::note "Done reading detector parameters."
+			::ctsimu::info "Done reading detector parameters."
+		}
+
+		method set_frame { stageCS frame nFrames { forced 0 } } {
+			set detector_geometry_updated 0
+
+			# Columns and rows:
+			# ----------------------
+			if { [[my parameter columns] set_frame $frame $nFrames] || \
+			     [[my parameter rows] set_frame $frame $nFrames] || \
+			     $forced } {
+				::ctsimu::info "Setting detector size: [my get columns] x [my get rows]"
+				if { [::ctsimu::aRTist_available] } {
+					set ::Xsetup(DetectorPixelX) [my get columns]
+					set ::Xsetup(DetectorPixelY) [my get rows]
+					set detector_geometry_updated 1
+				}
+			}
+
+			# Pixel size:
+			# ----------------------
+			if { [[my parameter pitch_u] set_frame $frame $nFrames] || \
+			     [[my parameter pitch_v] set_frame $frame $nFrames] || \
+			     $forced } {
+				::ctsimu::info "Setting pixel size: [my get pitch_u] x [my get pitch_v]"
+				if { [::ctsimu::aRTist_available] } {
+					set ::Xsetup_private(DGdx) [my get pitch_u]
+					set ::Xsetup_private(DGdy) [my get pitch_v]
+					set detector_geometry_updated 1
+				}
+			}
+
+			if { $detector_geometry_updated } {
+				if { [::ctsimu::aRTist_available] } {
+					::XDetector::UpdateGeometry %W
+				}
+			}
+
+			# set_frame of ::ctsimu::part parent class:
+			next $stageCS $frame $nFrames
 		}
 	}
 }

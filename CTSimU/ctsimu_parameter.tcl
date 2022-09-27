@@ -137,21 +137,21 @@ namespace eval ::ctsimu {
 				# Parameter is given as a single number, not as a
 				# parameter object (with value, unit, drift, uncertainty)
 				if { [my native_unit] != "string" } {
-					my set_standard_value $json_parameter_object
+					my set_standard_value [::ctsimu::get_value $json_parameter_object]
 					set success 1
 				}
 			} elseif { [::ctsimu::json_type $json_parameter_object] == "string" } {
 				# Parameter is given as a single string, not as a
 				# parameter object (with value, unit, drift, uncertainty)
 				if { [my native_unit] == "string"} {
-					my set_standard_value $json_parameter_object
+					my set_standard_value [::ctsimu::get_value $json_parameter_object]
 					set success 1
 				}				
 			} elseif { [::ctsimu::json_type $json_parameter_object] == "object" } {
 				# Parameter is hopefully a valid parameter object...
 
 				# Value, automatically converted to parameter's native unit:
-				if { [::ctsimu::json_exists $json_parameter_object value] } {
+				if { [::ctsimu::json_exists_and_not_null $json_parameter_object value] } {
 					if { ![::ctsimu::object_value_is_null $json_parameter_object] } {
 						my set_standard_value [::ctsimu::json_convert_to_native_unit $_native_unit $json_parameter_object]
 						set success 1
@@ -163,21 +163,19 @@ namespace eval ::ctsimu {
 				set _current_value $_standard_value
 
 				# Drifts:
-				if { [::ctsimu::json_exists $json_parameter_object drift] } {
-					if { ![::ctsimu::json_isnull $json_parameter_object drift] } {
-						set jsonDrifts [::ctsimu::json_extract $json_parameter_object drifts]
-						set jsonType [::ctsimu::json_type $jsonDrifts]
+				if { [::ctsimu::json_exists_and_not_null $json_parameter_object drift] } {
+					set jsonDrifts [::ctsimu::json_extract $json_parameter_object drifts]
+					set jsonType [::ctsimu::json_type $jsonDrifts]
 
-						if {$jsonType == "array"} {
-							# an array of drift objects
-							::rl_json::json foreach jsonDriftObj $jsonDrifts {
-								my add_drift $jsonDriftObj
-							}
-						} elseif {$jsonType == "object"} {
-							# a single drift object (apparently)
-							my add_drift $jsonDrifts
-							warning "Warning: invalid drift syntax. A drift should always be defined as a JSON array. Trying to interpret this drift as a single drift object."
+					if {$jsonType == "array"} {
+						# an array of drift objects
+						::rl_json::json foreach jsonDriftObj $jsonDrifts {
+							my add_drift $jsonDriftObj
 						}
+					} elseif {$jsonType == "object"} {
+						# a single drift object (apparently)
+						my add_drift $jsonDrifts
+						warning "Warning: invalid drift syntax. A drift should always be defined as a JSON array. Trying to interpret this drift as a single drift object."
 					}
 				}
 			}
@@ -186,7 +184,7 @@ namespace eval ::ctsimu {
 		}
 
 		method set_from_key { json_object key_sequence } {
-			if { [::ctsimu::json_exists $json_object $key_sequence] } {
+			if { [::ctsimu::json_exists_and_not_null $json_object $key_sequence] } {
 				if { [my set_from_json [::ctsimu::json_extract $json_object $key_sequence]] } {
 					return 1
 				}
@@ -217,7 +215,9 @@ namespace eval ::ctsimu {
 			set total_drift [my get_total_drift_value_for_frame $frame $nFrames $only_drifts_known_to_reconstruction]
 
 			if { $_native_unit == "string" } {
-				set new_value $total_drift
+				if { $total_drift != 0 } {
+					set new_value $total_drift
+				}
 			} else {
 				set new_value [expr $new_value + $total_drift]
 			}

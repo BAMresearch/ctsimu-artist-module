@@ -26,16 +26,18 @@ namespace eval ::ctsimu {
 		variable _amount
 		variable _known_to_reconstruction
 
-		constructor { } {			
+		constructor { { native_unit "" } } {			
 			# The axis and pivot point are ::ctsimu::scenevector
 			# objects that can handle vector drifts and
 			# conversion between coordinate systems:
 			set _axis   [::ctsimu::scenevector new]
 			set _pivot  [::ctsimu::scenevector new "mm"]
+			$_pivot set_simple 0 0 0
+			$_pivot set_reference "local"
 			
 			# The transformation amount is a
 			# ::ctsimu::parameter that can handle drifts.
-			set _amount [::ctsimu::parameter new]
+			set _amount [::ctsimu::parameter new $native_unit]
 		}
 
 		destructor {
@@ -96,8 +98,10 @@ namespace eval ::ctsimu {
 
 				# Set the correct native unit for the amount:
 				if { $type == "rotation" } {
+					::ctsimu::info "Setting deviation amount native unit to rad."
 					$_amount set_native_unit "rad"
 				} elseif { $type == "translation" } {
+					::ctsimu::info "Setting deviation amount native unit to mm."
 					$_amount set_native_unit "mm"
 				}
 			} else {
@@ -139,6 +143,7 @@ namespace eval ::ctsimu {
 		method set_pivot { pivot } {
 			# Set the pivot point for rotations.
 			# Expects a ::ctsimu::scenevector.
+			$_pivot destroy
 			set _pivot pivot
 		}
 		
@@ -159,15 +164,23 @@ namespace eval ::ctsimu {
 		
 		method set_from_json { json_obj } {
 			# Set up the deviation from a JSON deviation structure.
-			if { [::ctsimu::json_exists $json_obj type] } {
+			if { [::ctsimu::json_exists_and_not_null $json_obj type] } {
 				my set_type [::ctsimu::get_value $json_obj {type} ""]
+
+				if { [my type] == "translation" } {
+					$_amount set_native_unit "mm"
+				} elseif { [my type] == "rotation" } {
+					$_amount set_native_unit "rad"
+				} else {
+					::ctsimu::fail "Invalid deviation type: [my type]. Must be \"rotation\" or \"translation\"."
+				}
 			} else {
 				::ctsimu::fail "A deviation must provide a \"type\": either \"rotation\" or \"translation\"."
 				return 0
 			}
 			
 			# Transformation axis:
-			if { [::ctsimu::json_exists $json_obj axis] } {
+			if { [::ctsimu::json_exists_and_not_null $json_obj axis] } {
 				if { [::ctsimu::json_type $json_obj axis] == "string" } {
 					set axis [::ctsimu::get_value $json_obj {axis}]
 					if { [::ctsimu::is_valid $axis $::ctsimu::valid_axis_strings] == 1 } {
@@ -197,7 +210,7 @@ namespace eval ::ctsimu {
 			# Set a standard pivot which refers to the object's center:
 			$_pivot set_simple 0 0 0
 			$_pivot set_reference [$_axis reference]
-			if { [::ctsimu::json_exists $json_obj pivot] } {
+			if { [::ctsimu::json_exists_and_not_null $json_obj pivot] } {
 				# If another pivot is defined in the
 				# JSON file, take this one instead...
 				if { [$_pivot set_from_json [::ctsimu::json_extract $json_obj {pivot}]] } {

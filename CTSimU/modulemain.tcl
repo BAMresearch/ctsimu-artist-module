@@ -20,6 +20,7 @@ package require fileutil
 # Source the CTSimU namespace and tell it the module namespace:
 source [file join $BasePath ctsimu_main.tcl]
 ::ctsimu::set_module_namespace $ns
+::ctsimu::set_module_directory $BasePath
 
 # The currently loaded CTSimU scenario:
 variable ctsimu_scenario

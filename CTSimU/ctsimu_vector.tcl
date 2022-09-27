@@ -221,9 +221,9 @@ namespace eval ::ctsimu {
 
 		method to { other } {
 			# Returns a vector that points from this point to other point.
-			set d [my get_copy]
-			$d subtract $other
-			return $d
+			set o [$other get_copy]
+			$o subtract [self object]
+			return $o
 		}
 
 		method sum { } {

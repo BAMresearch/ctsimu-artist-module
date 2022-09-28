@@ -98,10 +98,8 @@ namespace eval ::ctsimu {
 
 				# Set the correct native unit for the amount:
 				if { $type == "rotation" } {
-					::ctsimu::info "Setting deviation amount native unit to rad."
 					$_amount set_native_unit "rad"
 				} elseif { $type == "translation" } {
-					::ctsimu::info "Setting deviation amount native unit to mm."
 					$_amount set_native_unit "mm"
 				}
 			} else {

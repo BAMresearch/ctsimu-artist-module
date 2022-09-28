@@ -445,10 +445,6 @@ namespace eval ::ctsimu {
 					set known_to_recon [::ctsimu::get_value_in_unit "bool" $geometry {deviation known_to_reconstruction}]
 				}
 
-				::ctsimu::info "Geometry of [my name]:"
-				::ctsimu::info "============================="
-				::ctsimu::info $geometry
-
 				foreach axis $::ctsimu::valid_axes {
 					# Deviations in position
 					# -------------------------------------
@@ -456,9 +452,7 @@ namespace eval ::ctsimu {
 					# have not been part of the legacy file formats
 					# prior to version 0.9, but we still add them here
 					# because now we easily can... ;-)
-					::ctsimu::info "Translation for axis $axis?"
 					if {[::ctsimu::json_exists_and_not_null $geometry [list deviation position $axis] ]} {
-						::ctsimu::info " -> Yes!"
 						set pos_dev [::ctsimu::deviation new "mm"]
 						$pos_dev set_type "translation"
 						$pos_dev set_axis "$axis"
@@ -478,9 +472,7 @@ namespace eval ::ctsimu {
 					# for x, y, z (zy'x''), just because we can.
 					# The list ::ctsimu::valid_axes is already in the
 					# correct order for legacy rotations.
-					::ctsimu::info "Rotation for axis $axis?"
 					if {[::ctsimu::json_exists_and_not_null $geometry [list deviation rotation $axis] ]} {
-						::ctsimu::info " -> Yes!"
 						set rot_dev [::ctsimu::deviation new "rad"]
 						$rot_dev set_type "rotation"
 						$rot_dev set_axis "$axis"

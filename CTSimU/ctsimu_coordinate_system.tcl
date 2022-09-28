@@ -448,7 +448,6 @@ namespace eval ::ctsimu {
 			set known_to_recon [$deviation known_to_reconstruction]
 			if { ($only_known_to_reconstruction==0) || ($known_to_recon==1) } {
 				set value [[$deviation amount] get_value_for_frame $frame $nFrames $only_known_to_reconstruction]
-				::ctsimu::info "Apply deviation for [my name] by $value"
 				
 				if { [$deviation type] == "translation" } {
 					if { [$deviation native_unit] == "mm" } {
@@ -489,10 +488,7 @@ namespace eval ::ctsimu {
 									[self object] $::ctsimu::world $frame $nFrames $only_known_to_reconstruction]
 							set pivot_point [[$deviation pivot] in_world "point" \
 									[self object] $::ctsimu::world $frame $nFrames $only_known_to_reconstruction]
-
-							::ctsimu::info "Pivot Reference: [[$deviation pivot] print]"
-							::ctsimu::info "Pivot point in World: [$pivot_point print]"
-									
+								
 							my rotate_around_pivot_point $rotation_axis $value $pivot_point
 							
 							$rotation_axis destroy

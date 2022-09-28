@@ -34,8 +34,6 @@ namespace eval ::ctsimu {
 				dict set values composition [$_composition current_value]
 				dict set values comment [my name]
 
-				::ctsimu::info "-- [my name] composition: [$_composition current_value]"
-
 				if { [::ctsimu::aRTist_available] } {
 					dict set ::Materials::MatList [my aRTist_id] $values
 				}

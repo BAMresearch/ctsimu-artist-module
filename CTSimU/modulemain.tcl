@@ -345,7 +345,7 @@ proc InitGUI { parent } {
 	set general   [FoldFrame $model.frmGeneral -text "General"     -padding $pad]
 	dataform $general {
 		{JSON File}   jsonfile    file   { { {CTSimU Scenario} .json } }
-		{ }                      loadbtn     buttons { "Load" loadCTSimUScene 10 }
+		{ }                      loadbtn     buttons { "Load" loadScene 10 }
 	}
 
 	set CTProjection  [FoldFrame $model.frmCTProjection -text "CT Projection"     -padding $pad]
@@ -492,30 +492,8 @@ proc GUIok {} {
 	variable toplevel
 	variable GUISettings
 
-	loadCTSimUScene
+	loadScene
 	showProjection
-}
-
-proc loadCTSimUScene {} {
-	variable GUISettings
-	variable ns
-	variable ctsimu_scenario
-
-	applyCurrentParameters
-	aRTist::LoadEmptyProject
-#	CTSimU::setModuleNamespace $ns
-
-	set sceneState [$ctsimu_scenario load_json_scene $GUISettings(jsonfile)]
-
-	# Continue only if JSON was loaded successfully:
-	if { $sceneState == 1 } {
-		fillCurrentParameters
-#		showInfo "Scenario loaded."
-#		showProjection
-		$ctsimu_scenario set_frame 0 1
-		Engine::RenderPreview
-		::SceneView::ViewAllCmd
-	}
 }
 
 # ----------------------------------------------
@@ -605,7 +583,7 @@ proc applyCurrentParameters {} {
 	$ctsimu_scenario set start_angle         $GUISettings(startAngle)
 	$ctsimu_scenario set stop_angle          $GUISettings(stopAngle)
 	$ctsimu_scenario set n_projections       $GUISettings(nProjections)
-	$ctsimu_scenario set proj_nr             $GUISettings(projNr)
+	$ctsimu_scenario set current_frame       $GUISettings(projNr)
 	$ctsimu_scenario set include_final_angle $GUISettings(includeFinalAngle)
 	$ctsimu_scenario set start_proj_nr       $GUISettings(startProjNr)
 
@@ -937,43 +915,61 @@ proc runBatch { } {
 #  Scenario loading and handling
 # ----------------------------------------------
 
+proc loadScene {} {
+	variable GUISettings
+	variable ns
+	variable ctsimu_scenario
+
+	applyCurrentParameters
+	aRTist::LoadEmptyProject
+#	CTSimU::setModuleNamespace $ns
+
+	set sceneState [$ctsimu_scenario load_json_scene $GUISettings(jsonfile)]
+
+	# Continue only if JSON was loaded successfully:
+	if { $sceneState == 1 } {
+		fillCurrentParameters
+#		showInfo "Scenario loaded."
+#		showProjection
+		
+		::SceneView::ViewAllCmd
+		showProjection
+	}
+}
+
 proc showProjection {} {
 	variable GUISettings
 	variable ctsimu_scenario
 
 	applyCurrentParameters
-	#setupProjection [$ctsimu_scenario getCurrentProjNr] 1
+	$ctsimu_scenario set_frame [$ctsimu_scenario get current_frame] 0 1
+	Engine::RenderPreview
 }
 
 proc nextProjection {} {
 	variable GUISettings
+	variable ctsimu_scenario
 
 	applyCurrentParameters
 	
-	set projNr $GUISettings(projNr)
-	incr projNr
-	set GUISettings(projNr) $projNr
-
-	showProjection
+	$ctsimu_scenario set_next_frame 1
+	set GUISettings(projNr) [expr [$ctsimu_scenario get current_frame]]
+	Engine::RenderPreview
 }
 
 proc prevProjection {} {
 	variable GUISettings
+	variable ctsimu_scenario
 
 	applyCurrentParameters
 	
-	set projNr $GUISettings(projNr)
-	incr projNr -1
-	set GUISettings(projNr) $projNr
-
-	showProjection
+	$ctsimu_scenario set_previous_frame 1
+	set GUISettings(projNr) [expr [$ctsimu_scenario get current_frame]]
+	Engine::RenderPreview
 }
 
 proc startScan {} {
-	# User starts scan with button
-
 	variable GUISettings
-	variable container
 	variable ctsimu_scenario
 
 	applyCurrentParameters
@@ -982,7 +978,7 @@ proc startScan {} {
 	$ctsimu_scenario set output_basename $GUISettings(outputBaseName)
 }
 
-proc CTSimU_stopScan {} {
+proc stopScan {} {
 	variable GUISettings
 	stopScan
 }

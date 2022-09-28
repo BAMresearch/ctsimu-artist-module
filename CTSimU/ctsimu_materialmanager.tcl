@@ -80,10 +80,10 @@ namespace eval ::ctsimu {
 						}
 					}
 				} else {
-					::ctsimu::fail "The materials section in the JSON file is not an array."
+					::ctsimu::warning "The materials section in the JSON file is not an array. No materials imported."
 				}
 			} else {
-				::ctsimu::fail "JSON file does not have a materials section."
+				::ctsimu::warning "JSON file does not have a materials section."
 			}
 		}
 	}

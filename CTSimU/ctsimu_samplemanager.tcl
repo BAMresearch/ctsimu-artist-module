@@ -44,8 +44,6 @@ namespace eval ::ctsimu {
 			::ctsimu::status_info "Placing objects..."
 			foreach s $_samples {
 				$s place_in_scene $stageCS
-				::ctsimu::info "CS [$s name]:"
-				::ctsimu::info [[$s current_coordinate_system] print]
 			}
 		}
 
@@ -63,10 +61,10 @@ namespace eval ::ctsimu {
 						}
 					}
 				} else {
-					::ctsimu::fail "The samples section in the JSON file is not an array."
+					::ctsimu::warning "The samples section in the JSON file is not an array. No samples imported."
 				}
 			} else {
-				::ctsimu::fail "JSON file does not have a samples section."
+				::ctsimu::warning "JSON file does not have a samples section."
 			}
 		}
 

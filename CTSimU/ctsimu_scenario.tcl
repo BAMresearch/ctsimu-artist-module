@@ -114,6 +114,41 @@ namespace eval ::ctsimu {
 			return $_json_loaded_successfully
 		}
 
+		method get_current_stage_rotation_angle { } {
+			set startAngle    [expr double([my get start_angle])]
+			set stopAngle     [expr double([my get stop_angle])]
+			set nPositions    [expr double([my get n_frames])]
+
+			# If the final projection is taken at the stop angle (and not one step before),
+			# the number of positions has to be decreased by 1, resulting in one less
+			# angular step being performed.
+			if { [my get include_final_angle] == 1} {
+				if {$nPositions > 0} {
+					set nPositions [expr $nPositions - 1]
+				}
+			}
+
+			set angularRange 0.0
+			if {$startAngle <= $stopAngle} {
+				set angularRange [expr $stopAngle - $startAngle]
+			} else {
+				::ctsimu::fail "The start angle cannot be greater than the stop angle. Scan direction must be specified by the acquisition \'direction\' keyword (CCW or CW)."
+				return 0
+			}
+
+			set angularPosition $startAngle 
+			if {$nPositions != 0} {
+				set angularPosition [expr $startAngle + [my get current_frame]*$angularRange / $nPositions]
+			}
+
+			# Mathematically negative:
+			if {[my get scan_direction] == "CW"} {
+				set angularPosition [expr -$angularPosition]
+			}
+
+			return $angularPosition
+		}
+
 		# Setters
 		method set { setting value } {
 			# Set a settings value in the settings dict
@@ -122,7 +157,14 @@ namespace eval ::ctsimu {
 			# The projection counter format (e.g. %04d) needs
 			# to be adapted to the number of projections:
 			if { $setting == {n_projections} } {
-				my create_projection_counter_format { $value }
+				::ctsimu::info "-- Number of projections: $value"
+				my create_projection_counter_format $value
+
+				# The number of frames should currently match
+				# the number of projections, as long as we don't use
+				# sophisticated blurring techniques during frame
+				# averaging.
+				my set n_frames $value
 			}
 		}
 
@@ -164,6 +206,14 @@ namespace eval ::ctsimu {
 			my set projection_counter_format $pcformat
 		}
 
+		method set_next_frame { { apply_to_scene 0 } } {
+			my set_frame [expr [my get current_frame]+1] 0 $apply_to_scene
+		}
+
+		method set_previous_frame { { apply_to_scene 0 } } {
+			my set_frame [expr [my get current_frame]-1] 0 $apply_to_scene
+		}
+
 		method load_json_scene { json_filename } {
 			::ctsimu::status_info "Reading JSON file..."
 
@@ -189,7 +239,6 @@ namespace eval ::ctsimu {
 
 			my set n_projections [::ctsimu::get_value $jsonstring {acquisition number_of_projections} 1]
 			my set frame_average [::ctsimu::get_value $jsonstring {acquisition frame_average} 1]
-			my set n_frames [expr [my get n_projections] * [my get frame_average]]
 
 			my set include_final_angle [::ctsimu::get_value_in_unit "bool" $jsonstring {acquisition include_final_angle} 0]
 			my set scan_direction [::ctsimu::get_value $jsonstring {acquisition direction} "CCW"]
@@ -246,31 +295,32 @@ namespace eval ::ctsimu {
 			return 1
 		}
 
-		method set_frame { frame { force 0 } } {
+		method set_frame { frame { force 0 } { apply_to_scene 0 } } {
 			my set current_frame $frame
+
+			set stage_rotation_angle_in_rad [::ctsimu::in_rad [my get_current_stage_rotation_angle]]
+			$_stage set_frame $::ctsimu::world $frame [my get n_frames] $stage_rotation_angle_in_rad
 
 			set stageCS [$_stage current_coordinate_system]
 
 			$_material_manager set_frame $frame [my get n_frames]
 			$_sample_manager set_frame $stageCS $frame [my get n_frames]
-			$_sample_manager update_scene $stageCS
-			
 			$_detector set_frame $stageCS $frame [my get n_frames]
-			$_detector place_in_scene $stageCS
-
-			::ctsimu::info "CS Detector:"
-			::ctsimu::info [[$_detector current_coordinate_system] print]
-
 			$_source set_frame $stageCS $frame [my get n_frames]
-			$_source place_in_scene $stageCS
+			
+			if { $apply_to_scene } {
+				$_sample_manager update_scene $stageCS
+				$_detector place_in_scene $stageCS
+				$_source place_in_scene $stageCS
 
-			# Set environment material:
-			if { [::ctsimu::aRTist_available] } {
-				# We have to ask the material manager for the
-				# aRTist id of the environment material in each frame,
-				# just in case it has changed from vacuum (void) to
-				# a higher-density material:
-				set ::Xsetup(SpaceMaterial) [ [$_material_manager get [my get environment_material]] aRTist_id ]
+				# Set environment material:
+				if { [::ctsimu::aRTist_available] && $apply_to_scene } {
+					# We have to ask the material manager for the
+					# aRTist id of the environment material in each frame,
+					# just in case it has changed from vacuum (void) to
+					# a higher-density material:
+					set ::Xsetup(SpaceMaterial) [ [$_material_manager get [my get environment_material]] aRTist_id ]
+				}
 			}
 
 			::ctsimu::status_info "Done setting frame $frame."

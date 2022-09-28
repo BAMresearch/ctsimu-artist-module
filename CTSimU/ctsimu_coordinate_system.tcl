@@ -410,7 +410,7 @@ namespace eval ::ctsimu {
 		}
 
 		method change_reference_frame { csFrom csTo } {
-			# Transform this coordinate system from the csFrom reference frame
+			# Move this coordinate system from the csFrom reference frame
 			# to the csTo reference frame. Result will be in terms of csTo.
 
 			# Rotate basis vectors into csTo:
@@ -418,19 +418,11 @@ namespace eval ::ctsimu {
 			$_u transform_by_matrix $R
 			$_v transform_by_matrix $R
 			$_w transform_by_matrix $R
-
-			# Move center to csTo:
-			# Calculate translation vector that moves the 'to' center to the origin of 'from':
-			set translation_centerTo_to_centerFrom [[$csTo center] to [$csFrom center]]
-
-			# Calculate position of 'my' center as seen from 'from' if 'to' were at 'from's origin:
-			set new_center_in_from [[my center] to $translation_centerTo_to_centerFrom]
-
-			# Rotate 'my' center into csTo and thus make it 'my' new center:
-			set _center   [$R multiply_vector $new_center_in_from]
-
 			$R destroy
-			$translation_centerTo_to_centerFrom destroy
+
+			# Move center point from 'csFrom' to 'csTo':
+			set new_center_in_from [::ctsimu::change_reference_frame_of_point [my center] $csFrom $csTo]
+			$_center copy $new_center_in_from
 			$new_center_in_from destroy
 		}
 
@@ -591,24 +583,22 @@ namespace eval ::ctsimu {
 		# Return point's coordinates, given in csFrom, in terms of csTo.
 		# csFrom and csTo must be in the same reference coordinate system.
 
-		# Rotation matrix to rotate base vectors into csTo:
-		set R [::ctsimu::basis_transform_matrix $csFrom $csTo]
+		# Place the point in the common reference coordinate system
+		# (mathematically, this is always the 'world'):
+		set point_in_to [$point get_copy]
+		set R_to_world [::ctsimu::basis_transform_matrix $csFrom $::ctsimu::world]
+		$point_in_to transform_by_matrix $R_to_world
+		$point_in_to add [$csFrom center]
 
-		# Move center to csTo:
-		# Calculate translation vector that moves the 'to' center to the origin of 'from':
-		set translation_centerTo_to_centerFrom [[$csTo center] to [$csFrom center]]
+		# Move point to the target coordinate system:
+		$point_in_to subtract [$csTo center]
+		set R_to_to [::ctsimu::basis_transform_matrix $::ctsimu::world $csTo]
+		$point_in_to transform_by_matrix $R_to_to
 
-		# Calculate position of 'point' as seen from 'from' if 'to' were at 'from's origin:
-		set new_center_in_from [$point to $translation_centerTo_to_centerFrom]
+		$R_to_world destroy
+		$R_to_to destroy
 
-		# Rotate 'my' center into csTo and thus make it 'my' new center:
-		set pointInTo [$R multiply_vector $new_center_in_from]
-
-		$translation_centerTo_to_centerFrom destroy
-		$new_center_in_from destroy
-		$R destroy
-
-		return $pointInTo
+		return $point_in_to
 	}
 
 	variable world

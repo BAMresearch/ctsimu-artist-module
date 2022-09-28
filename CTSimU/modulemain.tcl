@@ -10,7 +10,7 @@ proc Info {} {
 	return [dict create \
 		Name        CTSimU \
 		Description "CTSimU Scenario Loader" \
-		Version     "0.8.14" \
+		Version     "0.8.15" \
 	]
 }
 
@@ -3302,9 +3302,6 @@ namespace eval ::CTSimU {
 								}
 							}
 						}
-
-						# Samples must be loaded to be centreed at (0, 0, 0):
-						set ::aRTist::LoadCentreed 1
 
 						# Import samples:
 						showInfo "Importing samples..."

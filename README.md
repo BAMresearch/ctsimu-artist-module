@@ -1,4 +1,4 @@
-# CTSimU JSON Loader
+# CTSimU aRTist Module
 
 This is a module for the radiographic simulator [aRTist](http://artist.bam.de/) which reads and sets up the scenario from a [CTSimU JSON description](https://bamresearch.github.io/ctsimu-scenarios/). With the module, it is also possible to simulate the complete CT scan as described in the JSON scenario.
 
@@ -28,11 +28,14 @@ The `deploy.sh` script can be used to create an `.artp` file for aRTist for a ce
 
 For example:
 
-	./deploy.sh "0.8.14"
+	./deploy.sh "0.8.15"
 
 Note: the aRTist package file (`.artp`) should not be part of the git repository. Instead, it can be uploaded to Github as a file attachment to a new release.
 
 ## Version History
+
+### 0.8.15
++ Minor bug fix: Parts not loaded centered at (0,0,0) since version 0.7.10 due to a spelling mistake. This bug had no impact on part placement: centering parts after loading is not necessary and has therefore been fully removed in this version.
 
 ### 0.8.14
 + Removed iSRb correction scaling factor of 0.6830822016 (for aRTist 2.12+).

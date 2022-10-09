@@ -34,7 +34,7 @@ namespace eval ::ctsimu {
 			# Clears the trajectory list as well.
 			# Used by the constructor as initialization function.
 			set _known_to_reconstruction 1
-			set _interpolation           0
+			set _interpolation           1
 			set _trajectory              [list ]
 		}
 
@@ -99,10 +99,12 @@ namespace eval ::ctsimu {
 				set jsonValueType [::ctsimu::json_type $json_object value]
 
 				if {$jsonValueType == "number"} {
+					::ctsimu::info "Drift value is a number."
 					set jsonValue [::ctsimu::get_value $json_object {value}]
 					lappend _trajectory [::ctsimu::json_convert_to_native_unit $_native_unit $jsonValue]
 					return 1
 				} elseif {$jsonValueType == "array"} {
+					::ctsimu::info "Drift value is an array."
 					set jsonValueArray [::ctsimu::json_extract $json_object {value}]
 					::rl_json::json foreach value $jsonValueArray {
 						lappend _trajectory [::ctsimu::convert_to_native_unit $jsonUnit $_native_unit $value]
@@ -144,13 +146,20 @@ namespace eval ::ctsimu {
 					set lastTrajectoryIndex [expr int($nTrajectoryPoints - 1)]
 					set trajectoryIndex [expr $progress * double($lastTrajectoryIndex)]
 
+					#::ctsimu::debug "Drift Trajectory"
+					#::ctsimu::debug "===================="
+					#::ctsimu::debug "progress: $progress"
+					#::ctsimu::debug "lastTrajectoryIndex: $lastTrajectoryIndex"
+					#::ctsimu::debug "current trajectoryIndex: $trajectoryIndex"
+					#::ctsimu::debug "Frame $frame / $nFrames .. progress $progress .. trajIndex: $trajectoryIndex"
+
 					if { ($progress >= 0.0) && ($progress <= 1.0) } {
 						# We are inside the array of drift values.
 						set leftIndex  [expr int(floor($trajectoryIndex))]
 
-						if { double($leftIndex) == $trajectoryIndex } {
+						if { double($leftIndex) == double($trajectoryIndex) } {
 							# We are exactly at one trajectory point; no need for interpolation.
-							return [lindex $_trajectory $leftIndex]]
+							return [ lindex $_trajectory $leftIndex ]
 						}
 
 						if { $_interpolation } {
@@ -167,15 +176,15 @@ namespace eval ::ctsimu {
 							# e.g. 3.1415 -> 0.1415
 							set rightWeight [expr double($trajectoryIndex) - double(floor($trajectoryIndex))]
 
-							# Weight for the left bin is 1 - rightWeight.
+							# Weight for the left bin is 1-rightWeight.
 							set leftWeight [expr 1.0 - $rightWeight]
 
 							# Linear interpolation between left and right trajectory point:
-							return [expr $leftWeight*[lindex $_trajectory $leftIndex] + $rightWeight*[lindex $_trajectory $rightIndex]]
+							return [expr {$leftWeight*[lindex $_trajectory $leftIndex] + $rightWeight*[lindex $_trajectory $rightIndex]} ]
 						} else {
 							# Return the value at the last drift value index
 							# that would apply to this frame position.
-							return [lindex $_trajectory $leftIndex]
+							return [ lindex $_trajectory $leftIndex ]
 						}
 					} else {
 						# Linear interpolation beyond provided trajectory data
@@ -186,15 +195,16 @@ namespace eval ::ctsimu {
 								# Linear interpolation beyond last two drift values:
 								set trajectoryValue0 [lindex $_trajectory [expr int($lastTrajectoryIndex-1)]]
 								set trajectoryValue1 [lindex $_trajectory $lastTrajectoryIndex]
+								set offsetValue $trajectoryValue1
 								
 								# We assume a linear interpolation function beyond the two
 								# last drift values. Taking the last frame as the zero point
 								# (i.e., the starting point) of this linear interpolation,
 								# the frame's position on the x axis would be:
-								set xFrame [expr $trajectoryIndex - double($lastTrajectoryIndex)]
+								set xTraj [ expr {$trajectoryIndex - double($lastTrajectoryIndex)} ]
 							} else {
 								# No interpolation. Return last trajectory value:
-								return [lindex $_trajectory $lastTrajectoryIndex]
+								return [ lindex $_trajectory $lastTrajectoryIndex ]
 							}
 						} else {
 							# We are before the first frame (i.e., before frame 0).
@@ -202,41 +212,52 @@ namespace eval ::ctsimu {
 								# Linear interpolation previous to first two drift values:
 								set trajectoryValue0 [lindex $_trajectory 0]
 								set trajectoryValue1 [lindex $_trajectory 1]
+								set offsetValue $trajectoryValue0
 
 								# We assume a linear interpolation function beyond the two
 								# last drift values. Taking the last frame as the zero point
 								# (i.e., the starting point) of this linear interpolation,
 								# the frame's position on the x axis would be:
-								set xFrame $trajectoryIndex; # is negative in this case
+								set xTraj $trajectoryIndex; # is negative in this case
 							} else {
 								# No interpolation. Return first trajectory value:
-								return [lindex $_trajectory 0]
+								return [ lindex $_trajectory 0 ]
 							}
 						}
 
-						# How many frames do we pass when going from one drift value to the next?
-						# Frame 0 does not count here, so we use the $lastFrameNr insted of $nFrames.
-						set framesPerTrajectoryPoint [expr double($lastFrameNr) / double($lastTrajectoryIndex)];
-
-						# The slope of our linear interpolation function:
-						set m [expr double($trajectoryValue1 - $trajectoryValue0) / double($framesPerTrajectoryPoint)]
+						# m = the slope of our linear interpolation function.
+						# We are on the axis of trajectory drift values:
+						# Our step size in x direction is 1 (trajectoryValue1 and
+						# trajectoryValue0 are one trajectory step apart). Not
+						# to be confused with the frame number.
+						set m [expr {double($trajectoryValue1 - $trajectoryValue0)} ]
+						set driftValue [expr {$m*$xTraj + $offsetValue}]
+												
+						#::ctsimu::debug "Linear Interpolation"
+						#::ctsimu::debug "----------------------"
+						#::ctsimu::debug "trajectoryValue0: $trajectoryValue0"
+						#::ctsimu::debug "trajectoryValue1: $trajectoryValue1"
+						#::ctsimu::debug "m: $m"
+						#::ctsimu::debug "xTraj: $xTraj"
+						#::ctsimu::debug "Interpolated Value: $driftValue"
 
 						# Return the value from the linear interpolation function. y = m*x + n
-						return [expr $m*$xFrame + $trajectoryValue1]
+						return $driftValue
 					}
 				} else {
 					# If "scan" only has 1 or 0 frames, simply return the first trajectory value
-					return [lindex $_trajectory 0]
+					return [ lindex $_trajectory 0 ]
 				}
 			} else {
 				# trajectory points <= 1
 				if { $nTrajectoryPoints > 0 } {
 					# Simply check if the trajectory consists of at least 1 point and return this value:
-					return [lindex $_trajectory 0]
+					return [ lindex $_trajectory 0 ]
 				}
 			}
 
-			# Drifts are absolute deviations, so 0 is a sane default value:
+			# Drifts are per-frame absolute deviations from the standard value,
+			# so 0 is a sane default value for no drift components:
 			return 0
 		}
 	}

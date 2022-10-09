@@ -71,7 +71,7 @@ namespace eval ::ctsimu {
 		if { [::ctsimu::aRTist_available] } {
 			::aRTist::Debug { $message }
 		} else {
-			#puts "$message"
+			puts "$message"
 		}
 	}
 

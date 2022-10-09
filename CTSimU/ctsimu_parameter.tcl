@@ -110,7 +110,7 @@ namespace eval ::ctsimu {
 					}
 
 					# Add up all drift values for requested frame:
-					set total_drift [expr $total_drift + [$d get_value_for_frame $frame $nFrames]]
+					set total_drift [expr { $total_drift + [$d get_value_for_frame $frame $nFrames] } ]
 				}
 			}
 
@@ -164,7 +164,7 @@ namespace eval ::ctsimu {
 
 				# Drifts:
 				if { [::ctsimu::json_exists_and_not_null $json_parameter_object drift] } {
-					set jsonDrifts [::ctsimu::json_extract $json_parameter_object drifts]
+					set jsonDrifts [::ctsimu::json_extract $json_parameter_object drift]
 					set jsonType [::ctsimu::json_type $jsonDrifts]
 
 					if {$jsonType == "array"} {
@@ -175,7 +175,7 @@ namespace eval ::ctsimu {
 					} elseif {$jsonType == "object"} {
 						# a single drift object (apparently)
 						my add_drift $jsonDrifts
-						warning "Warning: invalid drift syntax. A drift should always be defined as a JSON array. Trying to interpret this drift as a single drift object."
+						::ctsimu::warning "Warning: invalid drift syntax. A drift should always be defined as a JSON array. Trying to interpret this drift as a single drift object."
 					}
 				}
 			}

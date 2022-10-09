@@ -494,6 +494,8 @@ namespace eval ::ctsimu {
 			#
 			# This function is used by `set_frame` and is
 			# usually not called from outside the object.
+
+			::ctsimu::debug "Setting frame CS for [$cs name]..."
 			
 			# Set up standard coordinate system at frame zero:
 			set center [$_center standard_vector]

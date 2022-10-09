@@ -10,7 +10,7 @@ namespace eval ::ctsimu {
 	::oo::class create source {
 		superclass ::ctsimu::part
 
-		constructor { { name "Source" } { id "S" } } {
+		constructor { { name "CTSimU_Source" } { id "S" } } {
 			next $name $id; # call constructor of parent class ::ctsimu::part
 			my reset
 		}

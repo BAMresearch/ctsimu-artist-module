@@ -10,7 +10,7 @@ namespace eval ::ctsimu {
 	::oo::class create detector {
 		superclass ::ctsimu::part
 
-		constructor { { name "Detector" } { id "D" } } {
+		constructor { { name "CTSimU_Detector" } { id "D" } } {
 			next $name $id; # call constructor of parent class ::ctsimu::part
 			my reset
 		}

@@ -9,7 +9,7 @@ namespace eval ::ctsimu {
 	::oo::class create stage {
 		superclass ::ctsimu::part
 
-		constructor { { name "Stage" } } {
+		constructor { { name "CTSimU_Stage" } } {
 			next $name; # call constructor of parent class ::ctsimu::part
 			my reset
 

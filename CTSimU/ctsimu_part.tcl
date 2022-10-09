@@ -63,7 +63,7 @@ namespace eval ::ctsimu {
 			
 			# A general list of properties
 			# (all of them are of type ::ctsimu::parameter)
-			set _properties [list]
+			set _properties [dict create]
 		}
 
 		destructor {
@@ -585,7 +585,7 @@ namespace eval ::ctsimu {
 			set posX [[$coordinateSystem center] x]
 			set posY [[$coordinateSystem center] y]
 			set posZ [[$coordinateSystem center] z]
-			::ctsimu::debug "   Centre for [my id]: [[$coordinateSystem center] print]"
+			::ctsimu::debug "   Center for [my id]: [[$coordinateSystem center] print]"
 
 			if { [::ctsimu::aRTist_available] } {
 				::PartList::Invoke [my id] SetPosition $posX $posY $posZ

@@ -130,8 +130,8 @@ namespace eval ::ctsimu {
 			
 			# Get vector components, respecting drifts:
 			set v0 [$_c0 get_total_drift_value_for_frame $frame $nFrames $only_known_to_reconstruction]
-			set v1 [$_c0 get_total_drift_value_for_frame $frame $nFrames $only_known_to_reconstruction]
-			set v2 [$_c0 get_total_drift_value_for_frame $frame $nFrames $only_known_to_reconstruction]
+			set v1 [$_c1 get_total_drift_value_for_frame $frame $nFrames $only_known_to_reconstruction]
+			set v2 [$_c2 get_total_drift_value_for_frame $frame $nFrames $only_known_to_reconstruction]
 			
 			# Build a vector:
 			set v [::ctsimu::vector new [list $v0 $v1 $v2]]

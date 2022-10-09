@@ -68,7 +68,7 @@ namespace eval ::ctsimu {
 			}
 		}
 
-		method load_meshes { stageCS jsondir material_manager } {
+		method load_meshes { stageCS material_manager } {
 			# Loads the mesh file of each part into aRTist.
 			::ctsimu::status_info "Loading surface meshes..."
 			
@@ -87,8 +87,7 @@ namespace eval ::ctsimu {
 					# If the surface mesh location is a relative path,
 					# the location of the JSON file need to be appended
 					# in front:
-					set meshfile $jsondir
-					append meshfile "/[$s get surface_mesh_file]"
+					set meshfile [::ctsimu::get_absolute_path [$s get surface_mesh_file]]
 					puts "Meshfile: $meshfile"
 				}
 

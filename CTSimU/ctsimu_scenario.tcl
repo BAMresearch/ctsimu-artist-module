@@ -220,6 +220,7 @@ namespace eval ::ctsimu {
 			my reset
 			my set json_file $json_filename
 			my set json_file_directory [file dirname "$json_filename"]
+			::ctsimu::set_json_path [my get json_file_directory]
 
 			set jsonstring [::ctsimu::read_json_file $json_filename]
 
@@ -289,7 +290,7 @@ namespace eval ::ctsimu {
 
 			$_sample_manager set_from_json $jsonstring $stageCS
 			$_sample_manager set_frame $stageCS [my get current_frame] [my get n_frames]
-			$_sample_manager load_meshes $stageCS [my get json_file_directory] $_material_manager
+			$_sample_manager load_meshes $stageCS $_material_manager
 
 			::ctsimu::status_info "Scenario loaded."
 			return 1

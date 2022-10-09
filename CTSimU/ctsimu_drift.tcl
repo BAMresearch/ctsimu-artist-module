@@ -112,7 +112,22 @@ namespace eval ::ctsimu {
 					return 1
 				}
 			} else {
-				# TODO: Check if a drift file can be imported (and do import it if possible).
+				if { [::ctsimu::json_exists_and_not_null $json_object file] } {
+					set jsonValueType [::ctsimu::json_type $json_object file]
+					if {$jsonValueType == "string"} {
+						::ctsimu::info "Drift values from a file."
+						set csvFilename [::ctsimu::get_value $json_object {file}]
+						set values [::ctsimu::read_csv_file $csvFilename]
+						set firstColumn [dict get $values 0]
+						foreach v $firstColumn {
+							lappend _trajectory $v
+						}
+
+						::ctsimu::info "Imported drift trajectory:"
+						::ctsimu::info $_trajectory
+						return 1
+					}
+				}
 			}
 
 			return 0

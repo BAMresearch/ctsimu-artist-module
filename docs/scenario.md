@@ -54,7 +54,6 @@ The following table gives an overview of the currently used keys and their meani
 | `current_frame`       | Current frame number.                                               |
 | `n_frames`            | Total number of frames in scan.                                     |
 | `environment_material`| Material id for the environment.                                    |
-
 | `create_cera_config_file` | If a reconstruction configuration file for SIEMENS CERA shall be created for the simulated projection images. |
 | `cera_output_datatype` | Data type of the CERA reconstruction volume: `uint16` or `float32`. |
 | `create_clfdk_config_file` | If a reconstruction configuration file for BAM clFDK shall be created for the simulated projection images. |

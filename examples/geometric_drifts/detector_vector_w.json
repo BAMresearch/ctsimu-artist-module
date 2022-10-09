@@ -35,19 +35,10 @@
 				"z": {"value":  0, "drift": null}
 			},
 			"vector_w": {
-				"x": {"value":  1, "drift": null},
+				"x": {"value":  1, "drift": [{"value": [0, -1]}]},
 				"y": {"value":  0, "drift": null},
-				"z": {"value":  0, "drift": null}
-			},
-			
-			"deviations": [
-				{
-					"type": "rotation",
-					"axis": "w",
-					"amount": {"value": -10, "unit": "deg", "drift": [{"value": [-20, 20], "unit": "deg"}]},
-					"known_to_reconstruction": true
-				}
-			]
+				"z": {"value":  0, "drift": [{"value": [0, 1]}]}
+			}
 		},
 
 		"source":

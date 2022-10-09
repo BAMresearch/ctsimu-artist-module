@@ -43,8 +43,14 @@
 			"deviations": [
 				{
 					"type": "rotation",
+					"axis": "u",
+					"amount": {"value": 10, "unit": "deg", "drift": [{"value": [20, -20], "unit": "deg"}]},
+					"known_to_reconstruction": true
+				},
+				{
+					"type": "rotation",
 					"axis": "w",
-					"amount": {"value": -10, "unit": "deg", "drift": [{"value": [-20, 20], "unit": "deg"}]},
+					"amount": {"value": -5, "unit": "deg", "drift": [{"value": [-10, 10], "unit": "deg"}]},
 					"known_to_reconstruction": true
 				}
 			]

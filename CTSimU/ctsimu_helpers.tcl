@@ -1,6 +1,7 @@
 package require TclOO
 package require rl_json
 package require fileutil
+package require csv
 
 variable BasePath [file dirname [info script]]
 
@@ -10,6 +11,7 @@ namespace eval ::ctsimu {
 	set pi 3.1415926535897931
 	set ctsimu_module_namespace 0
 	set module_directory [ file dirname [ file normalize [ info script ] ] ]
+	set json_path ""; # path to current json file
 
 	proc aRTist_available { } {
 		return [namespace exists ::aRTist]
@@ -23,8 +25,31 @@ namespace eval ::ctsimu {
 	}
 
 	proc set_module_directory { dir } {
+		# Set the absolute directory path of the CTSimU module (in aRTist).
 		set ::ctsimu::module_directory $dir
 		::ctsimu::debug "Setting CTSimU module directory: $dir"
+	}
+
+	proc set_json_path { jsonpath } {
+		# Set the absolute path to the currently loaded JSON file,
+		# so that `get_absolute_path` can return the absolute location
+		# of files that are referenced in the JSON file.
+		set ::ctsimu::json_path $jsonpath
+	}
+
+	proc get_absolute_path { filename } {
+		# Returns the absolute path for the requested filename,
+		# which is assumed to be given relative to the current JSON file.
+		# If an absolute path to a file is passed, it will be returned unchanged.
+		# set_json_path should have been used to set the correct path beforehand.
+		if { [file pathtype $filename] != "relative" } {
+			# $filename seems to be absolute already.
+			return $filename
+		}
+
+		set abspath $::ctsimu::json_path
+		set absfilename [string cat $abspath "/" $filename]
+		return $absfilename
 	}
 
 	proc status_info {  message } {
@@ -135,6 +160,73 @@ namespace eval ::ctsimu {
 
 		::ctsimu::debug "New JSON import method."
 		return $jsonstring
+	}
+
+	proc read_csv_file { filename } {
+		# Read CSV file, return dict of lists:
+		# one list for each column, columns identified by 
+		# column number (0 ... N-1).
+
+		set absfilename [::ctsimu::get_absolute_path $filename]
+
+		if { [catch {
+			# Open file
+			set csvfile [open $absfilename r]
+			try {
+				fconfigure $csvfile -encoding utf-8
+				set csvstring [read $csvfile]
+			} finally {
+				close $csvfile
+			}
+		} err ] } {
+			::ctsimu::fail "Cannot read CSV file: $absfilename"
+			return 0
+		}
+
+		set lines [split $csvstring "\n"]
+
+		# Number of expected columns:
+		set colsExpected 0
+		set values [dict create]
+		set l 0
+		foreach line $lines {
+			incr l
+
+			# Check if line starts with a comment character:
+			if {[string index $line 0] == "#"} {
+				continue
+			}
+
+			set entries [::csv::split $line]
+			set col 0
+			foreach entry $entries {
+				if { $colsExpected == 0 } {
+					# First meaningful run. Create a list for the dictionary.
+					set lst [list $entry]
+					dict set values $col $lst
+				} else {
+					if {$col < $colsExpected} {
+						set lst [dict get $values $col]
+						lappend lst $entry
+						dict set values $col $lst
+					} else {
+						::ctsimu::fail "Error reading CSV file: number of columns in line $l is higher than expected number of columns ($colsExpected)."
+					}
+				}
+
+				incr col
+			}
+
+			if { $colsExpected > 0 } {
+				if { $colsExpected != $col } {
+					::ctsimu::fail "Error reading CSV file: line $l contains $col columns and does not match expected number of columns ($colsExpected)."
+				}
+			} else {
+				set colsExpected $col
+			}
+		}
+
+		return $values
 	}
 
 	# Checkers for valid JSON data

@@ -24,14 +24,20 @@ CTSimU defines a [JSON-based file format](https://bamresearch.github.io/ctsimu-s
 
 * `pi` — `3.1415926535897931`
 * `ctsimu_module_namespace` — Namespace of the CTSimU module in aRTist. Should be set from aRTist when loading the module using `::ctsimu::set_module_namespace`.
+* `module_directory` — The script directory (to access files inside the module package).
+* `json_path` — Absolute path to the currently loaded JSON file. Usually set by a [`::ctsimu::scenario`](scenario.md) when a JSON scenario is loaded.
 
 ## Functions
 
 ### General
 
-* `module_directory` — Returns the script directory (to access files inside the module package).
 * `aRTist_available` — To check whether the `aRTist` namespace is available.
 * `set_module_namespace { ns }` — Store reference to aRTist module namespace in `ctsimu` namespace, so that the `modulemain.tcl` can be accessed (used to show GUI status messages).
+* `set_module_directory { dir }` — Set the absolute directory path of the CTSimU module (in aRTist).
+* `set_json_path { jsonpath }` — Set the absolute path to the currently loaded JSON file, so that `get_absolute_path` can return the absolute location of files that are referenced in the JSON file.
+* `get_absolute_path { filename }` — Returns the absolute path for the requested filename, which is assumed to be given relative to the current JSON file. If an absolute path to a file is passed, it will be returned unchanged. `set_json_path` should have been used to set the correct path beforehand.
+* `read_json_file { filename }` — Read JSON file, check its validity, and return a dictionary using rl_json.
+* `read_csv_file { filename }` — Read CSV file, return dict of lists: one list for each column, columns identified by column number (`0` ... `N-1`).
 
 ### Logging System
 The module uses its own little logging system that invokes aRTist's logging system if available. If aRTist is not available, messages are simply printed on the console.

@@ -33,7 +33,8 @@ namespace eval ::ctsimu {
 			foreach drift $_drifts {
 				$drift destroy
 			}
-			
+			set _drifts [list]
+						
 			set _current_value $_standard_value
 		}
 

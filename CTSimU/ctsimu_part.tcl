@@ -566,7 +566,12 @@ namespace eval ::ctsimu {
 			my set_frame_cs $_cs_current $stageCS $frame $nFrames 0 $w_rotation_in_rad
 
 			# Set up the recon CS only obeying the drifts 'known to reconstruction':
-			my set_frame_cs $_cs_recon   $stageCS $frame $nFrames 1 $w_rotation_in_rad			
+			my set_frame_cs $_cs_recon   $stageCS $frame $nFrames 1 $w_rotation_in_rad
+
+			# Set the frame for all elements of the properties dict:
+			dict for { key value } $_properties {
+				[my parameter $key] set_frame $frame $nFrames
+			}
 		}
 
 		method place_in_scene { stageCS } {

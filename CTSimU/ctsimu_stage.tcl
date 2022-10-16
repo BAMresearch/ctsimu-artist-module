@@ -16,7 +16,7 @@ namespace eval ::ctsimu {
 			# Set the mesh file for the stage
 			# from the script location and the stage.stl file:
 			set meshfile "$::ctsimu::module_directory/stage.stl"
-			my set surface_mesh_file $meshfile
+			my set surface_mesh_file $meshfile "string"
 
 			::ctsimu::debug "Stage surface mesh file: $meshfile"
 		}

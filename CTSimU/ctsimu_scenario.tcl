@@ -314,13 +314,14 @@ namespace eval ::ctsimu {
 				$_detector place_in_scene $stageCS
 				$_source place_in_scene $stageCS
 
-				# Set environment material:
 				if { [::ctsimu::aRTist_available] && $apply_to_scene } {
 					# We have to ask the material manager for the
 					# aRTist id of the environment material in each frame,
 					# just in case it has changed from vacuum (void) to
 					# a higher-density material:
 					set ::Xsetup(SpaceMaterial) [ [$_material_manager get [my get environment_material]] aRTist_id ]
+
+					$_detector set_in_aRTist $apply_to_scene
 				}
 			}
 

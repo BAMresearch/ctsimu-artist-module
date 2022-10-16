@@ -220,7 +220,9 @@ namespace eval ::ctsimu {
 					set new_value $total_drift
 				}
 			} else {
-				set new_value [expr $new_value + $total_drift]
+				if { $_standard_value != "null" } {
+					set new_value [expr $_standard_value + $total_drift]
+				}
 			}
 
 			# Check if the value has changed when compared to the previous value:

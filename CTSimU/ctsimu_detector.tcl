@@ -40,6 +40,7 @@ namespace eval ::ctsimu {
 			my set integration_time 1.0 "s"
 			my set dead_time        0.0 "s"
 			my set image_lag        0.0
+			my set frame_average    1
 			
 			# Properties for gray value reproduction:
 			my set gray_value_mode  "imin_imax" "string"
@@ -74,6 +75,7 @@ namespace eval ::ctsimu {
 			
 			# Scintillator
 			my set scintillator_material_id "" "string"
+			my set scintillator_thickness   0.1 "mm"
 		}
 
 		method set_from_json { jobj stage } {
@@ -186,47 +188,51 @@ namespace eval ::ctsimu {
 			
 			# Scintillator
 			my set_property scintillator_material_id $detprops {scintillator material_id} "null"
+			my set_property scintillator_thickness $detprops {scintillator thickness} 0
+
+			# Frame averaging:
+			my set_property frame_average $jobj {acquisition frame_average} 1
 
 			::ctsimu::info "Done reading detector parameters."
 		}
 
-		method set_frame { stageCS frame nFrames { forced 0 } } {
-			set detector_geometry_updated 0
+		method set_in_aRTist { { apply_to_scene 0 } } {
+			if { [::ctsimu::aRTist_available] } {
+				# Set the detector to auto-size mode.
+				# We set the number of pixels and the pixel size,
+				# and aRTist should automatically calculate the
+				# detector size:
+				Preferences::Set Detector AutoVar Size
+				set ::Xsetup_private(DGauto) Size
+				::XDetector::SelectAutoQuantity
 
-			# Columns and rows:
-			# ----------------------
-			if { [[my parameter columns] set_frame $frame $nFrames] || \
-			     [[my parameter rows] set_frame $frame $nFrames] || \
-			     $forced } {
-				::ctsimu::info "Setting detector size: [my get columns] x [my get rows]"
-				if { [::ctsimu::aRTist_available] } {
-					set ::Xsetup(DetectorPixelX) [my get columns]
-					set ::Xsetup(DetectorPixelY) [my get rows]
-					set detector_geometry_updated 1
+				# Number of pixels:
+				set ::Xsetup(DetectorPixelX) [expr int([my get columns])]
+				set ::Xsetup(DetectorPixelY) [expr int([my get rows])]
+
+				# Pixel size:
+				# Check if pixel size square lock needs to be lifted:
+				if { [my get pitch_u] == [my get pitch_v] } {
+					set ::Xsetup(SquarePixel) 1
+				} else {
+					set ::Xsetup(SquarePixel) 0
 				}
-			}
 
-			# Pixel size:
-			# ----------------------
-			if { [[my parameter pitch_u] set_frame $frame $nFrames] || \
-			     [[my parameter pitch_v] set_frame $frame $nFrames] || \
-			     $forced } {
-				::ctsimu::info "Setting pixel size: [my get pitch_u] x [my get pitch_v]"
-				if { [::ctsimu::aRTist_available] } {
-					set ::Xsetup_private(DGdx) [my get pitch_u]
-					set ::Xsetup_private(DGdy) [my get pitch_v]
-					set detector_geometry_updated 1
-				}
-			}
+				set ::Xsetup_private(DGdx) [my get pitch_u]
+				set ::Xsetup_private(DGdy) [my get pitch_v]
 
-			if { $detector_geometry_updated } {
-				if { [::ctsimu::aRTist_available] } {
-					::XDetector::UpdateGeometry %W
-				}
-			}
+				# Integration Time:
+				set ::Xdetector(AutoD) off
+				set ::Xdetector(Scale) [my get integration_time]
 
-			# set_frame of ::ctsimu::part parent class:
-			next $stageCS $frame $nFrames
+				# Frame Averaging
+				# Set frame averaging to 1 for now:
+				set ::Xdetector(NrOfFrames) [expr int([my get frame_average])]
+
+				::XDetector::UpdateGeometry %W
+
+
+			}
 		}
 	}
 }

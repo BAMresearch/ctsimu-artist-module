@@ -47,11 +47,5 @@ namespace eval ::ctsimu {
 
 			::ctsimu::info "Done reading source parameters."
 		}
-
-		method set_frame { stageCS frame nFrames { forced 0 } } {
-
-			# set_frame of ::ctsimu::part parent class:
-			next $stageCS $frame $nFrames
-		}
 	}
 }

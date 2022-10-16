@@ -11,4 +11,4 @@ set S [ctsimu::scenario new]
 #$S set_frame 0 1
 
 $S load_json_scene "../../example_jsons/2D-HS-1_2021-03-24v02r00dp.json"
-$S set_frame 0 1
+$S set_frame 100 200

@@ -78,6 +78,14 @@ namespace eval ::ctsimu {
 			my set scintillator_thickness   0.1 "mm"
 		}
 
+		method physical_width { } {
+			return [ expr [my get pitch_u] * [my get columns] ]
+		}
+
+		method physical_height { } {
+			return [ expr [my get pitch_v] * [my get rows] ]
+		}
+
 		method set_from_json { jobj stage } {
 			# Import the detector definition and geometry from the JSON object.
 			# The JSON object should contain the complete content

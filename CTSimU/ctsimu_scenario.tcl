@@ -298,7 +298,19 @@ namespace eval ::ctsimu {
 			# Add the stage as a sample to the sample manager
 			# so that it can be shown in the scene:
 			if { [my get show_stage] } {
-				$_sample_manager add_sample [$_stage get_sample_copy]
+				# Calculate a scaling factor for the stage object,
+				# such that is matches the detector height. The size
+				# of the original stage STL is 52 mm in each direction.
+				set stage_scaling_factor [expr [$_detector physical_height]/52.0 ]
+
+				# Create a sample for the stage
+				# that can be added to the sample manager:
+				set stage_copy [$_stage get_sample_copy]
+				$stage_copy set scaling_factor_r $stage_scaling_factor
+				$stage_copy set scaling_factor_s $stage_scaling_factor
+				$stage_copy set scaling_factor_t $stage_scaling_factor
+
+				$_sample_manager add_sample $stage_copy
 			}
 
 			$_sample_manager set_from_json $jsonstring $stageCS

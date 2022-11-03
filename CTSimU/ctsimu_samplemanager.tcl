@@ -42,8 +42,20 @@ namespace eval ::ctsimu {
 		method update_scene { stageCS } {
 			# Move objects in scene to match current frame number.
 			::ctsimu::status_info "Placing objects..."
+
+			# Create a list of IDs that are available in aRTist's part list:
+			set available_ids [list ]
+			if { [::ctsimu::aRTist_available] } {
+				set available_ids [::PartList::Query {ID}]
+			}
+
 			foreach s $_samples {
-				$s place_in_scene $stageCS
+				# Check if the sample ID is still in aRTist's part list
+				# or if it has been deleted.
+				if { [::ctsimu::is_valid [$s id] $available_ids] || ![::ctsimu::aRTist_available] } {
+					$s place_in_scene $stageCS
+					$s update_scaling_factor
+				}
 			}
 		}
 
@@ -94,6 +106,12 @@ namespace eval ::ctsimu {
 				set material_id [ [ $material_manager get [$s get material_id] ] aRTist_id ]
 				if { [::ctsimu::aRTist_available] } {
 					$s set_id [::PartList::LoadPart $meshfile "$material_id" "[$s name]" yes]
+
+					# Set the original object size:
+					set objectSize [::PartList::Invoke [$s id] GetSize]
+					$s set original_physical_size_r [lindex $objectSize 0]
+					$s set original_physical_size_s [lindex $objectSize 1]
+					$s set original_physical_size_t [lindex $objectSize 2]
 				}
 
 				$s place_in_scene $stageCS

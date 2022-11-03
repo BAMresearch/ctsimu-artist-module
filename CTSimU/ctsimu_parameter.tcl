@@ -38,6 +38,15 @@ namespace eval ::ctsimu {
 			set _current_value $_standard_value
 		}
 
+		method print { frame nFrames } {
+			set s "Standard value: $_standard_value, Current value: $_current_value, Native unit: $_native_unit, nDrifts: [llength $_drifts]"
+			foreach d $_drifts {
+				append s "\n  Drift at frame $frame: [$d get_value_for_frame $frame $nFrames]"
+			}
+
+			return $s
+		}
+
 		# Getters
 		# -------------------------
 		method native_unit { } {

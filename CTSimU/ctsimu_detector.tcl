@@ -188,7 +188,7 @@ namespace eval ::ctsimu {
 			
 			# Scintillator
 			my set_property scintillator_material_id $detprops {scintillator material_id} "null"
-			my set_property scintillator_thickness $detprops {scintillator thickness} 0
+			my set_from_key scintillator_thickness $detprops {scintillator thickness} 0
 
 			# Frame averaging:
 			my set_property frame_average $jobj {acquisition frame_average} 1

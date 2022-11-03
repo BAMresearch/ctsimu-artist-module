@@ -48,27 +48,31 @@ proc Init {} {
 
 	set prefs [Preferences::GetWithDefault CTSimU Settings {}]
 
-	if {[dict exists $prefs fileFormat]} {
+	if { [dict exists $prefs fileFormat] } {
 		$ctsimu_scenario set output_fileformat [dict get $prefs fileFormat]
 	}
 
-	if {[dict exists $prefs dataType]} {
+	if { [dict exists $prefs dataType] } {
 		$ctsimu_scenario set output_datatype [dict get $prefs dataType]
 	}
 
-	if {[dict exists $prefs cfgFileCERA]} {
+	if { [dict exists $prefs showStageInScene] } {
+		$ctsimu_scenario set show_stage [dict get $prefs showStageInScene]
+	}
+
+	if { [dict exists $prefs cfgFileCERA] } {
 		$ctsimu_scenario set create_cera_config_file [dict get $prefs cfgFileCERA]
 	}
 	
-	if {[dict exists $prefs ceraOutputDatatype]} {
+	if { [dict exists $prefs ceraOutputDatatype] } {
 		$ctsimu_scenario set cera_output_datatype [dict get $prefs ceraOutputDatatype]
 	}
 
-	if {[dict exists $prefs cfgFileOpenCT]} {
+	if { [dict exists $prefs cfgFileOpenCT] } {
 		$ctsimu_scenario set create_openct_config_file [dict get $prefs cfgFileOpenCT]
 	}
 	
-	if {[dict exists $prefs	openctOutputDatatype]} {
+	if { [dict exists $prefs openctOutputDatatype] } {
 		$ctsimu_scenario set openct_output_datatype [dict get $prefs openctOutputDatatype]
 	}
 
@@ -92,6 +96,7 @@ proc Running {} {
 
 proc CanClose {} {
 	variable ctsimu_scenario
+
 	if {[$ctsimu_scenario batch_is_running] == 1} {
 		return false
 	}
@@ -100,6 +105,7 @@ proc CanClose {} {
 		return false
 	}
 
+	applyCurrentSettings
 	return true
 }
 
@@ -364,7 +370,7 @@ proc InitGUI { parent } {
 		{Projection Base Name}    outputBaseName  string   {}
 		{Start at Projection Nr.} startProjNr     integer  {}
 		{File Format}             fileFormat      choice   { "TIFF" "tiff" "RAW" "raw" }
-		{Data Type}               dataType        choice   { "uint16" "16bit" "float32" "32bit" }
+		{Data Type}               dataType        choice   { "uint16" "uint16" "float32" "float32" }
 		{Save ideal dark field}   takeDarkField   bool     {}
 		{Flat field images}       nFlatFrames     integer  {}
 		{Flat frames to average}  nFlatAvg        integer  {}
@@ -423,17 +429,27 @@ proc InitGUI { parent } {
 	foreach dir { row column } { grid ${dir}configure $batch $batchListGroup -weight 1 }
 
 
+	set generalCfgGroup   [FoldFrame $settings.frmGeneralCfg  -text "General"  -padding $pad]
+	dataform $generalCfgGroup {
+		{Show stage coordinate system in scene}       showStageInScene     bool   { }
+	}
+
+	set buttons [ttk::frame $generalCfgGroup.frmButtons]
+	grid $buttons - -sticky snew
+
 
 	set reconCfgGroup   [FoldFrame $settings.frmReconCfg  -text "Reconstruction"  -padding $pad]
 	dataform $reconCfgGroup {
 		{Create CERA config file}   cfgFileCERA          bool   { }
-		{CERA volume data type}     ceraOutputDataType   choice { "uint16" "16bit" "float32" "32bit"}
-		{Create OpenCT config file} cfgFileOpenCT         bool   { }
-		{OpenCT volume data type}   openctOutputDataType choice { "uint16" "16bit" "float32" "32bit"}
+		{CERA volume data type}     ceraOutputDatatype   choice { "uint16" "uint16" "float32" "float32" }
+		{Create OpenCT config file} cfgFileOpenCT        bool   { }
+		{OpenCT volume data type}   openctOutputDatatype choice { "uint16" "uint16" "float32" "float32" }
 	}
 
 	set buttons [ttk::frame $reconCfgGroup.frmButtons]
 	grid $buttons - -sticky snew
+
+
 
 	foreach item [winfo children $settings] { grid $item -sticky snew }
 
@@ -540,12 +556,15 @@ proc fillCurrentParameters {} {
 	set GUISettings(nFlatAvg)             [$ctsimu_scenario get n_darks]
 	set GUISettings(ffIdeal)              [$ctsimu_scenario get flat_field_ideal]
 
+	# General settings
+	set GUISettings(showStageInScene)     [$ctsimu_scenario get show_stage]
+
 	# Recon settings
 	set GUISettings(cfgFileCERA)          [$ctsimu_scenario get create_cera_config_file]
-	set GUISettings(ceraOutputDataType)   [$ctsimu_scenario get cera_output_datatype]
+	set GUISettings(ceraOutputDatatype)   [$ctsimu_scenario get cera_output_datatype]
 
 	set GUISettings(cfgFileOpenCT)        [$ctsimu_scenario get create_openct_config_file]
-	set GUISettings(openctOutputDataType) [$ctsimu_scenario get openct_output_datatype]
+	set GUISettings(openctOutputDatatype) [$ctsimu_scenario get openct_output_datatype]
 }
 
 proc applyCurrentSettings {} {
@@ -554,21 +573,25 @@ proc applyCurrentSettings {} {
 	variable GUISettings
 	variable ctsimu_scenario
 
+	$ctsimu_scenario set show_stage                $GUISettings(showStageInScene)
+
 	$ctsimu_scenario set create_cera_config_file   $GUISettings(cfgFileCERA)
-	$ctsimu_scenario set cera_output_datatype      $GUISettings(ceraOutputDataType)
+	$ctsimu_scenario set cera_output_datatype      $GUISettings(ceraOutputDatatype)
 
 	$ctsimu_scenario set create_openct_config_file $GUISettings(cfgFileOpenCT)
-	$ctsimu_scenario set openct_output_datatype    $GUISettings(openctOutputDataType)
+	$ctsimu_scenario set openct_output_datatype    $GUISettings(openctOutputDatatype)
 
 	# Create a settings dict for aRTist:
 	dict set storeSettings fileFormat    [$ctsimu_scenario get output_fileformat]
 	dict set storeSettings dataType      [$ctsimu_scenario get output_datatype]
 
-	dict set storeSettings cfgFileCERA   [$ctsimu_scenario get create_cera_config_file]
-	dict set storeSettings ceraOutputDataType [$ctsimu_scenario get cera_output_datatype]
+	dict set storeSettings showStageInScene   [$ctsimu_scenario get show_stage]
+
+	dict set storeSettings cfgFileCERA        [$ctsimu_scenario get create_cera_config_file]
+	dict set storeSettings ceraOutputDatatype [$ctsimu_scenario get cera_output_datatype]
 
 	dict set storeSettings cfgFileOpenCT [$ctsimu_scenario get create_openct_config_file]
-	dict set storeSettings openctOutputDataType [$ctsimu_scenario get openct_output_datatype]
+	dict set storeSettings openctOutputDatatype [$ctsimu_scenario get openct_output_datatype]
 
 	# Save the settings dict in preferences file:
 	Preferences::Set CTSimU Settings $storeSettings
@@ -601,7 +624,7 @@ proc applyCurrentParameters {} {
 proc setOutputParameters { file_format data_type output_folder projectionBasename } {
 	variable ctsimu_scenario
 	# file_format: "raw" or "tiff". Standard: "raw".
-	# data_type: "16bit" or "32bit". Standard: "16bit"
+	# data_type: "uint16" or "float32". Standard: "float32"
 
 	if { [string match -nocase "tiff" $file_format] } {
 		$ctsimu_scenario set output_fileformat "tiff"
@@ -609,10 +632,10 @@ proc setOutputParameters { file_format data_type output_folder projectionBasenam
 		$ctsimu_scenario set output_fileformat "raw"
 	}
 
-	if { [string match -nocase "32bit" $data_type] } {
-		$ctsimu_scenario set output_datatype "32bit"
+	if { [string match -nocase "uint16" $data_type] } {
+		$ctsimu_scenario set output_datatype "uint16"
 	} else {
-		$ctsimu_scenario set output_datatype "16bit"
+		$ctsimu_scenario set output_datatype "float32"
 	}
 
 	if { [string length $output_folder] > 0 } {
@@ -753,7 +776,7 @@ proc addBatchJob { } {
 				set formatString "TIFF "
 			}
 
-			if { $GUISettings(dataType) == "32bit" } {
+			if { $GUISettings(dataType) == "float32" } {
 				append formatString "float32"
 			} else {
 				append formatString "uint16"
@@ -827,15 +850,17 @@ proc runBatch { } {
 
 			if {$status == "Pending"} {
 				if {$nRuns > 0} {
+					set data_type "uint16"
 					set file_format "raw"
-					set data_type "16bit"
 
 					if { $outputFormat == "RAW float32" } {
-						set data_type "32bit"
+						set data_type "float32"
+						set file_format "raw"
 					} elseif { $outputFormat == "TIFF float32" } {
-						set data_type "32bit"
+						set data_type "float32"
 						set file_format "tiff"
 					} elseif { $outputFormat == "TIFF uint16" } {
+						set data_type "uint16"
 						set file_format "tiff"
 					}
 

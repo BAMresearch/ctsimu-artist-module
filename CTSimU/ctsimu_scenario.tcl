@@ -34,6 +34,9 @@ namespace eval ::ctsimu {
 			my set output_basename          "proj_"
 			my set output_folder            ""
 
+			# Option to show stage coordinate system in scene:
+			my set show_stage               1
+
 			# CERA config file options:
 			my set create_cera_config_file  1
 			my set cera_output_datatype     "float32"
@@ -85,8 +88,6 @@ namespace eval ::ctsimu {
 			my set n_frames            2000; # frame_average * n_projections
 
 			my set environment_material "void"
-
-			my set show_stage             1; # show stage as object in the scene
 
 			$_detector reset
 			$_stage reset
@@ -151,13 +152,25 @@ namespace eval ::ctsimu {
 
 		# Setters
 		method set { setting value } {
+			# We changed the keywords for the data types:
+			# 16bit -> uint16
+			# 32bit -> float32
+			# For backwards compatibility, we need to check
+			# if someone still has those in their aRTist settings.
+			if { $setting == {output_datatype} || $setting == {cera_output_datatype} || $setting == {openct_output_datatype} } {
+				if { $value == "16bit" } {
+					set value "uint16"
+				} elseif { $value == "32bit" } {
+					set value "float32"
+				}
+			}
+
 			# Set a settings value in the settings dict
 			dict set _settings $setting $value
-
+	
 			# The projection counter format (e.g. %04d) needs
 			# to be adapted to the number of projections:
 			if { $setting == {n_projections} } {
-				::ctsimu::info "-- Number of projections: $value"
 				my create_projection_counter_format $value
 
 				# The number of frames should currently match

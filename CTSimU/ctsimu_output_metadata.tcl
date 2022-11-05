@@ -111,7 +111,7 @@ namespace eval ::ctsimu {
 		::rl_json::json set metadata output projections datatype [::rl_json::json new string [$S get output_datatype]]
 
 		if {$headerSizeValid==1} {
-			::rl_json::json set metadata output projections headersize [::rl_json::json object {"file": 0, "image": 0}]
+			::rl_json::json set metadata output projections headersize {{"file": 0, "image": 0}}
 		}
 
 		# Projection number and size:

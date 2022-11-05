@@ -371,11 +371,7 @@ proc InitGUI { parent } {
 		{Start at Projection Nr.} startProjNr     integer  {}
 		{File Format}             fileFormat      choice   { "TIFF" "tiff" "RAW" "raw" }
 		{Data Type}               dataType        choice   { "uint16" "uint16" "float32" "float32" }
-		{Save ideal dark field}   takeDarkField   bool     {}
-		{Flat field images}       nFlatFrames     integer  {}
-		{Flat frames to average}  nFlatAvg        integer  {}
-		{Flat field mode}         ffIdeal         choice   { "Regular" 0 "Ideal" 1 }
-		{ }                       scanBtn         buttons  { "Run scenario" startScan 12 "Stop" CTSimU_stopScan 7 }
+		{ }                       scanBtn         buttons  { "Run scenario" startScan 12 "Stop" stopScan 7 }
 	}
 	
 #	set infoFrame   [FoldFrame $model.frmInfo -text "Status"     -padding $pad]
@@ -551,11 +547,6 @@ proc fillCurrentParameters {} {
 	set GUISettings(includeFinalAngle)    [$ctsimu_scenario get include_final_angle]
 	set GUISettings(startProjNr)          [$ctsimu_scenario get start_proj_nr]
 
-	#set GUISettings(takeDarkField)        [$ctsimu_scenario get dark_field]
-	set GUISettings(nFlatFrames)          [$ctsimu_scenario get n_flats]
-	set GUISettings(nFlatAvg)             [$ctsimu_scenario get n_darks]
-	set GUISettings(ffIdeal)              [$ctsimu_scenario get flat_field_ideal]
-
 	# General settings
 	set GUISettings(showStageInScene)     [$ctsimu_scenario get show_stage]
 
@@ -610,11 +601,6 @@ proc applyCurrentParameters {} {
 	$ctsimu_scenario set include_final_angle $GUISettings(includeFinalAngle)
 	$ctsimu_scenario set start_proj_nr       $GUISettings(startProjNr)
 
-	#$ctsimu_scenario set dark_field          $GUISettings(takeDarkField)
-	$ctsimu_scenario set n_flats             $GUISettings(nFlatFrames)
-	$ctsimu_scenario set n_flat_avg          $GUISettings(nFlatAvg)
-	$ctsimu_scenario set flat_field_ideal    $GUISettings(ffIdeal)
-	
 	$ctsimu_scenario set output_fileformat   $GUISettings(fileFormat)
 	$ctsimu_scenario set output_datatype     $GUISettings(dataType)
 
@@ -647,6 +633,11 @@ proc setOutputParameters { file_format data_type output_folder projectionBasenam
 	}
 
 	fillCurrentParameters
+}
+
+proc setFrameNumber { nr } {
+	variable GUISettings
+	set GUISettings(projNr) $nr
 }
 
 
@@ -821,7 +812,7 @@ proc deleteBatchJob { } {
 proc stopBatch { } {
 	variable ctsimu_scenario
 	$ctsimu_scenario set_batch_run_status 0
-	CTSimU_stopScan
+	$ctsimu_scenario stop_scan
 }
 
 proc runBatch { } {
@@ -942,55 +933,40 @@ proc runBatch { } {
 
 proc loadScene {} {
 	variable GUISettings
-	variable ns
 	variable ctsimu_scenario
 
 	applyCurrentParameters
 	aRTist::LoadEmptyProject
-#	CTSimU::setModuleNamespace $ns
 
 	set sceneState [$ctsimu_scenario load_json_scene $GUISettings(jsonfile)]
 
 	# Continue only if JSON was loaded successfully:
 	if { $sceneState == 1 } {
 		fillCurrentParameters
-#		showInfo "Scenario loaded."
-#		showProjection
-		
 		::SceneView::ViewAllCmd
 		showProjection
 	}
 }
 
 proc showProjection {} {
-	variable GUISettings
 	variable ctsimu_scenario
 
 	applyCurrentParameters
 	$ctsimu_scenario set_frame [$ctsimu_scenario get current_frame] 0 1
-	Engine::RenderPreview
 }
 
 proc nextProjection {} {
-	variable GUISettings
 	variable ctsimu_scenario
 
 	applyCurrentParameters
-	
 	$ctsimu_scenario set_next_frame 1
-	set GUISettings(projNr) [expr [$ctsimu_scenario get current_frame]]
-	Engine::RenderPreview
 }
 
 proc prevProjection {} {
-	variable GUISettings
 	variable ctsimu_scenario
 
 	applyCurrentParameters
-	
 	$ctsimu_scenario set_previous_frame 1
-	set GUISettings(projNr) [expr [$ctsimu_scenario get current_frame]]
-	Engine::RenderPreview
 }
 
 proc startScan {} {
@@ -1005,6 +981,6 @@ proc startScan {} {
 }
 
 proc stopScan {} {
-	variable GUISettings
+	variable ctsimu_scenario
 	$ctsimu_scenario stop_scan
 }

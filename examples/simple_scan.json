@@ -1,43 +1,49 @@
 {
 	"file":
 	{
-		"name": "Test Scenario",
+		"name": "SimpleScan",
 		"description": "",
-
+		
 		"contact": "David Plotzki",
-		"date_created": "2022-10-06",
-		"date_changed": "2022-10-09",
+		"date_created": "2022-11-05",
+		"date_changed": "2022-11-05",
 		"version": {"major": 1, "minor": 0},
 
 		"file_type": "CTSimU Scenario",
-		"file_format_version": {"major": 1, "minor": 0}
+		"file_format_version": {"major": 0, "minor": 8}
 	},
 
 	"environment":
 	{
-		"material_id": "Air",
-		"temperature": {"value": 20, "unit": "C", "uncertainty": {"value": 0.5, "unit": "C"}}
+		"material_id": "Vacuum",
+		"temperature": null
 	},
 
 	"geometry":
 	{
 		"detector":
 		{
-			"center": {
-				"x": {"value": 400, "unit": "mm", "drift": null},
-				"y": {"value":   0, "unit": "mm", "drift": null},
-				"z": {"value":   0, "unit": "mm", "drift": null}
+			"centre": {
+				"x": {"value": 1000, "unit": "mm", "uncertainty": 0.0, "uncertainty_unit": "mm"},
+				"y": {"value":    0, "unit": "mm", "uncertainty": 0.0, "uncertainty_unit": "mm"},
+				"z": {"value":    0, "unit": "mm", "uncertainty": 0.0, "uncertainty_unit": "mm"}
 			},
 
-			"vector_u": {
-				"x": {"value":  0, "drift": null},
-				"y": {"value": -1, "drift": null},
-				"z": {"value":  0, "drift": null}
-			},
-			"vector_w": {
-				"x": {"value":  1, "drift": null},
-				"y": {"value":  0, "drift": null},
-				"z": {"value":  0, "drift": null}
+			"vector_u": {"x": 0, "y": -1, "z": 0},
+			"vector_w": {"x": 1, "y":  0, "z": 0},
+
+			"deviation": {
+				"position": {
+					"x": {"value": 0, "unit": "mm", "uncertainty": 0.0, "uncertainty_unit": "mm"},
+					"y": {"value": 0, "unit": "mm", "uncertainty": 0.0, "uncertainty_unit": "mm"},
+					"z": {"value": 0, "unit": "mm", "uncertainty": 0.0, "uncertainty_unit": "mm"}
+				},
+				"rotation": {
+					"u": {"value": 0, "unit": "rad", "uncertainty": 0.0, "uncertainty_unit": "rad"},
+					"v": {"value": 0, "unit": "rad", "uncertainty": 0.0, "uncertainty_unit": "rad"},
+					"w": {"value": 0, "unit": "rad", "uncertainty": 0.0, "uncertainty_unit": "rad"}
+				},
+				"known_to_reconstruction": true
 			}
 		},
 
@@ -45,45 +51,57 @@
 		{
 			"type": "cone",
 			"beam_divergence": {
-				"u": {"value": 0, "unit": "rad", "drift": null},
-				"v": {"value": 0, "unit": "rad", "drift": null}
+				"u": {"value": 0, "unit": "rad", "uncertainty": 0.0, "uncertainty_unit": "rad"},
+				"v": {"value": 0, "unit": "rad", "uncertainty": 0.0, "uncertainty_unit": "rad"}
 			},
 
-			"center": {
-				"x": {"value": 0, "unit": "mm", "drift": null},
-				"y": {"value": 0, "unit": "mm", "drift": null},
-				"z": {"value": 0, "unit": "mm", "drift": null}
+			"centre": {
+				"x": {"value": 0, "unit": "mm", "uncertainty": 0.0, "uncertainty_unit": "mm"},
+				"y": {"value": 0, "unit": "mm", "uncertainty": 0.0, "uncertainty_unit": "mm"},
+				"z": {"value": 0, "unit": "mm", "uncertainty": 0.0, "uncertainty_unit": "mm"}
 			},
 
-			"vector_u": {
-				"x": {"value":  0, "drift": null},
-				"y": {"value": -1, "drift": null},
-				"z": {"value":  0, "drift": null}
-			},
-			"vector_w": {
-				"x": {"value":  1, "drift": null},
-				"y": {"value":  0, "drift": null},
-				"z": {"value":  0, "drift": null}
+			"vector_u": {"x": 0, "y": -1, "z": 0},
+			"vector_w": {"x": 1, "y":  0, "z": 0},
+
+			"deviation": {
+				"position": {
+					"x": {"value": 0, "unit": "mm", "uncertainty": 0.0, "uncertainty_unit": "mm"},
+					"y": {"value": 0, "unit": "mm", "uncertainty": 0.0, "uncertainty_unit": "mm"},
+					"z": {"value": 0, "unit": "mm", "uncertainty": 0.0, "uncertainty_unit": "mm"}
+				},
+				"rotation": {
+					"u": {"value": 0, "unit": "rad", "uncertainty": 0.0, "uncertainty_unit": "rad"},
+					"v": {"value": 0, "unit": "rad", "uncertainty": 0.0, "uncertainty_unit": "rad"},
+					"w": {"value": 0, "unit": "rad", "uncertainty": 0.0, "uncertainty_unit": "rad"}
+				},
+				"known_to_reconstruction": true
 			}
 		},
 
 		"stage":
 		{
-			"center": {
-				"x": {"value": 275, "unit": "mm", "drift": null},
-				"y": {"value":   0, "unit": "mm", "drift": null},
-				"z": {"value":   0, "unit": "mm", "drift": null}
+			"centre": {
+				"x": {"value": 500, "unit": "mm", "uncertainty": 0.0, "uncertainty_unit": "mm"},
+				"y": {"value":   0, "unit": "mm", "uncertainty": 0.0, "uncertainty_unit": "mm"},
+				"z": {"value":   0, "unit": "mm", "uncertainty": 0.0, "uncertainty_unit": "mm"}
 			},
 
-			"vector_u": {
-				"x": {"value":  1, "drift": null},
-				"y": {"value":  0, "drift": null},
-				"z": {"value":  0, "drift": null}
-			},
-			"vector_w": {
-				"x": {"value":  0, "drift": null},
-				"y": {"value":  0, "drift": null},
-				"z": {"value":  1, "drift": null}
+			"vector_u": {"x": 1, "y": 0, "z": 0},
+			"vector_w": {"x": 0, "y": 0, "z": 1},
+
+			"deviation": {
+				"position": {
+					"x": {"value":  0, "unit": "mm", "uncertainty": 0.0, "uncertainty_unit": "mm"},
+					"y": {"value":  0, "unit": "mm", "uncertainty": 0.0, "uncertainty_unit": "mm"},
+					"z": {"value":  0, "unit": "mm", "uncertainty": 0.0, "uncertainty_unit": "mm"}
+				},
+				"rotation": {
+					"u": {"value": 0.0, "unit": "deg", "uncertainty": 0.0, "uncertainty_unit": "deg"},
+					"v": {"value": 0.0, "unit": "deg", "uncertainty": 0.0, "uncertainty_unit": "deg"},
+					"w": {"value": 0.0, "unit": "deg", "uncertainty": 0.0, "uncertainty_unit": "deg"}
+				},
+				"known_to_reconstruction": true
 			}
 		}
 	},
@@ -96,102 +114,136 @@
 		"columns":      {"value": 1000, "unit": "px"},
 		"rows":         {"value": 1000, "unit": "px"},
 		"pixel_pitch": {
-			"u": {"value": 0.1, "unit": "mm", "drift": null},
-			"v": {"value": 0.1, "unit": "mm", "drift": null}
+			"u": {"value": 0.4, "unit": "mm", "uncertainty": 0, "uncertainty_unit": "mm"},
+			"v": {"value": 0.4, "unit": "mm", "uncertainty": 0, "uncertainty_unit": "mm"}
 		},
 		"bit_depth":  {"value": 16},
-		"integration_time": {"value": 1, "unit": "s", "drift": null},
+		"integration_time": {"value": 1, "unit": "s", "uncertainty": 0.0, "uncertainty_unit": "s"},
 		"dead_time":  null,
 		"image_lag":  null,
 		"grey_value":
 		{
-			"imax":   {"value": 60000, "drift": null},
-			"imin":   {"value":     0, "drift": null},
+			"imin": {"value": 0},
+			"imax": {"value": 60000},
 
 			"factor": null,
-			"offset": null
+			"offset": null,
+
+			"intensity_characteristics_file": null,
+
+			"efficiency":   {"value": 1.0, "unit": null, "uncertainty": 0.0, "uncertainty_unit": null},
+			"efficiency_characteristics_file": null
 		},
 		"noise":
 		{
-			"snr_at_imax": null,
+			"snr_at_imax":  null,
+			"fwhm_at_imax": null,
 			"noise_characteristics_file": null
 		},
-		"unsharpness":
+		"gain":
 		{
-			"basic_spatial_resolution": {"value": null, "unit": "mm", "drift": null},
-			"mtf10_frequency": {"value": null, "unit": "lp/mm", "drift": null},
+			"value": 1,
+			"scale_signal_and_noise": false
+		},
+		"sharpness":
+		{
+			"basic_spatial_resolution": null,
+			"mtf10_frequency": null,
 			"mtf": null
 		},		
-		"bad_pixel_map": null,
-		"scintillator": null,
-		"filters": null
+		"bad_pixel_map":
+		{
+			"file": null,
+			"type": "uint8"
+		},
+		"scintillator":
+		{
+			"material_id": null,
+			"thickness": {"value": 0.0, "unit": "mm", "uncertainty": 0, "uncertainty_unit": "mm"}
+		},
+		"filters":
+		{
+			"front": null,
+			"rear":  null
+		}
 	},
 
 	"source":
 	{
 		"model":        "",
-		"manufacturer": "",
-		"voltage": {"value": 130, "unit": "kV", "drift": null},
-		"current": {"value": 100, "unit": "uA", "drift": null},
-		"target": null,
-		"spot":
-		{
-			"size": {
-				"u": {"value": 0.0, "unit": "um", "drift": null},
-				"v": {"value": 0.0, "unit": "um", "drift": null},
-				"w": {"value": 0.0, "unit": "um", "drift": null}
+			"manufacturer": "",
+			"voltage": {"value": 80, "unit": "kV", "uncertainty": 0, "uncertainty_unit": "kV"},
+			"current": {"value": 100, "unit": "uA", "uncertainty": 0, "uncertainty_unit": "uA"},
+			"target":
+			{
+				"material_id": "W",
+				"type": "reflection",
+				"thickness": null,
+				"angle":
+				{
+					"incidence": {"value": 45, "unit": "deg", "uncertainty": 0, "uncertainty_unit": "deg"},
+					"emission":  {"value": 45, "unit": "deg", "uncertainty": 0, "uncertainty_unit": "deg"}
+				}
 			},
-			"sigma": {
-				"u": {"value": 0.0, "unit": "um", "drift": null},
-				"v": {"value": 0.0, "unit": "um", "drift": null},
-				"w": {"value":   0.0, "unit": "um", "drift": null}
-			}
-		},
-		"spectrum":
-		{
-			"monochromatic": true,
-			"bremsstrahlung": false,
-			"characteristic": false
-		},
-		"window": null,
-		"filters": null
+			"spot":
+			{
+				"size": null,
+				"sigma": null,
+				"intensity_map": null
+			},
+			"spectrum":
+			{
+				"monochromatic": true,
+				"bremsstrahlung": false	,
+				"characteristic": false,
+				"file": null
+			},
+			"window":
+			[
+				{
+					"material_id": "Al",
+					"thickness": {"value": 4.0, "unit": "mm", "uncertainty": 0.0, "uncertainty_unit": "mm"}
+				}
+			],
+			"filters": 
+			[
+				{
+					"material_id": "Cu",
+					"thickness": {"value": 0.5, "unit": "mm", "uncertainty": 0.0, "uncertainty_unit": "mm"}
+				}
+			]
 	},
 
 	"samples":
 	[
 		{
 			"name": "Frame",
-			"file": {"value": "frame.stl", "drift": null},
+			"file": "frame.stl",
 			"unit": "mm",
-			"scaling_factor": {
-				"r": {"value": 1.0, "drift": null},
-				"s": {"value": 1.0, "drift": null},
-				"t": {"value": 1.0, "drift": null}
-			},
+			"scaling_factor": {"r": 1.0, "s": 1.0, "t": 1.0},
 			"material_id": "Al",
 			"position":
 			{
 				"centre": {
-					"u": {"value": 0, "unit": "mm", "drift": null},
-					"v": {"value": 0, "unit": "mm", "drift": null},
-					"w": {"value": 0, "unit": "mm", "drift": null}
+					"u": {"value": 0, "unit": "mm", "uncertainty": 0.0, "uncertainty_unit": "mm"},
+					"v": {"value": 0, "unit": "mm", "uncertainty": 0.0, "uncertainty_unit": "mm"},
+					"w": {"value": 0, "unit": "mm", "uncertainty": 0.0, "uncertainty_unit": "mm"}
 				},
 
-				"vector_r": {
-					"u": {"value":  1,   "drift": null},
-					"v": {"value":  0,   "drift": null},
-					"w": {"value":  0,   "drift": null}
-				},
-				"vector_t": {
-					"u": {"value":  0,   "drift": null},
-					"v": {"value":  0, "drift": null},
-					"w": {"value":  1,   "drift": null}
-				},
+				"vector_r": {"u": 1, "v":  0, "w": 0},
+				"vector_t": {"u": 0, "v":  0, "w": 1},
 
-				"rotation": {
-					"r": {"value": 0, "unit": "rad", "drift": null},
-					"s": {"value": 0, "unit": "rad", "drift": null},
-					"t": {"value": 0, "unit": "rad", "drift": null}
+				"deviation": {
+					"position": {
+						"u": {"value": 0, "unit": "mm", "uncertainty": 0.0, "uncertainty_unit": "mm"},
+						"v": {"value": 0.0, "unit": "mm", "uncertainty": 0.0, "uncertainty_unit": "mm"},
+						"w": {"value": 0, "unit": "mm", "uncertainty": 0.0, "uncertainty_unit": "mm"}
+					},
+					"rotation": {
+						"r": {"value": 0, "unit": "deg", "uncertainty": 0.0, "uncertainty_unit": "rad"},
+						"s": {"value": 0, "unit": "deg", "uncertainty": 0.0, "uncertainty_unit": "rad"},
+						"t": {"value": 0, "unit": "deg", "uncertainty": 0.0, "uncertainty_unit": "rad"}
+					}
 				}
 			}
 		}
@@ -199,81 +251,74 @@
 
 	"acquisition":
 	{
-		"start_angle": {"value":    0, "unit": "deg"},
-		"stop_angle":  {"value":  360, "unit": "deg"},
+		"start_angle": {"value":   0, "unit": "deg", "uncertainty": 0, "uncertainty_unit": "deg"},
+		"stop_angle":  {"value": 360, "unit": "deg", "uncertainty": 0, "uncertainty_unit": "deg"},
 		"direction": "CCW",
 		"scan_mode": "stop+go",
 		"scan_speed": null,
-		"number_of_projections": 101,
-		"include_final_angle": true,
+		"number_of_projections": 15,
+		"include_final_angle": false,
 		"frame_average": 1,
 		"dark_field":
 		{
-			"number": 99999,
-			"frame_average": 3,
-			"ideal": true,
-			"correction": false
+			"number": 2,
+			"frame_average": 1,
+			"ideal": false
 		},
 		"flat_field":
 		{
-			"number": 1000001,
-			"frame_average": 5,
-			"ideal": true,
-			"correction": false
+			"number": 3,
+			"frame_average": 1,
+			"ideal": false
 		},
 		"pixel_binning": {"u": 1, "v": 1},
-		"scattering": false
+		"scattering": false,
+		"drift":
+		{
+			"detector": null,
+			"source":   null,
+			"stage":    null,
+			"samples":  null
+		}
 	},
 
 	"materials":
 	[
 		{
-			"id":   "Air",
-			"name": "Air",
-			"density": {"value": 1.293, "unit": "kg/m^3", "drift": null},
-			"composition": {"value": "N 0.785 O 0.21 Ar 0.005", "drift": null}
+			"id":   "Vacuum",
+			"name": "Vacuum",
+			"density": {"value": 0.0, "unit": "g/cm^3", "uncertainty": 0, "uncertainty_unit": "g/cm^3"},
+			"composition": ""
 		},
 		{
 			"id":   "Al",
 			"name": "Aluminium",
-			"density": {"value": 2.6989, "unit": "g/cm^3", "drift": null},
-			"composition": {"value": "Al", "drift": null}
+			"density": {"value": 2.6989, "unit": "g/cm^3", "uncertainty": 0, "uncertainty_unit": "g/cm^3"},
+			"composition": "Al"
 		},
 		{
 			"id":   "W",
 			"name": "Tungsten",
-			"density": {"value": 19.25, "unit": "g/cm^3", "drift": null},
-			"composition": {"value": "W", "drift": null}
-		},
-		{
-			"id":   "CsI",
-			"name": "Caesium Iodide",
-			"density": {"value": 4.51, "unit": "g/cm^3", "drift": null},
-			"composition": {"value": "CsI", "drift": null}
-		},
-		{
-			"id":   "Brass",
-			"name": "Brass",
-			"density": {"value": 8860, "unit": "kg/m^3", "drift": null},
-			"composition": {"value": "CuZn5", "drift": null}
+			"density": {"value": 19.25, "unit": "g/cm^3", "uncertainty": 0, "uncertainty_unit": "g/cm^3"},
+			"composition": "W"
 		},
 		{
 			"id":   "Cu",
 			"name": "Copper",
-			"density": {"value": 8.92, "unit": "g/cm^3", "drift": null},
-			"composition": {"value": "Cu", "drift": null}
+			"density": {"value": 8.92, "unit": "g/cm^3", "uncertainty": 0, "uncertainty_unit": "g/cm^3"},
+			"composition": "Cu"
 		},
 		{
-			"id":   "Kapton",
-			"name": "Kapton 50HN (Polyimide film)",
-			"density": {"value": 1.42, "unit": "g/cm^3", "drift": null},
-			"composition": {"value": "C16H14N4O4", "drift": null}
+			"id":   "CarbonFibre",
+			"name": "Carbon Fibres",
+			"density": {"value": 1.8, "unit": "g/cm^3", "uncertainty": 0, "uncertainty_unit": "g/cm^3"},
+			"composition": "C"
 		},
 		{
-			"id":   "Glass Ceramic",
-			"name": "Glass Ceramic",
-			"density": {"value": 2.53, "unit": "g/cm^3", "drift": null},
-			"composition": {"value": "Al 0.21172 Si 0.28044 O 0.50784", "drift": null}
+			"id":   "CsI",
+			"name": "Caesium Iodide",
+			"density": {"value": 4.51, "unit": "g/cm^3", "uncertainty": 0, "uncertainty_unit": "g/cm^3"},
+			"composition": "CsI"
 		}
 	]
 }

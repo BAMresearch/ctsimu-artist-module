@@ -1,5 +1,4 @@
 + Detector name, Source name...
-+ Scan Simulator
 + Batch Manager
 
 + Implement detector properties -> aRTist

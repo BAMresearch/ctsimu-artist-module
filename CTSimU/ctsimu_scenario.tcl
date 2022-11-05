@@ -82,7 +82,7 @@ namespace eval ::ctsimu {
 			my set n_darks_avg            1
 			my set n_flats                1
 			my set n_flats_avg           20
-			my set dark_field_ideal       0; # 1=yes, 0=no
+			my set dark_field_ideal       1; # 1=yes, 0=no
 			my set flat_field_ideal       0; # 1=yes, 0=no
 			my set ff_correction_on       0; # run a flat field correction in aRTist?
 
@@ -282,8 +282,14 @@ namespace eval ::ctsimu {
 			# ------------------------------------------
 
 			my set n_darks [::ctsimu::get_value $jsonstring {acquisition dark_field number} 0]
-			my set n_darks_avg [::ctsimu::get_value $jsonstring {acquisition dark_field frame_average} 1]
-			my set dark_field_ideal [::ctsimu::get_value_in_unit "bool" $jsonstring {acquisition dark_field ideal} 0]
+			# aRTist can currently only take ideal dark field images.
+			# Averaging=1 and ideal mode are therefore currently forced.
+			#my set n_darks_avg [::ctsimu::get_value $jsonstring {acquisition dark_field frame_average} 1]
+			# my set dark_field_ideal [::ctsimu::get_value_in_unit "bool" $jsonstring {acquisition dark_field ideal} 0]
+			if { [my get n_darks] > 0 } {
+				# In (currently forced) ideal mode, one dark image is enough.
+				my set n_darks 1
+			}
 
 			my set n_flats [::ctsimu::get_value $jsonstring {acquisition flat_field number} 0]
 			my set n_flats_avg [::ctsimu::get_value $jsonstring {acquisition flat_field frame_average} 1]
@@ -375,7 +381,7 @@ namespace eval ::ctsimu {
 				$_detector place_in_scene $stageCS
 				$_source place_in_scene $stageCS
 
-				if { [::ctsimu::aRTist_available] && $apply_to_scene } {
+				if { [::ctsimu::aRTist_available] } {
 					# We have to ask the material manager for the
 					# aRTist id of the environment material in each frame,
 					# just in case it has changed from vacuum (void) to
@@ -383,14 +389,20 @@ namespace eval ::ctsimu {
 					set ::Xsetup(SpaceMaterial) [ [$_material_manager get [my get environment_material]] aRTist_id ]
 
 					$_detector set_in_aRTist $apply_to_scene
+
+					${::ctsimu::ctsimu_module_namespace}::setFrameNumber $frame
+					Engine::RenderPreview
 				}
 			}
 
 			::ctsimu::status_info "Done setting frame $frame."
 		}
 
-		method stop_scan { } {
+		method stop_scan { { noMessage 0 } } {
 			my _set_run_status 0
+			if { $noMessage == 0 } {
+				::ctsimu::status_info "Stopped."
+			}
 		}
 
 		method start_scan { { run 1 } { nruns 1 } } {
@@ -410,8 +422,55 @@ namespace eval ::ctsimu {
 
 			my create_run_filenames $run $nruns
 			my prepare_postprocessing_configs $run $nruns
+			
 			my _set_run_status 1
 
+			if { [my is_running] } {
+				# Create flat field and dark field images.
+				my generate_flats_and_darks
+			}
+
+			if { [my is_running] } {
+				# Run actual scan.
+				set nProjections [my get n_projections]
+				set projCtrFmt [my get projection_counter_format]
+
+				if {$nProjections > 0} {
+					::ctsimu::status_info { "Taking $nProjections projections."}
+
+					#aRTist::InitProgress
+					#aRTist::ProgressQuantum $nProjections
+
+					for {set projNr [my get start_proj_nr]} {$projNr < $nProjections} {incr projNr} {
+						my set_frame $projNr 0 1
+
+						set pnr [expr $projNr+1]
+						set prcnt [expr round((100.0*($projNr+1.0))/$nProjections)]
+						::ctsimu::status_info "Taking projection $pnr/$nProjections... ($prcnt%)"
+						set fileNameSuffix [format $projCtrFmt $projNr]
+						my save_projection_image $projNr $fileNameSuffix
+
+						if {[my is_running] == 0} {break}
+					}
+
+					#aRTist::ProgressFinished
+				}
+			}
+
+			# Check if we are still successfully running.
+			# If so, print a "done" message after stopping the simulation.
+			# Otherwise, the "stopped" status info message will remain
+			# in the CTSimU Module window.
+			set display_done_message 0
+			if { [my is_running] } {
+				set display_done_message 1
+			}
+
+			my stop_scan
+
+			if { $display_done_message == 1 } {
+				::ctsimu::status_info "Simulation done."
+			}
 		}
 
 		method prepare_postprocessing_configs { { run 1 } { nruns 1 } } {
@@ -426,6 +485,193 @@ namespace eval ::ctsimu {
 			::ctsimu::create_metadata_file [self] $run $nruns
 
 			#my _set_run_status 1
+		}
+
+		method save_projection_image { projNr fileNameSuffix } {
+			set projectionFolder [my get run_projection_folder]
+			set outputBaseName [my get run_output_basename]
+
+			if { [::ctsimu::aRTist_available] } {
+				set Scale [vtkImageShiftScale New]
+				if {[my get output_datatype] == "float32"} {
+					$Scale SetOutputScalarTypeToFloat
+					$Scale ClampOverflowOff
+				} else {
+					$Scale SetOutputScalarTypeToUnsignedInt
+					$Scale ClampOverflowOn
+				}
+
+				update
+				if {[my is_running] == 0} {return}
+
+				set imglist [::Engine::Go]
+				::Image::Show $imglist
+				lassign $imglist img
+
+				$Scale SetInput [$img GetImage]
+
+				# Write TIFF or RAW:
+				set currFile "$projectionFolder/$outputBaseName"
+				append currFile "_$fileNameSuffix"
+				if {[my get output_fileformat] == "raw"} {
+					append currFile ".raw"
+				} else {
+					append currFile ".tif"
+				}
+
+				puts "Saving $currFile"
+				set tmp [Image::aRTistImage %AUTO%]
+				if { [catch {
+					$Scale Update
+					$tmp ShallowCopy [$Scale GetOutput]
+					$tmp SetMetaData [$img GetMetaData]
+					if {[my get output_datatype] == "float32"} {
+						set convtmp [::Image::ConvertToFloat $tmp]
+					} else {
+						set convtmp [::Image::ConvertTo16bit $tmp]
+					}
+
+					if {[my get output_fileformat] == "raw"} {
+						::Image::SaveRawFile $convtmp $currFile true . "" 0.0
+					} else {
+						::Image::SaveTIFF $convtmp $currFile true . NoCompression
+					}
+
+					$tmp Delete
+					$convtmp Delete
+				} err errdict] } {
+					Utils::nohup { $tmp Delete }
+					return -options $errdict $err
+				}
+
+				#aRTist::SignalProgress
+				update
+
+				foreach img $imglist { $img Delete }
+				if { [info exists Scale] } { $Scale Delete }
+
+				::xrEngine ClearOutput
+				::xrEngine ClearObjects
+			}
+		}
+
+		method generate_flats_and_darks { } {
+			if { [::ctsimu::aRTist_available] } {
+				SceneView::SetInteractive 1
+				set imglist {}
+
+				if { [my get n_darks] > 0 } {
+					if {[my is_running] == 0} {return}
+					::ctsimu::status_info "Taking ideal dark field."
+
+					# Take dark field image(s):
+					set savedXrayCurrent   $::Xsource(Exposure)
+					set savedNoiseFactorOn $::Xdetector(NoiseFactorOn)
+					set savedNoiseFactor   $::Xdetector(NoiseFactor)
+					set savedNFrames       $::Xdetector(NrOfFrames)
+					set savedScatter       $::Xscattering(Mode)
+					
+					# Take ideal dark image at 0 current and 0 noise:
+					set ::Xsource(Exposure) 0
+					set ::Xdetector(NoiseFactorOn) 1
+					set ::Xdetector(NoiseFactor) 0
+					set ::Xdetector(NrOfFrames) 1
+					set ::Xscattering(Mode) off
+					
+					my save_projection_image 0 "dark"
+
+					set ::Xsource(Exposure) $savedXrayCurrent
+					set ::Xdetector(NoiseFactorOn) $savedNoiseFactorOn
+					set ::Xdetector(NoiseFactor) $savedNoiseFactor
+					set ::Xdetector(NrOfFrames) $savedNFrames
+					set ::Xscattering(Mode) $savedScatter
+				}
+
+				if { [my get n_flats] } {
+					if {[my is_running] == 0} {return}
+					::ctsimu::status_info "Taking flat field."
+
+					::PartList::SelectAll
+					::PartList::SetVisibility 0
+					::PartList::UnselectAll
+
+					if { [my get flat_field_ideal] == 1 } {
+						set savedNoiseFactorOn $::Xdetector(NoiseFactorOn)
+						set savedNoiseFactor   $::Xdetector(NoiseFactor)
+						set savedNFrames       $::Xdetector(NrOfFrames)
+
+						# Take ideal flat image at 0 noise:
+						set ::Xdetector(NoiseFactorOn) 1
+						set ::Xdetector(NoiseFactor) 0
+						set ::Xdetector(NrOfFrames) 1
+
+						if {[my get n_flats] > 1} {
+							# Save all frames as individual images
+							for {set flatImgNr 0} {$flatImgNr < [my get n_flats]} {incr flatImgNr} {
+								set fnr [expr $flatImgNr+1]
+								::ctsimu::status_info "Taking flat field $fnr/[my get n_flats]..."
+								set flatFileNameSuffix "flat_[format $projCtrFmt $flatImgNr]"
+								my save_projection_image 0 $flatFileNameSuffix
+
+								if {[my is_running] == 0} {break}
+							}
+						} elseif {[my get n_flats] == 1} {
+							::ctsimu::status_info "Taking flat field..."
+							my save_projection_image 0 "flat"
+						} else {
+							my stop_scan
+							::PartList::SelectAll
+							::PartList::SetVisibility 1
+							::PartList::UnselectAll	
+							::ctsimu::fail "Invalid number of flat field images."
+						}
+
+						set ::Xdetector(NoiseFactorOn) $savedNoiseFactorOn
+						set ::Xdetector(NoiseFactor) $savedNoiseFactor
+						set ::Xdetector(NrOfFrames) $savedNFrames
+					} else {
+						if {[my get n_flats_avg] > 0} {
+							# Flat field frame averaging
+							set savedNFrames $::Xdetector(NrOfFrames)
+							set ::Xdetector(NrOfFrames) [my get n_flats_avg]
+
+							if {[my get n_flats] > 1} {
+								# Save all frames as individual images
+								set projCtrFmt [::ctsimu::generate_projection_counter_format [my get n_flats]]
+								for {set flatImgNr 0} {$flatImgNr < [my get n_flats]} {incr flatImgNr} {
+									set fnr [expr $flatImgNr+1]
+									::ctsimu::status_info "Taking flat field $fnr/[my get n_flats]..."
+									set flatFileNameSuffix "flat_[format $projCtrFmt $flatImgNr]"
+									my save_projection_image 0 $flatFileNameSuffix
+
+									if {[my is_running] == 0} {break}
+								}
+							} elseif {[my get n_flats] == 1} {
+								::ctsimu::status_info "Taking flat field..."
+								my save_projection_image 0 "flat"
+							} else {
+								my stop_scan
+								::PartList::SelectAll
+								::PartList::SetVisibility 1
+								::PartList::UnselectAll	
+								::ctsimu::fail "Invalid number of flat field images."
+							}
+
+							set ::Xdetector(NrOfFrames) $savedNFrames
+						} else {
+							my stop_scan
+							::PartList::SelectAll
+							::PartList::SetVisibility 1
+							::PartList::UnselectAll	
+							::ctsimu::fail "Number of flat field averages must be greater than 0."
+						}
+					}
+
+					::PartList::SelectAll
+					::PartList::SetVisibility 1
+					::PartList::UnselectAll
+				}
+			}
 		}
 	}
 }

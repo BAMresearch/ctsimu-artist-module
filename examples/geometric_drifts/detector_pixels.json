@@ -24,7 +24,7 @@
 		"detector":
 		{
 			"center": {
-				"x": {"value": 400, "unit": "mm", "uncertainty": {"value": 0, "unit": "mm"}, "drift": null},
+				"x": {"value": 1000, "unit": "mm", "uncertainty": {"value": 0, "unit": "mm"}, "drift": null},
 				"y": {"value":   0, "unit": "mm", "uncertainty": {"value": 0, "unit": "mm"}, "drift": null},
 				"z": {"value":   0, "unit": "mm", "uncertainty": {"value": 0, "unit": "mm"}, "drift": null}
 			},
@@ -70,7 +70,7 @@
 		"stage":
 		{
 			"center": {
-				"x": {"value": 275, "unit": "mm", "uncertainty": {"value": 0, "unit": "mm"}, "drift": null},
+				"x": {"value": 500, "unit": "mm", "uncertainty": {"value": 0, "unit": "mm"}, "drift": null},
 				"y": {"value":   0, "unit": "mm", "uncertainty": {"value": 0, "unit": "mm"}, "drift": null},
 				"z": {"value":   0, "unit": "mm", "uncertainty": {"value": 0, "unit": "mm"}, "drift": null}
 			},
@@ -96,8 +96,8 @@
 		"columns":      {"value": 1000, "unit": "px", "drift": [{"value": [0,  100]}]},
 		"rows":         {"value": 1000, "unit": "px", "drift": [{"value": [0, -100]}]},
 		"pixel_pitch": {
-			"u": {"value": 0.1, "unit": "mm", "uncertainty": null, "drift": null},
-			"v": {"value": 0.1, "unit": "mm", "uncertainty": null, "drift": null}
+			"u": {"value": 0.4, "unit": "mm", "uncertainty": null, "drift": null},
+			"v": {"value": 0.4, "unit": "mm", "uncertainty": null, "drift": null}
 		},
 		"bit_depth":  {"value": 16},
 		"integration_time": {"value": 1, "unit": "s", "uncertainty": null, "drift": null},
@@ -204,7 +204,7 @@
 		"direction": "CCW",
 		"scan_mode": "stop+go",
 		"scan_speed": null,
-		"number_of_projections": 101,
+		"number_of_projections": 11,
 		"include_final_angle": true,
 		"frame_average": 1,
 		"dark_field":

@@ -115,6 +115,7 @@ namespace eval ::ctsimu {
 				}
 
 				$s place_in_scene $stageCS
+				$s update_scaling_factor
 			}
 		}		
 	}

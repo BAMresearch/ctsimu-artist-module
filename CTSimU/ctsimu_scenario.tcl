@@ -10,7 +10,6 @@ source -encoding utf-8 [file join $BasePath ctsimu_samplemanager.tcl]
 namespace eval ::ctsimu {
 	::oo::class create scenario {
 		variable _running
-		variable _batch_is_running
 		variable _json_loaded_successfully
 		variable _settings;  # dictionary with simulation settings
 
@@ -22,8 +21,7 @@ namespace eval ::ctsimu {
 
 		constructor { } {
 			# State
-			my _set_run_status       0
-			my _set_batch_run_status 0
+			my _set_run_status 0
 
 			# Settings
 			set _settings [dict create]
@@ -66,8 +64,9 @@ namespace eval ::ctsimu {
 			# Reset scenario to standard settings.
 			my _set_json_load_status      0
 
-			my set json_file             ""
-			my set json_file_directory   ""
+			my set json_file             ""; # full path + name of JSON file
+			my set json_file_name        ""; # JSON filename without path
+			my set json_file_directory   ""; # Path to JSON file
 			my set start_angle            0
 			my set stop_angle           360
 			my set n_projections       2000
@@ -78,11 +77,14 @@ namespace eval ::ctsimu {
 			my set start_proj_nr          0
 			my set scan_direction     "CCW"
 
-			my set dark_field             0; # 1=yes, 0=no
-			my set n_darks                1
+			# Number of dark and flat field images:
+			my set n_darks                0
+			my set n_darks_avg            1
 			my set n_flats                1
-			my set n_flat_avg            20
+			my set n_flats_avg           20
+			my set dark_field_ideal       0; # 1=yes, 0=no
 			my set flat_field_ideal       0; # 1=yes, 0=no
+			my set ff_correction_on       0; # run a flat field correction in aRTist?
 
 			my set current_frame          0
 			my set n_frames            2000; # frame_average * n_projections
@@ -107,12 +109,20 @@ namespace eval ::ctsimu {
 			return $_running
 		}
 
-		method batch_is_running { } {
-			return $_batch_is_running
-		}
-
 		method json_loaded_successfully { } {
 			return $_json_loaded_successfully
+		}
+
+		method detector { } {
+			return $_detector
+		}
+
+		method source { } {
+			return $_source
+		}
+
+		method stage { } {
+			return $_stage
 		}
 
 		method get_current_stage_rotation_angle { } {
@@ -171,7 +181,7 @@ namespace eval ::ctsimu {
 			# The projection counter format (e.g. %04d) needs
 			# to be adapted to the number of projections:
 			if { $setting == {n_projections} } {
-				my create_projection_counter_format $value
+				my set projection_counter_format [::ctsimu::generate_projection_counter_format $value]
 
 				# The number of frames should currently match
 				# the number of projections, as long as we don't use
@@ -185,10 +195,6 @@ namespace eval ::ctsimu {
 			set _running $status
 		}
 
-		method _set_batch_run_status { status } {
-			set _batch_is_running $status
-		}
-
 		method _set_json_load_status { status } {
 			set _json_loaded_successfully $status
 		}
@@ -196,27 +202,41 @@ namespace eval ::ctsimu {
 		method set_basename_from_json { json_filename } {
 			# Extracts the base name of a JSON file and
 			# sets the output_basename setting accordingly.
-			set baseName [file root [file tail $json_filename]]
+			set baseName [file rootname [file tail $json_filename]]
 			set outputBaseName $baseName
 			#append outputBaseName "_aRTist"
 			my set output_basename $outputBaseName
 		}
 
-		method create_projection_counter_format { nProjections } {
-			# Sets the number format string to get the correct
-			# number of digits in the consecutive projection file names.
-			set digits 4
+		method create_run_filenames { { run 1 } { nruns 1 } } {
+			# Generate the strings for output basename,
+			# projection folder and reconstruction folder.
+			# Decides whether the run number must be added.
 
-			# For anything bigger than 10000 projections (0000 ... 9999) we need more filename digits.
-			if { $nProjections > 10000 } {
-				set digits [expr int(ceil(log10($nProjections)))]
+			set s_run_output_basename [my get output_basename]
+
+			set s_run_projection_folder [my get output_folder]
+			append s_run_projection_folder "/projections"
+
+			set s_run_recon_folder [my get output_folder]
+			append s_run_recon_folder "/reconstruction"
+
+			if { $nruns > 1 } {
+				# Multiple runs. We need to add the run number
+				# to the names of files and folders.
+				set s_run "run[format "%03d" $run]"
+
+				if { $s_run_output_basename != "" } {
+					append s_run_output_basename "_"
+				}
+				append s_run_output_basename $s_run
+				append s_run_projection_folder "/$s_run"
+				append s_run_recon_folder "/$s_run"
 			}
 
-			set pcformat "%0"
-			append pcformat $digits
-			append pcformat "d"
-
-			my set projection_counter_format $pcformat
+			my set run_output_basename $s_run_output_basename
+			my set run_projection_folder $s_run_projection_folder
+			my set run_recon_folder $s_run_recon_folder
 		}
 
 		method set_next_frame { { apply_to_scene 0 } } {
@@ -232,6 +252,7 @@ namespace eval ::ctsimu {
 
 			my reset
 			my set json_file $json_filename
+			my set json_file_name [file tail "$json_filename"]
 			my set json_file_directory [file dirname "$json_filename"]
 			::ctsimu::set_json_path [my get json_file_directory]
 
@@ -239,7 +260,7 @@ namespace eval ::ctsimu {
 
 			# Default output basename and folder
 			# ------------------------------------
-			my set output_basename [file root [file tail $json_filename]]
+			my set output_basename [file rootname [file tail $json_filename]]
 			set folder [my get json_file_directory]
 			append folder "/"
 			append folder [my get output_basename]
@@ -256,6 +277,20 @@ namespace eval ::ctsimu {
 
 			my set include_final_angle [::ctsimu::get_value_in_unit "bool" $jsonstring {acquisition include_final_angle} 0]
 			my set scan_direction [::ctsimu::get_value $jsonstring {acquisition direction} "CCW"]
+
+			# Dark and flat field correction settings
+			# ------------------------------------------
+
+			my set n_darks [::ctsimu::get_value $jsonstring {acquisition dark_field number} 0]
+			my set n_darks_avg [::ctsimu::get_value $jsonstring {acquisition dark_field frame_average} 1]
+			my set dark_field_ideal [::ctsimu::get_value_in_unit "bool" $jsonstring {acquisition dark_field ideal} 0]
+
+			my set n_flats [::ctsimu::get_value $jsonstring {acquisition flat_field number} 0]
+			my set n_flats_avg [::ctsimu::get_value $jsonstring {acquisition flat_field frame_average} 1]
+			my set flat_field_ideal [::ctsimu::get_value_in_unit "bool" $jsonstring {acquisition flat_field ideal} 0]
+
+
+			my set ff_correction_on [::ctsimu::get_value_in_unit "bool" $jsonstring {acquisition flat_field correction} 0]
 
 			# Materials
 			# -------------
@@ -318,6 +353,7 @@ namespace eval ::ctsimu {
 			$_sample_manager load_meshes $stageCS $_material_manager
 
 			::ctsimu::status_info "Scenario loaded."
+			my _set_json_load_status 1
 			return 1
 		}
 
@@ -351,6 +387,45 @@ namespace eval ::ctsimu {
 			}
 
 			::ctsimu::status_info "Done setting frame $frame."
+		}
+
+		method stop_scan { } {
+			my _set_run_status 0
+		}
+
+		method start_scan { { run 1 } { nruns 1 } } {
+			# Some guards to check for correct conditions:
+			if { $run <= 0 } {
+				::ctsimu::fail "Cannot start scan. Number of current run is given as $run. Must be >0."
+				return
+			}
+			if { $nruns <= 0 } {
+				::ctsimu::fail "Cannot start scan. Number of runs is given as $nruns. Must be >0."
+				return
+			}
+			if { ![my json_loaded_successfully] } {
+				::ctsimu::fail "Cannot start scan. JSON scenario was not loaded correctly."
+				return
+			}
+
+			my create_run_filenames $run $nruns
+			my prepare_postprocessing_configs $run $nruns
+			my _set_run_status 1
+
+		}
+
+		method prepare_postprocessing_configs { { run 1 } { nruns 1 } } {
+			# Flat field correction Python file, config files for
+			# various reconstruction softwares.
+
+			# Make projection folder and metadata file:
+			file mkdir [my get run_projection_folder]
+			file mkdir [my get run_recon_folder]
+
+			# Create metadata file:
+			::ctsimu::create_metadata_file [self] $run $nruns
+
+			#my _set_run_status 1
 		}
 	}
 }

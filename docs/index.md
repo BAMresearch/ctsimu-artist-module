@@ -80,3 +80,7 @@ The following list provides the source order and links to the descriptions of ea
 * **[`ctsimu_helpers.tcl`](helpers.md)**
 
 	Helpers for logging (info messages, warning, errors) and handling JSON files using the `rl_json` Tcl extension.
+
+* **[`ctsimu_output_metadata.tcl`](output_metadata.md)**
+
+	Generator function to create a metadata file for the simulation.

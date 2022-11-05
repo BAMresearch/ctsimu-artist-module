@@ -164,9 +164,9 @@
 			"file": {"value": "frame.stl", "drift": null},
 			"unit": "mm",
 			"scaling_factor": {
-				"r": {"value": 1.0, "unit": "", "drift": [{"value": [-0.5, 3.0], "unit": ""}]},
-				"s": {"value": 1.0, "unit": "", "drift": [{"value": [4.0, 2.0], "unit": ""}]},
-				"t": {"value": 1.0, "unit": "", "drift": [{"value": [-0.9, 0.0], "unit": ""}]}
+				"r": {"value": 1.0, "drift": null},
+				"s": {"value": 1.0, "drift": null},
+				"t": {"value": 1.0, "drift": null}
 			},
 			"material_id": "Al",
 			"position":
@@ -184,7 +184,7 @@
 				},
 				"vector_t": {
 					"u": {"value":  0,   "drift": null},
-					"v": {"value":  0,   "drift": null},
+					"v": {"value":  0, "drift": null},
 					"w": {"value":  1,   "drift": null}
 				},
 
@@ -209,17 +209,17 @@
 		"frame_average": 1,
 		"dark_field":
 		{
-			"number": 0,
-			"frame_average": 1,
+			"number": 99999,
+			"frame_average": 3,
 			"ideal": true,
-			"correction": true
+			"correction": false
 		},
 		"flat_field":
 		{
-			"number": 0,
-			"frame_average": 20,
+			"number": 1000001,
+			"frame_average": 5,
 			"ideal": true,
-			"correction": true
+			"correction": false
 		},
 		"pixel_binning": {"u": 1, "v": 1},
 		"scattering": false

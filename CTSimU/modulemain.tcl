@@ -97,9 +97,9 @@ proc Running {} {
 proc CanClose {} {
 	variable ctsimu_scenario
 
-	if {[$ctsimu_scenario batch_is_running] == 1} {
-		return false
-	}
+	#if {[$ctsimu_scenario batch_is_running] == 1} {
+	#	return false
+	#}
 
 	if {[$ctsimu_scenario is_running] == 1} {
 		return false
@@ -551,7 +551,7 @@ proc fillCurrentParameters {} {
 	set GUISettings(includeFinalAngle)    [$ctsimu_scenario get include_final_angle]
 	set GUISettings(startProjNr)          [$ctsimu_scenario get start_proj_nr]
 
-	set GUISettings(takeDarkField)        [$ctsimu_scenario get dark_field]
+	#set GUISettings(takeDarkField)        [$ctsimu_scenario get dark_field]
 	set GUISettings(nFlatFrames)          [$ctsimu_scenario get n_flats]
 	set GUISettings(nFlatAvg)             [$ctsimu_scenario get n_darks]
 	set GUISettings(ffIdeal)              [$ctsimu_scenario get flat_field_ideal]
@@ -610,7 +610,7 @@ proc applyCurrentParameters {} {
 	$ctsimu_scenario set include_final_angle $GUISettings(includeFinalAngle)
 	$ctsimu_scenario set start_proj_nr       $GUISettings(startProjNr)
 
-	$ctsimu_scenario set dark_field          $GUISettings(takeDarkField)
+	#$ctsimu_scenario set dark_field          $GUISettings(takeDarkField)
 	$ctsimu_scenario set n_flats             $GUISettings(nFlatFrames)
 	$ctsimu_scenario set n_flat_avg          $GUISettings(nFlatAvg)
 	$ctsimu_scenario set flat_field_ideal    $GUISettings(ffIdeal)
@@ -678,7 +678,7 @@ proc saveBatchJobs { csvFilename } {
 			if { [catch {
 				set jsonFilename       [$batchList cellcget $index,JSONFile  -text]
 				set outputFormat       [$batchList cellcget $index,OutputFormat  -text]
-				set output_folder       [$batchList cellcget $index,OutputFolder  -text]
+				set output_folder      [$batchList cellcget $index,OutputFolder  -text]
 				set projectionBasename [$batchList cellcget $index,ProjectionBaseName  -text]
 				set nRuns              [$batchList cellcget $index,Runs  -text]
 				set startRun           [$batchList cellcget $index,StartRun  -text]
@@ -999,11 +999,12 @@ proc startScan {} {
 
 	applyCurrentParameters
 	
-	$ctsimu_scenario set output_folder $GUISettings(outputFolder) ""
+	$ctsimu_scenario set output_folder $GUISettings(outputFolder)
 	$ctsimu_scenario set output_basename $GUISettings(outputBaseName)
+	$ctsimu_scenario start_scan
 }
 
 proc stopScan {} {
 	variable GUISettings
-	stopScan
+	$ctsimu_scenario stop_scan
 }

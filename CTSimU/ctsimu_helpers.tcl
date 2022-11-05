@@ -4,10 +4,9 @@ package require fileutil
 package require csv
 
 variable BasePath [file dirname [info script]]
+source -encoding utf-8 [file join $BasePath ctsimu_output_metadata.tcl]
 
 namespace eval ::ctsimu {
-	namespace import ::rl_json::*
-
 	set pi 3.1415926535897931
 	set ctsimu_module_namespace 0
 	set module_directory [ file dirname [ file normalize [ info script ] ] ]
@@ -50,6 +49,23 @@ namespace eval ::ctsimu {
 		set abspath $::ctsimu::json_path
 		set absfilename [string cat $abspath "/" $filename]
 		return $absfilename
+	}
+
+	proc generate_projection_counter_format { nProjections } {
+		# Generates a number format string to get the correct
+		# number of digits in the consecutive projection file names.
+		set digits 4
+
+		# For anything bigger than 10000 projections (0000 ... 9999) we need more filename digits.
+		if { $nProjections > 10000 } {
+			set digits [expr int(ceil(log10($nProjections)))]
+		}
+
+		set pcformat "%0"
+		append pcformat $digits
+		append pcformat "d"
+
+		return $pcformat
 	}
 
 	proc status_info {  message } {
@@ -119,7 +135,7 @@ namespace eval ::ctsimu {
 			# Open file in byte mode, use rl_json to decode using utf-8:
 			set jf [open $filename rb]
 			try {
-				set jsonstring [json decode [read $jf] utf-8]
+				set jsonstring [::rl_json::json decode [read $jf] utf-8]
 			} finally {
 				close $jf
 			}
@@ -140,7 +156,7 @@ namespace eval ::ctsimu {
 		}
 
 		# Check for syntax errors, find error position.
-		if { [json valid -details errordetails $jsonstring] != 1 } {
+		if { [::rl_json::json valid -details errordetails $jsonstring] != 1 } {
 			# Get error line number:
 			set errpos [dict get $errordetails char_ofs]
 			set char_counter 0
@@ -252,14 +268,14 @@ namespace eval ::ctsimu {
 	proc object_value_is_null { json_obj } {
 		# Checks if a JSON object has a `value` parameter
 		# and if this parameter is set to `null` or the string "null".
-		if [json exists $json_obj value] {
-			if [json isnull $json_obj value] {
+		if [::rl_json::json exists $json_obj value] {
+			if [::rl_json::json isnull $json_obj value] {
 				return 1
 			}
 
 			# If the value is not set to `null`,
 			# still check if it is set to the string "null":
-			set value [json get $json_obj value]
+			set value [::rl_json::json get $json_obj value]
 			return [value_is_null $value]
 		}
 		
@@ -275,7 +291,7 @@ namespace eval ::ctsimu {
 
 		# At this point the value exists and it is not `null`.
 		# Check if it is 0:
-		set value [json get $json_obj value]
+		set value [::rl_json::json get $json_obj value]
 		return [value_is_null_or_zero $value]
 	}
 
@@ -284,9 +300,9 @@ namespace eval ::ctsimu {
 	proc get_value { dictionary { keys {} } {fail_value 0} } {
 		# Get the specific value of the parameter that is located
 		# at the given sequence of `keys` in the JSON dictionary.
-		if [json exists $dictionary {*}$keys] {
-			if { [json get $dictionary {*}$keys] != "" } {
-				return [json get $dictionary {*}$keys]
+		if [::rl_json::json exists $dictionary {*}$keys] {
+			if { [::rl_json::json get $dictionary {*}$keys] != "" } {
+				return [::rl_json::json get $dictionary {*}$keys]
 			}
 		}
 
@@ -294,11 +310,11 @@ namespace eval ::ctsimu {
 	}
 	
 	proc json_exists { dictionary { keys {} } } {
-		return [json exists $dictionary {*}$keys]
+		return [::rl_json::json exists $dictionary {*}$keys]
 	}
 
 	proc json_isnull { dictionary { keys {} } } {
-		return [json isnull $dictionary {*}$keys]
+		return [::rl_json::json isnull $dictionary {*}$keys]
 	}
 
 	proc json_exists_and_not_null { dictionary { keys {} } } {
@@ -314,14 +330,14 @@ namespace eval ::ctsimu {
 	}
 
 	proc json_type { dictionary { keys {} } } {
-		return [json type [json extract $dictionary {*}$keys]]
+		return [::rl_json::json type [::rl_json::json extract $dictionary {*}$keys]]
 	}
 	
 	proc json_extract { dictionary keys } {
 		# Get the JSON sub-object that is located
 		# by a given sequence of `keys` in the JSON dictionary.
-		if [json exists $dictionary {*}$keys] {
-			return [json extract $dictionary {*}$keys]
+		if [::rl_json::json exists $dictionary {*}$keys] {
+			return [::rl_json::json extract $dictionary {*}$keys]
 		}
 
 		return "null"
@@ -333,8 +349,8 @@ namespace eval ::ctsimu {
 		# The first sequence that exists will
 		# return an extracted JSON object.
 		foreach keys $key_sequences {
-			if [json exists $dictionary {*}$keys] {
-				return [json extract $dictionary {*}$keys]
+			if [::rl_json::json exists $dictionary {*}$keys] {
+				return [::rl_json::json extract $dictionary {*}$keys]
 			}
 		}
 
@@ -530,27 +546,29 @@ namespace eval ::ctsimu {
 		# Checks which native unit is requested, converts
 		# JSON `value` accordingly.
 		if { $native_unit == "" } {
+			# No unit given, simply return value.
 			return [::ctsimu::get_value $value_and_unit value]
 		} elseif { $native_unit == "bool" } {
 			# This is not a value/unit pair.
 			# Only convert bool $value to 1 or 0.
+			::ctsimu::info "Boolean: $value_and_unit -> [::ctsimu::from_bool $value_and_unit]"
 			return [::ctsimu::from_bool $value_and_unit]
 		} elseif { $native_unit == "string" } {
-			if { ![json exists $value_and_unit value] } {
+			if { ![::rl_json::json exists $value_and_unit value] } {
 				# This is already a string, not embedded in
 				# a value/unit pair.
 				return $value_and_unit
 			}			
 		}
 
-		if { [json exists $value_and_unit value] } {
-			set value [json get $value_and_unit value]
+		if { [::rl_json::json exists $value_and_unit value] } {
+			set value [::rl_json::json get $value_and_unit value]
 			set unit ""
-			if { [json exists $value_and_unit unit] } {
+			if { [::rl_json::json exists $value_and_unit unit] } {
 				# The unit does not necessarily have to exist.
 				# For example, in the case of strings it is clear
 				# just from the native unit.
-				set unit  [json get $value_and_unit unit]
+				set unit  [::rl_json::json get $value_and_unit unit]
 			}
 
 			return [::ctsimu::convert_to_native_unit $unit $native_unit $value]
@@ -563,9 +581,15 @@ namespace eval ::ctsimu {
 		# Takes a sequence of JSON keys from the given dictionary where
 		# a JSON object with a value/unit pair must be located.
 		# Returns the value of this JSON object in the requested native_unit.
-		set value_unit_pair [::ctsimu::json_extract $dictionary $keys]
-		if {![::ctsimu::object_value_is_null_or_zero $value_unit_pair]} {
-			return [::ctsimu::json_convert_to_native_unit $native_unit $value_unit_pair]
+		if { [::ctsimu::json_exists_and_not_null $dictionary $keys] } {
+			set value_unit_pair [::ctsimu::json_extract $dictionary $keys]
+			if {![::ctsimu::object_value_is_null $value_unit_pair] || $native_unit == "string" || $native_unit == "bool"} {
+				set value [::ctsimu::json_convert_to_native_unit $native_unit $value_unit_pair]
+
+				if { $value != "null" } {
+					return $value
+				}
+			}
 		}
 
 		return $fail_value

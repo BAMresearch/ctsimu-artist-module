@@ -41,7 +41,6 @@ namespace eval ::ctsimu {
 
 		method update_scene { stageCS } {
 			# Move objects in scene to match current frame number.
-			::ctsimu::status_info "Placing objects..."
 
 			# Create a list of IDs that are available in aRTist's part list:
 			set available_ids [list ]

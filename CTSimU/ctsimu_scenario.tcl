@@ -58,6 +58,7 @@ namespace eval ::ctsimu {
 			$_stage destroy
 			$_detector destroy
 			$_sample_manager destroy
+			$_material_manager destroy
 		}
 
 		method reset { } {
@@ -247,7 +248,7 @@ namespace eval ::ctsimu {
 			my set_frame [expr [my get current_frame]-1] 0 $apply_to_scene
 		}
 
-		method load_json_scene { json_filename } {
+		method load_json_scene { json_filename { apply_to_scene 0 } } {
 			::ctsimu::status_info "Reading JSON file..."
 
 			my reset
@@ -327,15 +328,16 @@ namespace eval ::ctsimu {
 
 			# Place objects in scene
 			# ------------------------
-			::ctsimu::status_info "Placing objects..."
 			set stageCS [$_stage current_coordinate_system]
 
 			$_detector set_frame $stageCS [my get current_frame] [my get n_frames] 1
 			$_source set_frame $stageCS [my get current_frame] [my get n_frames] 1
 			
-			$_detector place_in_scene $stageCS
-			$_source place_in_scene $stageCS
-
+			if { $apply_to_scene == 1} {
+				$_detector place_in_scene $stageCS
+				$_source place_in_scene $stageCS
+			}
+			
 			# Add the stage as a sample to the sample manager
 			# so that it can be shown in the scene:
 			if { [my get show_stage] } {
@@ -356,7 +358,10 @@ namespace eval ::ctsimu {
 
 			$_sample_manager set_from_json $jsonstring $stageCS
 			$_sample_manager set_frame $stageCS [my get current_frame] [my get n_frames]
-			$_sample_manager load_meshes $stageCS $_material_manager
+
+			if { $apply_to_scene == 1} {
+				$_sample_manager load_meshes $stageCS $_material_manager
+			}
 
 			::ctsimu::status_info "Scenario loaded."
 			my _set_json_load_status 1
@@ -395,7 +400,7 @@ namespace eval ::ctsimu {
 				}
 			}
 
-			::ctsimu::status_info "Done setting frame $frame."
+			#::ctsimu::status_info "Done setting frame $frame."
 		}
 
 		method stop_scan { { noMessage 0 } } {

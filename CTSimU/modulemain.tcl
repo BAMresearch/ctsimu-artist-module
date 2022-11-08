@@ -24,7 +24,9 @@ source [file join $BasePath ctsimu_main.tcl]
 
 # The currently loaded CTSimU scenario:
 variable ctsimu_scenario
+variable ctsimu_batchmanager
 set ctsimu_scenario [::ctsimu::scenario new]
+set ctsimu_batchmanager [::ctsimu::batchmanager new]
 
 proc Settings { args } {
 	variable GUISettings
@@ -373,11 +375,6 @@ proc InitGUI { parent } {
 		{Data Type}               dataType        choice   { "uint16" "uint16" "float32" "float32" }
 		{ }                       scanBtn         buttons  { "Run scenario" startScan 12 "Stop" stopScan 7 }
 	}
-	
-#	set infoFrame   [FoldFrame $model.frmInfo -text "Status"     -padding $pad]
-#	dataform $infoFrame {
-#		{Hallo}                  statusLine  infostring { }
-#	}
 
 	set buttons [ttk::frame $general.frmButtons]
 	grid $buttons - -sticky snew
@@ -591,7 +588,9 @@ proc applyCurrentSettings {} {
 proc applyCurrentParameters {} {
 	# Take parameters from GUI and store them in $ctsimu_scenario.
 	variable GUISettings
+	variable batchList
 	variable ctsimu_scenario
+	variable ctsimu_batchmanager
 
 	$ctsimu_scenario set json_file           $GUISettings(jsonfile)
 	$ctsimu_scenario set start_angle         $GUISettings(startAngle)
@@ -604,35 +603,11 @@ proc applyCurrentParameters {} {
 	$ctsimu_scenario set output_fileformat   $GUISettings(fileFormat)
 	$ctsimu_scenario set output_datatype     $GUISettings(dataType)
 
+	$ctsimu_batchmanager set standard_output_fileformat $GUISettings(fileFormat)
+	$ctsimu_batchmanager set standard_output_datatype   $GUISettings(dataType)
+	$ctsimu_batchmanager set_batch_list $batchList
+
 	applyCurrentSettings
-}
-
-proc setOutputParameters { file_format data_type output_folder projectionBasename } {
-	variable ctsimu_scenario
-	# file_format: "raw" or "tiff". Standard: "raw".
-	# data_type: "uint16" or "float32". Standard: "float32"
-
-	if { [string match -nocase "tiff" $file_format] } {
-		$ctsimu_scenario set output_fileformat "tiff"
-	} else {
-		$ctsimu_scenario set output_fileformat "raw"
-	}
-
-	if { [string match -nocase "uint16" $data_type] } {
-		$ctsimu_scenario set output_datatype "uint16"
-	} else {
-		$ctsimu_scenario set output_datatype "float32"
-	}
-
-	if { [string length $output_folder] > 0 } {
-		$ctsimu_scenario set output_folder $output_folder
-	}
-
-	if { [string length $projectionBasename] > 0 } {
-		$ctsimu_scenario set output_basename $projectionBasename
-	}
-
-	fillCurrentParameters
 }
 
 proc setFrameNumber { nr } {
@@ -646,7 +621,8 @@ proc setFrameNumber { nr } {
 # ------------------------------
 
 proc saveBatchJobs_user { } {
-	variable batchList
+	# Opens a file dialog to choose a CSV file
+	# to save the batch list.
 	set filename [tk_getSaveFile -title "Save Current Batch" -filetypes { { {Comma separated} .csv } } -initialfile "batch.csv"]
 
 	if { $filename != "" } {
@@ -655,44 +631,17 @@ proc saveBatchJobs_user { } {
 }
 
 proc saveBatchJobs { csvFilename } {
-	variable batchList
-
-	if { $csvFilename != "" } {
-		if {[string tolower [file extension $csvFilename]] != ".csv"} {
-			append csvFilename ".csv"
-		}
-
-		set fileId [open $csvFilename "w"]
-		puts $fileId "# JSON File,Output Format,Output Folder,Projection Base Name,Runs,StartRun,StartProjNr,Status"
-
-		foreach index [$batchList childkeys root] {
-			if { [catch {
-				set jsonFilename       [$batchList cellcget $index,JSONFile  -text]
-				set outputFormat       [$batchList cellcget $index,OutputFormat  -text]
-				set output_folder      [$batchList cellcget $index,OutputFolder  -text]
-				set projectionBasename [$batchList cellcget $index,ProjectionBaseName  -text]
-				set nRuns              [$batchList cellcget $index,Runs  -text]
-				set startRun           [$batchList cellcget $index,StartRun  -text]
-				set startProjNr        [$batchList cellcget $index,StartProjNr  -text]
-				set status             [$batchList cellcget $index,Status  -text]
-
-				set csvLine [::csv::join [list $jsonFilename $outputFormat $output_folder $projectionBasename $nRuns $startRun $startProjNr $status ]]
-
-				puts $fileId $csvLine
-
-			} err] } {
-				continue
-			}
-		}
-
-		close $fileId
-	}
+	variable ctsimu_batchmanager
+	
+	# Send batchlist reference to batch manager:
+	applyCurrentParameters
+	
+	$ctsimu_batchmanager sync_batchlist_into_manager
+	$ctsimu_batchmanager save_batch_jobs $csvFilename
 }
 
 proc loadBatchJobs { } {
-	variable batchList
-
-	# Choose a JSON file:
+	# Opens a file dialog to choose CSV batch list:
 	set csvFilename [ChooseFile { { {Comma separated} .csv } } ]
 
 	if { $csvFilename != "" } {
@@ -701,103 +650,38 @@ proc loadBatchJobs { } {
 }
 
 proc importBatchJobs { csvFilename } {
-	variable batchList
-
-	set csvfile [open $csvFilename r]
-	fconfigure $csvfile -encoding utf-8
-	set csvstring [read $csvfile]
-	close $csvfile
-
-	set lines [split $csvstring "\n"]
-	foreach line $lines {
-		# Check if line starts with a comment character:
-		if {[string index $line 0] == "#"} {
-			continue
-		}
-
-		set entries [::csv::split $line]
-
-		if {[llength $entries] >= 4} {
-			set jsonFilename       ""
-			set outputFormat       ""
-			set outputFolder       ""
-			set projectionBasename ""
-			set nRuns              "1"
-			set startRun           "1"
-			set startProjNr        "0"
-			set status             "Pending"
-
-			set i 0
-			foreach entry $entries {
-				if {$i == 0} {set jsonFilename $entry}
-				if {$i == 1} {set outputFormat $entry}
-				if {$i == 2} {set outputFolder $entry}
-				if {$i == 3} {set projectionBasename $entry}
-				if {$i == 4} {set nRuns $entry}
-				if {$i == 5} {set startRun $entry}
-				if {$i == 6} {set startProjNr $entry}
-				if {$i == 7} {set status $entry}
-
-				incr i
-			}
-
-			# Get number of jobs so far...
-			set id 1
-			foreach index [$batchList childkeys root] {
-				incr id
-			}
-
-			set colEntries [list $id $status $nRuns $startRun $startProjNr $jsonFilename $outputFormat $outputFolder $projectionBasename ]
-			$batchList insert end $colEntries
-		}
-	}
+	variable ctsimu_batchmanager
+	
+	# Send batchlist reference to batch manager:
+	applyCurrentParameters
+	
+	$ctsimu_batchmanager import_batch_jobs $csvFilename
 }
 
 proc addBatchJob { } {
-	variable batchList
-	variable GUISettings
+	variable ctsimu_batchmanager
 
 	# Choose a JSON file:
 	set jsonFileNames [ChooseFiles { { {CTSimU Scenario} .json } } ]
 
+	# Sets the currently selected file type
+	# and data type as standard values for the batch manager:
+	applyCurrentParameters
+
 	foreach jsonFileName $jsonFileNames {
-		if { $jsonFileName != "" } {
-			set formatString "RAW "
-			if { $GUISettings(fileFormat) == "tiff" } {
-				set formatString "TIFF "
-			}
-
-			if { $GUISettings(dataType) == "float32" } {
-				append formatString "float32"
-			} else {
-				append formatString "uint16"
-			}
-
-			# Get number of jobs so far...
-			set id 1
-			foreach index [$batchList childkeys root] {
-				incr id
-			}
-
-			set colEntries [list $id "Pending" "1" "1" "0" $jsonFileName]
-			lappend colEntries $formatString
-			lappend colEntries [getOutputFolderFromJSONfilename $jsonFileName]
-			lappend colEntries [getOutputBasenameFromJSONfilename $jsonFileName]
-
-			$batchList insert end $colEntries
-		}
+		$ctsimu_batchmanager add_batch_job_from_json $jsonFileName
 	}
 }
 
 proc clearBatchList { } {
-	variable batchList
-	foreach index [$batchList childkeys root] {
-		$batchList delete $index
-	}
+	variable ctsimu_batchmanager
+	$ctsimu_batchmanager clear
 }
 
 proc deleteBatchJob { } {
 	variable batchList
+	variable ctsimu_batchmanager
+	
 	set items [$batchList curselection]
 	if { $items != {} } { $batchList delete $items }
 
@@ -807,138 +691,41 @@ proc deleteBatchJob { } {
 		$batchList cellconfigure $index,Job -text "$id"
 		incr id
 	}
+	
+	$ctsimu_batchmanager sync_batchlist_into_manager
 }
 
 proc stopBatch { } {
 	variable ctsimu_scenario
-	$ctsimu_scenario set_batch_run_status 0
+	variable ctsimu_batchmanager
+	
 	$ctsimu_scenario stop_scan
+	$ctsimu_batchmanager stop_batch
 }
 
 proc runBatch { } {
 	variable ctsimu_scenario
-
-	if {[$ctsimu_scenario batch_is_running] == 0} {
-		$ctsimu_scenario set_batch_run_status 1
-		applyCurrentSettings
-
-		set nJobsDone 0
-
-		foreach index [$batchList childkeys root] {
-			if { [catch {
-				set jobNr              [$batchList cellcget $index,Job  -text]
-				set status             [$batchList cellcget $index,Status  -text]
-				set nRuns              [$batchList cellcget $index,Runs  -text]
-				set startRun           [$batchList cellcget $index,StartRun  -text]
-				set startProjNr        [$batchList cellcget $index,StartProjNr  -text]
-				set jsonFilename       [$batchList cellcget $index,JSONFile  -text]
-				set outputFormat       [$batchList cellcget $index,OutputFormat  -text]
-				set outputFolder       [$batchList cellcget $index,OutputFolder  -text]
-				set projectionBasename [$batchList cellcget $index,ProjectionBaseName  -text]
-			} err] } {
-				continue
-			}
-
-			if {$status == "Pending"} {
-				if {$nRuns > 0} {
-					set data_type "uint16"
-					set file_format "raw"
-
-					if { $outputFormat == "RAW float32" } {
-						set data_type "float32"
-						set file_format "raw"
-					} elseif { $outputFormat == "TIFF float32" } {
-						set data_type "float32"
-						set file_format "tiff"
-					} elseif { $outputFormat == "TIFF uint16" } {
-						set data_type "uint16"
-						set file_format "tiff"
-					}
-
-					$batchList cellconfigure $index,Status -text "Running $startRun/$nRuns"
-
-					if { [catch {
-						loadFullScenario $jsonFilename
-					} err] } {
-						$batchList cellconfigure $index,Status -text "ERROR"
-						continue
-					}
-
-					CTSimU::setStartProjNr $startProjNr
-
-					for {set run $startRun} {$run <= $nRuns } {incr run} {
-						$batchList cellconfigure $index,Status -text "Stopped"
-						if {[$ctsimu_scenario batch_is_running] == 0} {
-							return
-						}
-
-						$batchList cellconfigure $index,Status -text "Running $run/$nRuns"
-
-						set runBasename $projectionBasename
-						set runName ""
-
-						if {$nRuns > 1} {
-							set runName "run[format "%03d" $run]"
-
-							if { $runBasename != "" } {
-								append runBasename "_run[format "%03d" $run]"
-							}
-						}
-
-						if { [catch {
-							setOutputParameters $file_format $data_type $output_folder $runBasename $runName
-							CTSimU::startScan
-							$batchList cellconfigure $index,Status -text "Stopped"
-							incr nJobsDone
-						} err] } {
-							$batchList cellconfigure $index,Status -text "ERROR"
-							incr nJobsDone
-							break
-						}
-
-						if {[$ctsimu_scenario batch_is_running] == 0} {
-							return
-						}
-
-						$batchList cellconfigure $index,Status -text "Done"
-
-						CTSimU::setStartProjNr 0
-					}
-
-					stopBatch
-
-					# Run Batch again, just in case the user added new jobs or resubmitted some.
-					# Also, this 'foreach' loop only runs until the first 'pending' entry, then
-					# calls the runBatch function again and quits, in case the user changed
-					# any directory names, output basenames, etc.
-					if {$nJobsDone > 0} {
-						runBatch
-					}
-
-					return
-					
-				} else {
-					$batchList cellconfigure $index,Status -text "Done"
-				}
-			}
-		}
-
-		stopBatch
-	}
+	variable ctsimu_batchmanager
+	
+	applyCurrentSettings
+	$ctsimu_batchmanager sync_batchlist_into_manager
+	$ctsimu_batchmanager run_batch $ctsimu_scenario
 }
 
 # ----------------------------------------------
-#  Scenario loading and handling
+#  Single scenario loading and handling
 # ----------------------------------------------
 
 proc loadScene {} {
 	variable GUISettings
 	variable ctsimu_scenario
+	
+	stopScan
 
 	applyCurrentParameters
 	aRTist::LoadEmptyProject
 
-	set sceneState [$ctsimu_scenario load_json_scene $GUISettings(jsonfile)]
+	set sceneState [$ctsimu_scenario load_json_scene $GUISettings(jsonfile) 1]
 
 	# Continue only if JSON was loaded successfully:
 	if { $sceneState == 1 } {
@@ -982,5 +769,8 @@ proc startScan {} {
 
 proc stopScan {} {
 	variable ctsimu_scenario
+	variable ctsimu_batchmanager
+	
 	$ctsimu_scenario stop_scan
+	$ctsimu_batchmanager stop_batch
 }

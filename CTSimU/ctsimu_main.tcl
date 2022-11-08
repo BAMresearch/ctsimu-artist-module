@@ -7,4 +7,4 @@ package require fileutil
 package require rl_json
 
 variable BasePath [file dirname [info script]]
-source -encoding utf-8 [file join $BasePath ctsimu_scenario.tcl]
+source -encoding utf-8 [file join $BasePath ctsimu_batchmanager.tcl]

@@ -40,10 +40,8 @@ proc Settings { args } {
 }
 
 proc Init {} {
-	variable ns
 	variable ctsimu_scenario
-	variable GUISettings
-	variable CacheFiles [dict create]
+	variable ctsimu_batchmanager
 
 	# Load preferences dict (stored by aRTist):
 	Utils::nohup { Settings [Preferences::GetWithDefault CTSimU Settings {}] }
@@ -60,6 +58,22 @@ proc Init {} {
 
 	if { [dict exists $prefs showStageInScene] } {
 		$ctsimu_scenario set show_stage [dict get $prefs showStageInScene]
+	}
+	
+	if { [dict exists $prefs restartArtistAfterBatchRun] } {
+		$ctsimu_batchmanager set restart_aRTist_after_each_run [dict get $prefs restartArtistAfterBatchRun]
+	}
+
+	if { [dict exists $prefs csvJobList] } {
+		$ctsimu_batchmanager set csv_list_to_import [dict get $prefs csvJobList]
+	}
+	
+	if { [dict exists $prefs nextBatchRun] } {
+		$ctsimu_batchmanager set next_run [dict get $prefs nextBatchRun]
+	}
+	
+	if { [dict exists $prefs waitingForRestart] } {
+		$ctsimu_batchmanager set waiting_for_restart [dict get $prefs waitingForRestart]
 	}
 
 	if { [dict exists $prefs cfgFileCERA] } {
@@ -87,7 +101,14 @@ proc Init {} {
 # main entry point for aRTist
 proc Run {} {
 	variable ns
-	return [Modules::make_window .ctsimu ${ns}::InitGUI]
+	set ret [Modules::make_window .ctsimu ${ns}::InitGUI]
+
+	variable batchList
+	variable ctsimu_batchmanager
+	$ctsimu_batchmanager set_batch_list $batchList
+	$ctsimu_batchmanager kick_off_import
+
+	return $ret
 }
 
 proc Running {} {
@@ -98,10 +119,11 @@ proc Running {} {
 
 proc CanClose {} {
 	variable ctsimu_scenario
+	variable ctsimu_batchmanager
 
-	#if {[$ctsimu_scenario batch_is_running] == 1} {
-	#	return false
-	#}
+	if {[$ctsimu_batchmanager is_running] == 1} {
+		return false
+	}
 
 	if {[$ctsimu_scenario is_running] == 1} {
 		return false
@@ -409,8 +431,9 @@ proc InitGUI { parent } {
 	ttk::button $buttons.btnDel -command ${ns}::deleteBatchJob {*}[aRTist::ToolbuttonOptions "Remove" list-remove $iconsize]
 	ttk::button $buttons.btnRunBatch -command ${ns}::runBatch  {*}[aRTist::CompoundOptions "Run" compute-run $iconsize] -width 5
 	ttk::button $buttons.btnStopBatch -command ${ns}::stopBatch {*}[aRTist::CompoundOptions "Stop" compute-stop $iconsize] -width 5
-	ttk::button $buttons.btnSaveJobList -text "Save List..." -command ${ns}::saveBatchJobs_user
-	ttk::button $buttons.btnLoadJobList -text "Import..." -command ${ns}::loadBatchJobs
+	ttk::button $buttons.btnSaveJobList -command ${ns}::saveBatchJobs_user {*}[aRTist::CompoundOptions "Save List..." document-save $iconsize] -width 8
+	ttk::button $buttons.btnLoadJobList -command ${ns}::loadBatchJobs {*}[aRTist::CompoundOptions "Import..." document-open $iconsize] -width 8
+	ttk::button $buttons.btnClearJobList -command ${ns}::clearBatchList {*}[aRTist::CompoundOptions "Clear" document-close $iconsize] -width 5
 	grid {*}[winfo children $buttons] -sticky snew
 
 	grid $batchList $batchListGroup.sclY -sticky snew
@@ -425,6 +448,7 @@ proc InitGUI { parent } {
 	set generalCfgGroup   [FoldFrame $settings.frmGeneralCfg  -text "General"  -padding $pad]
 	dataform $generalCfgGroup {
 		{Show stage coordinate system in scene}       showStageInScene     bool   { }
+		{Restart aRTist after each batch run}         restartArtistAfterBatchRun   bool   { }
 	}
 
 	set buttons [ttk::frame $generalCfgGroup.frmButtons]
@@ -531,6 +555,7 @@ proc fillCurrentParameters {} {
 	# Fill GUI elements with parameters stored in $ctsimu_scenario
 	variable GUISettings
 	variable ctsimu_scenario
+	variable ctsimu_batchmanager
 
 	set GUISettings(jsonfile)             [$ctsimu_scenario get json_file]
 	set GUISettings(startAngle)           [$ctsimu_scenario get start_angle]
@@ -546,7 +571,8 @@ proc fillCurrentParameters {} {
 
 	# General settings
 	set GUISettings(showStageInScene)     [$ctsimu_scenario get show_stage]
-
+	set GUISettings(restartArtistAfterBatchRun)  [$ctsimu_batchmanager get restart_aRTist_after_each_run]
+	
 	# Recon settings
 	set GUISettings(cfgFileCERA)          [$ctsimu_scenario get create_cera_config_file]
 	set GUISettings(ceraOutputDatatype)   [$ctsimu_scenario get cera_output_datatype]
@@ -559,28 +585,43 @@ proc applyCurrentSettings {} {
 	# Store the parameters that are defined by the user in the settings pane,
 	# both in $ctsimu_scenario and in the module's preferences.
 	variable GUISettings
+	variable batchList
 	variable ctsimu_scenario
+	variable ctsimu_batchmanager
 
 	$ctsimu_scenario set show_stage                $GUISettings(showStageInScene)
-
+	$ctsimu_batchmanager set restart_aRTist_after_each_run $GUISettings(restartArtistAfterBatchRun)
+	
 	$ctsimu_scenario set create_cera_config_file   $GUISettings(cfgFileCERA)
 	$ctsimu_scenario set cera_output_datatype      $GUISettings(ceraOutputDatatype)
 
 	$ctsimu_scenario set create_openct_config_file $GUISettings(cfgFileOpenCT)
 	$ctsimu_scenario set openct_output_datatype    $GUISettings(openctOutputDatatype)
 
+	$ctsimu_scenario set output_fileformat         $GUISettings(fileFormat)
+	$ctsimu_scenario set output_datatype           $GUISettings(dataType)
+
+	$ctsimu_batchmanager set_batch_list $batchList
+	$ctsimu_batchmanager sync_batchlist_into_manager
+	$ctsimu_batchmanager set standard_output_fileformat $GUISettings(fileFormat)
+	$ctsimu_batchmanager set standard_output_datatype   $GUISettings(dataType)
+
 	# Create a settings dict for aRTist:
 	dict set storeSettings fileFormat    [$ctsimu_scenario get output_fileformat]
 	dict set storeSettings dataType      [$ctsimu_scenario get output_datatype]
 
-	dict set storeSettings showStageInScene   [$ctsimu_scenario get show_stage]
+	dict set storeSettings showStageInScene  [$ctsimu_scenario get show_stage]
+	dict set storeSettings restartArtistAfterBatchRun [$ctsimu_batchmanager get restart_aRTist_after_each_run]
+	dict set storeSettings waitingForRestart [$ctsimu_batchmanager get waiting_for_restart]
+	dict set storeSettings nextBatchRun      [$ctsimu_batchmanager get next_run]
+	dict set storeSettings csvJobList        [$ctsimu_batchmanager csv_joblist 1]
 
 	dict set storeSettings cfgFileCERA        [$ctsimu_scenario get create_cera_config_file]
 	dict set storeSettings ceraOutputDatatype [$ctsimu_scenario get cera_output_datatype]
 
 	dict set storeSettings cfgFileOpenCT [$ctsimu_scenario get create_openct_config_file]
 	dict set storeSettings openctOutputDatatype [$ctsimu_scenario get openct_output_datatype]
-
+	
 	# Save the settings dict in preferences file:
 	Preferences::Set CTSimU Settings $storeSettings
 }
@@ -588,7 +629,6 @@ proc applyCurrentSettings {} {
 proc applyCurrentParameters {} {
 	# Take parameters from GUI and store them in $ctsimu_scenario.
 	variable GUISettings
-	variable batchList
 	variable ctsimu_scenario
 	variable ctsimu_batchmanager
 
@@ -599,14 +639,7 @@ proc applyCurrentParameters {} {
 	$ctsimu_scenario set current_frame       $GUISettings(projNr)
 	$ctsimu_scenario set include_final_angle $GUISettings(includeFinalAngle)
 	$ctsimu_scenario set start_proj_nr       $GUISettings(startProjNr)
-
-	$ctsimu_scenario set output_fileformat   $GUISettings(fileFormat)
-	$ctsimu_scenario set output_datatype     $GUISettings(dataType)
-
-	$ctsimu_batchmanager set standard_output_fileformat $GUISettings(fileFormat)
-	$ctsimu_batchmanager set standard_output_datatype   $GUISettings(dataType)
-	$ctsimu_batchmanager set_batch_list $batchList
-
+	
 	applyCurrentSettings
 }
 
@@ -673,6 +706,32 @@ proc addBatchJob { } {
 	}
 }
 
+proc insertBatchJob { jsonFileName {runs 1} {startRun 1} {startProjectionNumber 0} {format "RAW uint16"} {outputFolder ""} {outputBasename ""} {status "Pending"} } {
+	variable ctsimu_batchmanager
+
+	# Sets the currently selected file type
+	# and data type as standard values for the batch manager:
+	applyCurrentParameters
+
+	set bj [::ctsimu::batchjob new]
+	$bj set_from_json $jsonFileName
+	$bj set status $status
+	$bj set runs $runs
+	$bj set start_run $startRun
+	$bj set start_proj_nr $startProjectionNumber
+	$bj set_format $format
+
+	if {$outputFolder != ""} {
+		$bj set output_folder $outputFolder
+	}
+
+	if {$outputBasename != ""} {
+		$bj set output_basename $outputBasename
+	}
+
+	$ctsimu_batchmanager add_batch_job $bj
+}
+
 proc clearBatchList { } {
 	variable ctsimu_batchmanager
 	$ctsimu_batchmanager clear
@@ -708,6 +767,7 @@ proc runBatch { } {
 	variable ctsimu_batchmanager
 	
 	applyCurrentSettings
+	::Preferences::Write
 	$ctsimu_batchmanager sync_batchlist_into_manager
 	$ctsimu_batchmanager run_batch $ctsimu_scenario
 }
@@ -723,7 +783,7 @@ proc loadScene {} {
 	stopScan
 
 	applyCurrentParameters
-	aRTist::LoadEmptyProject
+	::aRTist::LoadEmptyProject
 
 	set sceneState [$ctsimu_scenario load_json_scene $GUISettings(jsonfile) 1]
 
@@ -773,4 +833,19 @@ proc stopScan {} {
 	
 	$ctsimu_scenario stop_scan
 	$ctsimu_batchmanager stop_batch
+}
+
+proc kickOff { } {
+	# A kick-off function to execute after an aRTist restart.
+	variable ctsimu_batchmanager
+
+	if { [$ctsimu_batchmanager get waiting_for_restart] == 1 } {
+		Run
+
+		# Take care of batch manager:
+		variable batchList
+		variable ctsimu_scenario
+		$ctsimu_batchmanager set_batch_list $batchList
+		$ctsimu_batchmanager kick_off $ctsimu_scenario
+	}
 }

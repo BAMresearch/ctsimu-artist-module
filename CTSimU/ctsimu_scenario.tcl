@@ -441,8 +441,6 @@ namespace eval ::ctsimu {
 				set projCtrFmt [my get projection_counter_format]
 
 				if {$nProjections > 0} {
-					::ctsimu::status_info { "Taking $nProjections projections."}
-
 					#aRTist::InitProgress
 					#aRTist::ProgressQuantum $nProjections
 

@@ -79,7 +79,7 @@ namespace eval ::ctsimu {
 		set moduleversion "unknown"
 
 		if {[::ctsimu::aRTist_available]} {
-			set aRTistVersion [aRTist::GetVersion]
+			set aRTistVersion [::aRTist::GetVersion]
 			set moduleInfo [${::ctsimu::ctsimu_module_namespace}::Info]
 			set modulename [dict get $moduleInfo Description]
 			set moduleversion [dict get $moduleInfo Version]

@@ -551,7 +551,6 @@ namespace eval ::ctsimu {
 		} elseif { $native_unit == "bool" } {
 			# This is not a value/unit pair.
 			# Only convert bool $value to 1 or 0.
-			::ctsimu::info "Boolean: $value_and_unit -> [::ctsimu::from_bool $value_and_unit]"
 			return [::ctsimu::from_bool $value_and_unit]
 		} elseif { $native_unit == "string" } {
 			if { ![::rl_json::json exists $value_and_unit value] } {

@@ -18,6 +18,14 @@ namespace eval ::ctsimu {
 		variable _detector
 		variable _sample_manager
 		variable _material_manager
+		
+		variable _initial_SDD
+		variable _initial_SOD
+		variable _initial_ODD
+		# Computed by the 'update' method:
+		variable _SDD
+		variable _SOD
+		variable _ODD
 
 		constructor { } {
 			# State
@@ -43,12 +51,14 @@ namespace eval ::ctsimu {
 			my set create_openct_config_file 1
 			my set openct_output_datatype   "float32"
 
+			# Sample and material manager:
+			set _sample_manager [::ctsimu::samplemanager new]
+			set _material_manager [::ctsimu::materialmanager new]
+
 			# Objects in the scene:
 			set _source   [::ctsimu::source new]
 			set _stage    [::ctsimu::stage new]
 			set _detector [::ctsimu::detector new]
-			set _sample_manager [::ctsimu::samplemanager new]
-			set _material_manager [::ctsimu::materialmanager new]
 
 			my reset
 		}
@@ -325,13 +335,23 @@ namespace eval ::ctsimu {
 			# -------------
 			::ctsimu::status_info "Reading detector source parameters..."
 			$_detector set_from_json $jsonstring [$_stage current_coordinate_system]
+			::ctsimu::info "Detector hash: [$_detector hash]"
 
 			# Place objects in scene
 			# ------------------------
 			set stageCS [$_stage current_coordinate_system]
 
-			$_detector set_frame $stageCS [my get current_frame] [my get n_frames] 1
 			$_source set_frame $stageCS [my get current_frame] [my get n_frames] 1
+			set _initial_source_Xray_current [$_source get current]
+			
+			$_detector set_frame $stageCS [my get current_frame] [my get n_frames] 1
+			
+			my update
+			set _initial_SDD $_SDD
+			set _initial_SOD $_SOD
+			set _initial_ODD $_ODD
+			
+			$_detector initialize $_material_manager $_initial_SDD $_initial_source_Xray_current			
 			
 			if { $apply_to_scene == 1} {
 				$_detector place_in_scene $stageCS
@@ -401,6 +421,24 @@ namespace eval ::ctsimu {
 			}
 
 			#::ctsimu::status_info "Done setting frame $frame."
+		}
+		
+		method update { } {
+			# Calculate some geometry parameters (SDD, SOD, ODD)
+			# for current frame.
+			set source_cs           [ $_source current_coordinate_system ]
+			set stage_cs            [ $_stage current_coordinate_system ]
+			set detector_cs         [ $_detector current_coordinate_system ]
+			
+			set source_from_image   [$source_cs get_copy]
+			set stage_from_detector [$stage_cs get_copy]
+						
+			$source_from_image change_reference_frame $::ctsimu::world $detector_cs
+			$stage_from_detector change_reference_frame $::ctsimu::world $detector_cs
+			
+			set _SDD [expr abs([[$source_from_image center] z])]
+			set _ODD [expr abs([[$stage_from_detector center] z])]
+			set _SOD [ [$source_cs center] distance [$stage_cs center] ]
 		}
 
 		method stop_scan { { noMessage 0 } } {

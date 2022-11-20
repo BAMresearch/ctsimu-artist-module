@@ -54,6 +54,10 @@ namespace eval ::ctsimu {
 			::ctsimu::fail "Material not defined: $material_id"
 		}
 
+		method aRTist_id { material_id } {
+			return [[my get $material_id] aRTist_id]
+		}
+
 		method add_material { m } {
 			lappend _materials $m
 		}

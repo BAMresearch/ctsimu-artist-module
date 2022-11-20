@@ -28,8 +28,15 @@ namespace eval ::ctsimu {
 			# Declare all source parameters and their native units.
 			# --------------------------------------------------------
 			# General properties:
-			my set model            "" "string"
-			my set manufacturer     "" "string"		
+			my set model               ""  "string"
+			my set manufacturer        ""  "string"
+			my set voltage             130 "kV"
+			my set current             0.1 "mA"
+			#my set target_material_id  "W" "string"
+			#my set type                "reflection" "string"
+			#my set thickness           0   "mm"
+			#my set angle_incidence     45  "deg"
+			#my set angle_emission      45  "deg"			
 		}
 
 		method set_from_json { jobj stage } {
@@ -44,6 +51,20 @@ namespace eval ::ctsimu {
 
 			set sourceGeometry [::ctsimu::json_extract $jobj {geometry source}]
 			my set_geometry $sourceGeometry $stage
+			
+			# Source properties:
+			set sourceprops [::ctsimu::json_extract $jobj {source}]
+
+			my set model        [::ctsimu::get_value $sourceprops {model} ""]
+			my set manufacturer [::ctsimu::get_value $sourceprops {manufacturer} ""]
+			
+			if { ![my set_from_key voltage $sourceprops {voltage} 130] } {
+				::ctsimu::warning "No voltage provided for the X-ray source. Using standard value: 130 kV."
+			}
+			
+			if { ![my set_from_key current $sourceprops {current} 0.1] } {
+				::ctsimu::warning "No current provided for the X-ray source. Using standard value: 0.1 mA."
+			}
 
 			::ctsimu::info "Done reading source parameters."
 		}

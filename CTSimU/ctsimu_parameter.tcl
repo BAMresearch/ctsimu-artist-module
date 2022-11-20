@@ -157,6 +157,12 @@ namespace eval ::ctsimu {
 					my set_standard_value [::ctsimu::get_value $json_parameter_object]
 					set success 1
 				}				
+			} elseif { [::ctsimu::json_type $json_parameter_object] == "boolean" } {
+				# Parameter is given as a boolean. Convert to 0 or 1.
+				if { [my native_unit] == "bool"} {
+					my set_standard_value [::ctsimu::json_convert_to_native_unit [my get native_unit] $json_parameter_object]
+					set success 1
+				}				
 			} elseif { [::ctsimu::json_type $json_parameter_object] == "object" } {
 				# Parameter is hopefully a valid parameter object...
 

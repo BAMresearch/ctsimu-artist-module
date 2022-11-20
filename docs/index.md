@@ -32,6 +32,10 @@ The following list provides the source order and links to the descriptions of ea
 
 	A generic sample. Inherits from [`::ctsimu::part`](part.md).
 
+* **[`ctsimu_filter.tcl`](filter.md)**
+
+	A class for a filter (material id and thickness).
+
 * **[`ctsimu_materialmanager.tcl`](materialmanager.md)**
 
 	The material manager that handles all the sample materials.

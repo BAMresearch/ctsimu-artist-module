@@ -34,6 +34,9 @@ Note: the aRTist package file (`.artp`) should not be part of the git repository
 
 ## Version History
 
+### 0.8.16
++ Added aRTist-specific JSON option to create primary intensity images (as an alternative to primary energy images).
+
 ### 0.8.15
 + Minor bug fix: Parts not loaded centered at (0,0,0) since version 0.7.10 due to a spelling mistake. This bug had no impact on part placement: centering parts after loading is not necessary and has therefore been fully removed in this version.
 

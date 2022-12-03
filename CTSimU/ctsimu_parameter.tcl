@@ -160,7 +160,7 @@ namespace eval ::ctsimu {
 			} elseif { [::ctsimu::json_type $json_parameter_object] == "boolean" } {
 				# Parameter is given as a boolean. Convert to 0 or 1.
 				if { [my native_unit] == "bool"} {
-					my set_standard_value [::ctsimu::json_convert_to_native_unit [my get native_unit] $json_parameter_object]
+					my set_standard_value [::ctsimu::json_convert_to_native_unit [my native_unit] $json_parameter_object]
 					set success 1
 				}				
 			} elseif { [::ctsimu::json_type $json_parameter_object] == "object" } {
@@ -199,7 +199,7 @@ namespace eval ::ctsimu {
 			return $success
 		}
 
-		method set_from_key { json_object key_sequence } {
+		method set_parameter_from_key { json_object key_sequence } {
 			if { [::ctsimu::json_exists_and_not_null $json_object $key_sequence] } {
 				if { [my set_from_json [::ctsimu::json_extract $json_object $key_sequence]] } {
 					return 1
@@ -209,13 +209,13 @@ namespace eval ::ctsimu {
 			return 0
 		}
 
-		method set_from_possible_keys { json_object key_sequences } {
+		method set_parameter_from_possible_keys { json_object key_sequences } {
 			# Searches the JSON object for each
 			# key sequence in the given list of key_sequences.
 			# The first sequence that matches is taken
 			# for the parameter.
 			foreach keyseq $key_sequences {
-				if { [my set_from_key $json_object $keyseq] } {
+				if { [my set_parameter_from_key $json_object $keyseq] } {
 					# Returned succesfully, so we can finish this...
 
 					return 1

@@ -202,7 +202,7 @@ namespace eval ::ctsimu {
 			dict set _properties $property $parameter
 		}
 
-		method set_property { property dictionary key_sequence { fail_value 0 } { native_unit "" } } {
+		method set_parameter_value { property dictionary key_sequence { fail_value 0 } { native_unit "" } } {
 			# Sets the value for the parameter that is identified
 			# by the `property` key in the internal properties dictionary.
 			# The new value is taken from the given JSON `dictionary`,
@@ -241,7 +241,7 @@ namespace eval ::ctsimu {
 			return 0
 		}
 
-		method set_from_key { property dictionary key_sequence { fail_value 0 } { native_unit "" } } {
+		method set_parameter_from_key { property dictionary key_sequence { fail_value "undefined" } { native_unit "" } } {
 			# Set up a parameter object for the given
 			# `property` from the `key_sequence` in the given `dictionary`.
 			# The object located at the key sequence must at least
@@ -258,17 +258,20 @@ namespace eval ::ctsimu {
 			}
 
 			set p [my parameter $property]
-			if { ![$p set_from_key $dictionary $key_sequence] } {
-				# Setting from key failed. Set to fail value.
-				my set $property $fail_value
+			if { ![$p set_parameter_from_key $dictionary $key_sequence] } {
+				if { $fail_value != "undefined" } {
+					# Setting from key failed. Set to fail value.
+					my set $property $fail_value
+				}
+
 				return 0
 			}
 
 			return 1
 		}
 
-		method set_from_possible_keys { property dictionary key_sequences { fail_value 0 } { native_unit "" } } {
-			# Like `set_from_key`, but a list of multiple possible
+		method set_parameter_from_possible_keys { property dictionary key_sequences { fail_value "undefined" } { native_unit "" } } {
+			# Like `set_parameter_from_key`, but a list of multiple possible
 			# `key_sequences` can be provided. Uses the first sequence that matches
 			# or the `fail_value` if nothing matches.
 
@@ -279,9 +282,12 @@ namespace eval ::ctsimu {
 			}
 
 			set p [my parameter $property]
-			if { ![$p set_from_possible_keys $dictionary $key_sequences] } {
-				# Setting from key failed. Set to standard value.
-				my set $property $fail_value
+			if { ![$p set_parameter_from_possible_keys $dictionary $key_sequences] } {
+				if { $fail_value != "undefined" } {
+					# Setting from key failed. Set to fail value.
+					my set $property $fail_value
+				}
+
 				return 0
 			}
 

@@ -55,7 +55,7 @@ namespace eval ::ctsimu {
 				::ctsimu::fail "Error setting up filter: missing material id."
 			}
 
-			if { ![$_thickness set_from_key $jsonobj {thickness}] } {
+			if { ![$_thickness set_parameter_from_key $jsonobj {thickness}] } {
 				::ctsimu::fail "Error setting up filter: thickness wrong or not specified."
 			}
 

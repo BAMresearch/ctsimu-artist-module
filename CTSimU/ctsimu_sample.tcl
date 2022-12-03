@@ -53,26 +53,26 @@ namespace eval ::ctsimu {
 			my set_geometry $geometry $stageCS
 
 			# Surface mesh file:
-			if { ![my set_from_key surface_mesh_file $jobj file ""] } {
+			if { ![my set_parameter_from_key surface_mesh_file $jobj file ""] } {
 				::ctsimu::fail "No surface mesh file defined for object \'[my name]\'."
 			}
-			if { ![my set_from_key unit $jobj unit "mm"] } {
+			if { ![my set_parameter_from_key unit $jobj unit "mm"] } {
 				::ctsimu::warning "No unit of length provided for object \'[my name]\'. Using standard value: [my get unit]"
 			}
 
-			if { ![my set_from_key scaling_factor_r $jobj {scaling_factor r} 1.0 ""] } {
+			if { ![my set_parameter_from_key scaling_factor_r $jobj {scaling_factor r} 1.0 ""] } {
 				::ctsimu::warning "Scaling factor r for sample [my name] not found or invalid. Using standard value."
 			}
 
-			if { ![my set_from_key scaling_factor_s $jobj {scaling_factor s} 1.0 ""] } {
+			if { ![my set_parameter_from_key scaling_factor_s $jobj {scaling_factor s} 1.0 ""] } {
 				::ctsimu::warning "Scaling factor s for sample [my name] not found or invalid. Using standard value."
 			}
 
-			if { ![my set_from_key scaling_factor_t $jobj {scaling_factor t} 1.0 ""] } {
+			if { ![my set_parameter_from_key scaling_factor_t $jobj {scaling_factor t} 1.0 ""] } {
 				::ctsimu::warning "Scaling factor t for sample [my name] not found or invalid. Using standard value."
 			}
 
-			if { ![my set_from_key material_id $jobj {material_id} "Fe"] } {
+			if { ![my set_parameter_from_key material_id $jobj {material_id} "Fe"] } {
 				::ctsimu::warning "No material id defined for object \'[my name]\'. Using standard value: [my get material_id]"
 			}
 		}

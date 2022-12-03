@@ -37,10 +37,10 @@ CTSimU defines a [JSON-based file format](https://bamresearch.github.io/ctsimu-s
 * `get_total_drift_value_for_frame { frame nFrames { only_drifts_known_to_reconstruction 0 } }` — Calculates the total drift value from all drift components, for the given `frame` out of a total of `nFrames`, depending on wheter all drifts are applied or only drifts known to the reconstruction software.
 * `add_drift { json_drift_obj }` — Generates a `ctsimu::drift` object (from a JSON object that defines a drift) and adds it to its internal list of drifts to handle.
 * `set_from_json { json_parameter_object }` — Set up this parameter from a JSON parameter object. Returns `1` on success, `0` otherwise.
-* `set_from_key { json_object key_sequence }` — Tries to find a valid parameter object at the given `key_sequence` in the given `json_object`. Sets the parameter if possible and returns `1` on success, `0` otherwise.
-* `set_from_possible_keys { json_object key_sequences }` — Accepts a list of `key_sequences` that specify possible locations of a parameter object in the given `json_object`. Sets up the parameter from the first valid JSON parameter object it finds, and returns `1` on success, `0` if no key sequence in the list of key sequences turned out to be a valid parameter. This can be used to support multiple spelling variants, for example "center" and "centre":
+* `set_parameter_from_key { json_object key_sequence }` — Tries to find a valid parameter object at the given `key_sequence` in the given `json_object`. Sets the parameter if possible and returns `1` on success, `0` otherwise.
+* `set_parameter_from_possible_keys { json_object key_sequences }` — Accepts a list of `key_sequences` that specify possible locations of a parameter object in the given `json_object`. Sets up the parameter from the first valid JSON parameter object it finds, and returns `1` on success, `0` if no key sequence in the list of key sequences turned out to be a valid parameter. This can be used to support multiple spelling variants, for example "center" and "centre":
 
-      $center_x set_from_possible_keys $geometry [list {center x} {centre x}]
+      $center_x set_parameter_from_possible_keys $geometry [list {center x} {centre x}]
 
 * `set_frame { frame nFrames { only_drifts_known_to_reconstruction 0 } }` — Prepares the `current_value` for the given `frame` number (assuming a total of `nFrames` frames). This takes into account all drifts. 
     

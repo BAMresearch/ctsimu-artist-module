@@ -593,4 +593,28 @@ namespace eval ::ctsimu {
 
 		return $fail_value
 	}
+
+	# More helpers
+	# -----------------
+	proc add_filters_to_list { filter_list jobj key_sequence } {
+		# Add filters from a given key sequence in the json object.
+		if { [::ctsimu::json_exists_and_not_null $jobj $key_sequence] } {
+			if { [::ctsimu::json_type $jobj $key_sequence] == "array" } {
+				set filters [::ctsimu::json_extract $jobj $key_sequence]
+				::rl_json::json foreach filter_json $filters {
+					set new_filter [::ctsimu::filter new]
+					$new_filter set_from_json $filter_json
+				}
+				lappend filter_list $new_filter
+			} elseif { [::ctsimu::json_type $jobj $key_sequence] == "object" } {
+				# If no array is given, maybe just
+				# one filter is defined as an object...?
+				set new_filter [::ctsimu::filter new]
+				$new_filter set_from_json $filter_json
+				lappend filter_list $new_filter
+			}
+		}
+
+		return $filter_list
+	}
 }

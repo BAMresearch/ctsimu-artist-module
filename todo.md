@@ -1,4 +1,6 @@
-+ Detector name, Source name...
++ Weiter bei:
+	- Source: ComputeSpectrum
+	- loading external spectrum files
 
 + Implement detector properties -> aRTist
 	- efficiency (replaces sensitivity?)

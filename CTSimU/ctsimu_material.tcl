@@ -122,11 +122,11 @@ namespace eval ::ctsimu {
 				::ctsimu::fail "Error reading material: missing name."
 			}
 
-			if { ![$_density set_from_key $jsonobj {density}] } {
+			if { ![$_density set_parameter_from_key $jsonobj {density}] } {
 				::ctsimu::fail "Error reading density of material [my id] ([my name])."
 			}
 
-			if { ![$_composition set_from_key $jsonobj {composition}] } {
+			if { ![$_composition set_parameter_from_key $jsonobj {composition}] } {
 				::ctsimu::fail "Error reading composition of material [my id] ([my name])."
 			}
 

@@ -10,7 +10,7 @@ proc Info {} {
 	return [dict create \
 		Name        CTSimU \
 		Description "CTSimU Scenario Loader" \
-		Version     "0.8.14" \
+		Version     "0.8.16" \
 	]
 }
 
@@ -1707,6 +1707,7 @@ namespace eval ::CTSimU {
 		dict set ctsimuSettings ffIdeal             0
 		dict set ctsimuSettings startProjNr         0
 		dict set ctsimuSettings primary_energies    0
+		dict set ctsimuSettings primary_intensities 0
 	}
 
 	proc makeCoordinateSystemFromVectors { centre u w attachedToStage } {
@@ -2377,8 +2378,8 @@ namespace eval ::CTSimU {
 		set pcount [string trim "$pixelCountX $pixelCountY"]
 		if { $pcount != "" } { dict set detector Global PixelCount $pcount }
 
-		# Primary energy mode:
-		if { [ dict get $ctsimuSettings primary_energies ] == 1 } {
+		# Primary energy/intensity mode:
+		if { ([ dict get $ctsimuSettings primary_energies ] == 1) || ([ dict get $ctsimuSettings primary_intensities ] == 1) } {
 			aRTist::Info { "Primary energy mode." }
 			dict set detector Global UnitOut {primary energy (J)}
 			set GVatMin "null"
@@ -2388,16 +2389,22 @@ namespace eval ::CTSimU {
 			set SNR "null"
 			set FWHM "null"
 			set SRb "null"
-			set integrationTime 1
+			#set integrationTime 1
 			set ::Xdetector(AutoD) off
 			set ::Xdetector(Scale) $integrationTime
 			set ::Xdetector(NrOfFrames) 1
 			set bitDepth 32
 			set maxGVfromDetector [expr pow(2, $bitDepth)-1]
 			set detectorType "real"
-			dict set ctsimuSettings nFlatFrames 0
-			dict set ctsimuSettings nFlatAvg 1
-			dict set ctsimuSettings ffIdeal 0
+			#dict set ctsimuSettings nFlatFrames 0
+			#dict set ctsimuSettings nFlatAvg 1
+			#dict set ctsimuSettings ffIdeal 0
+		} 
+		
+		if { [ dict get $ctsimuSettings primary_intensities ] == 1 } {
+			aRTist::Info { "Primary intensity mode." }
+			dict set detector Global UnitOut {primary intensity (J/m²/s)}
+			set factor [expr 1.0 / ($pixelSizeX * $pixelSizeY * 1e-6 * $integrationTime)]
 		}
 
 		if { $SRb == "null" } { set SRb 0 }
@@ -3303,9 +3310,6 @@ namespace eval ::CTSimU {
 							}
 						}
 
-						# Samples must be loaded to be centreed at (0, 0, 0):
-						set ::aRTist::LoadCentreed 1
-
 						# Import samples:
 						showInfo "Importing samples..."
 						if {![json isnull $scene samples]} {
@@ -3813,6 +3817,10 @@ namespace eval ::CTSimU {
 						if [json exists $scene simulation aRTist primary_energies] {
 							dict set ctsimuSettings primary_energies [from_bool [json get $scene simulation aRTist primary_energies]]
 						}
+						
+						if [json exists $scene simulation aRTist primary_intensities] {
+							dict set ctsimuSettings primary_intensities [from_bool [json get $scene simulation aRTist primary_intensities]]
+						}
 
 						set scintillatorMaterialID ""
 						if [json exists $scene detector scintillator material_id] {
@@ -3962,7 +3970,7 @@ namespace eval ::CTSimU {
 						FileIO::OpenAnyGUI $detectorFilePath
 
 						# Long Range Unsharpness:
-						if { [ dict get $ctsimuSettings primary_energies ] != 1 } {
+						if { ([ dict get $ctsimuSettings primary_energies ] != 1) && ([ dict get $ctsimuSettings primary_intensities ] != 1) } {
 							if [json exists $scene simulation aRTist long_range_unsharpness] {
 								set longrange_unsharpness_extension  [in_mm [json extract $scene simulation aRTist long_range_unsharpness extension]]
 								set longrange_unsharpness_ratio      [getValue $scene {simulation aRTist long_range_unsharpness ratio value}]

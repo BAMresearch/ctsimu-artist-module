@@ -33,7 +33,9 @@ namespace eval ::ctsimu {
 			next
 		}
 		
-		method initialize { material_manager SDD current } {
+		method initialize { material_manager { SDD 1000 } { current 1 } } {
+			# Necessary initialization after constructing, when the detector object
+			# shall be used fully (not just as a geometrical object).
 			set _material_manager $material_manager
 			set _initial_SDD $SDD
 			set _initial_current $current
@@ -76,7 +78,8 @@ namespace eval ::ctsimu {
 			my set gray_value_mode  "imin_imax" "string"
 				# Valid gray value modes:
 				# "imin_imax", "linear", "file"
-			my set primary_energy_mode 0 "bool"
+			my set primary_energy_mode    0 "bool"
+			my set primary_intensity_mode 0 "bool"
 			my set imin             0
 			my set imax             60000
 			my set factor           1.0
@@ -114,11 +117,18 @@ namespace eval ::ctsimu {
 		}
 
 		method physical_width { } {
+			# Physical width in mm
 			return [ expr [my get pitch_u] * [my get columns] ]
 		}
 
 		method physical_height { } {
+			# Physical height in mm
 			return [ expr [my get pitch_v] * [my get rows] ]
+		}
+
+		method pixel_area_m2 { } {
+			# Return pixel area in m²
+			return [ expr [my get pitch_u] * [my get pitch_v] * 1.0e-6 ]
 		}
 
 		method max_gray_value { } {
@@ -194,10 +204,22 @@ namespace eval ::ctsimu {
 			# Detector properties:
 			set detprops [::ctsimu::json_extract $jobj {detector}]
 
+			# Detector name:
 			my set model        [::ctsimu::get_value $detprops {model} ""]
 			my set manufacturer [::ctsimu::get_value $detprops {manufacturer} ""]
+			my set_name "CTSimU_detector"
+			if { ([my get model] != "") || ([my get model] != "")} {
+				if { [my get model] == "" } {
+					my set_name [my get manufacturer]
+				} elseif { [my get manufacturer] == "" } {
+					my set_name [my get model]
+				} else {
+					my set_name "[my get manufacturer] [my get model]"
+				}
+			}
 
-			if { ![my set_property type $detprops {type} "ideal"] } {
+			# Detector type:
+			if { ![my set_parameter_value type $detprops {type} "ideal"] } {
 				::ctsimu::warning "Detector type not found or invalid. Should be \"ideal\" or \"real\". Using standard value: \"ideal\"."
 			} else {
 				# Check if the detector type is valid:
@@ -208,38 +230,39 @@ namespace eval ::ctsimu {
 				}
 			}
 			
-			if { ![my set_from_key columns $detprops {columns} 100 ""] } {
+			# Detector size:
+			if { ![my set_parameter_from_key columns $detprops {columns}] } {
 				::ctsimu::warning "Number of detector columns not found or invalid. Using standard value."
 			}
 
-			if { ![my set_from_key rows $detprops {rows} 100 ""] } {
+			if { ![my set_parameter_from_key rows $detprops {rows}] } {
 				::ctsimu::warning "Number of detector rows not found or invalid. Using standard value."
 			}
 
-			if { ![my set_from_key pitch_u   $detprops {pixel_pitch u} 0.1 "mm"] } {
+			if { ![my set_parameter_from_key pitch_u   $detprops {pixel_pitch u}] } {
 				::ctsimu::warning "Pixel pitch in the u direction not found or invalid. Using standard value."
 			}
 
-			if { ![my set_from_key pitch_v   $detprops {pixel_pitch v} 0.1 "mm"] } {
+			if { ![my set_parameter_from_key pitch_v   $detprops {pixel_pitch v}] } {
 				::ctsimu::warning "Pixel pitch in the v direction not found or invalid. Using standard value."
 			}
 			
-			if { ![my set_from_key bit_depth $detprops {bit_depth} 16 ""] } {
+			if { ![my set_parameter_from_key bit_depth $detprops {bit_depth}] } {
 				::ctsimu::warning "Detector bit depth not found or invalid. Using standard value."
 			}
 
-			if { ![my set_from_key integration_time $detprops {integration_time} 1 "s"] } {
-				::ctsimu::warning "Detector integration time not found or invalid. Using standard value (1 s)."
+			if { ![my set_parameter_from_key integration_time $detprops {integration_time}] } {
+				::ctsimu::warning "Detector integration time not found or invalid. Using standard value."
 			}
 
-			my set_from_key dead_time $detprops {dead_time} 1 "s"
-			my set_from_key image_lag $detprops {image_lag} 0.0
+			my set_parameter_from_key dead_time $detprops {dead_time}
+			my set_parameter_from_key image_lag $detprops {image_lag}
 			
-			my set_from_possible_keys imin $detprops {{grey_value imin} {gray_value imin}} "null"
-			my set_from_possible_keys imax $detprops {{grey_value imax} {gray_value imax}} "null"
-			my set_from_possible_keys factor $detprops {{grey_value factor} {gray_value factor}} "null"
-			my set_from_possible_keys offset $detprops {{grey_value offset} {gray_value offset}} "null"
-			my set_from_possible_keys gv_characteristics_file $detprops {{grey_value intensity_characteristics_file} {gray_value intensity_characteristics_file}} "null"
+			my set_parameter_from_possible_keys imin $detprops {{grey_value imin} {gray_value imin}} "null"
+			my set_parameter_from_possible_keys imax $detprops {{grey_value imax} {gray_value imax}} "null"
+			my set_parameter_from_possible_keys factor $detprops {{grey_value factor} {gray_value factor}} "null"
+			my set_parameter_from_possible_keys offset $detprops {{grey_value offset} {gray_value offset}} "null"
+			my set_parameter_from_possible_keys gv_characteristics_file $detprops {{grey_value intensity_characteristics_file} {gray_value intensity_characteristics_file}} "null"
 
 			# Decide on gray value mode:
 			if { [my get gv_characteristics_file] != "null" } {
@@ -253,13 +276,13 @@ namespace eval ::ctsimu {
 				::ctsimu::info "Gray value mode: [my get gray_value_mode] (imin: [my get imin], imax: [my get imax])"
 			}
 			
-			my set_from_possible_keys efficiency  $detprops {{grey_value efficiency} {gray_value efficiency}} "null"
-			my set_from_possible_keys efficiency_characteristics_file $detprops {{grey_value efficiency_characteristics_file} {gray_value efficiency_characteristics_file}} "null"
+			my set_parameter_from_possible_keys efficiency  $detprops {{grey_value efficiency} {gray_value efficiency}} "null"
+			my set_parameter_from_possible_keys efficiency_characteristics_file $detprops {{grey_value efficiency_characteristics_file} {gray_value efficiency_characteristics_file}} "null"
 
 			
 			# Noise:
-			my set_from_key snr_at_imax $detprops {noise snr_at_imax} "null"
-			my set_from_key noise_characteristics_file $detprops {noise noise_characteristics_file} "null"
+			my set_parameter_from_key snr_at_imax $detprops {noise snr_at_imax} "null"
+			my set_parameter_from_key noise_characteristics_file $detprops {noise noise_characteristics_file} "null"
 
 			# Decide on noise mode:
 			if { [my get noise_characteristics_file] != "null" } {
@@ -278,9 +301,9 @@ namespace eval ::ctsimu {
 				# Valid unsharpness modes:
 				# "off", "basic_spatial_resolution", "mtf10freq", "mtffile"
 
-			my set_from_key basic_spatial_resolution $detprops {unsharpness basic_spatial_resolution} 0			
-			my set_from_key mtf10_freq $detprops {unsharpness mtf10_frequency} 0
-			my set_from_key mtf_file $detprops {unsharpness mtf} "null"
+			my set_parameter_from_key basic_spatial_resolution $detprops {unsharpness basic_spatial_resolution} 0			
+			my set_parameter_from_key mtf10_freq $detprops {unsharpness mtf10_frequency} 0
+			my set_parameter_from_key mtf_file $detprops {unsharpness mtf} "null"
 			
 			# Decide on unsharpness mode:
 			if { [my get mtf_file] != "null" } {
@@ -298,47 +321,39 @@ namespace eval ::ctsimu {
 			}
 
 			# Long range unsharpness is software-specific JSON parameter:
-			my set_from_key long_range_unsharpness $jobj {simulation aRTist long_range_unsharpness extension} 0
-			my set_from_key long_range_ratio $jobj {simulation aRTist long_range_unsharpness ratio} 0
+			my set_parameter_from_key long_range_unsharpness $jobj {simulation aRTist long_range_unsharpness extension} 0
+			my set_parameter_from_key long_range_ratio $jobj {simulation aRTist long_range_unsharpness ratio} 0
 			
 			# Bad pixel map
-			my set_from_key bad_pixel_map $detprops {bad_pixel_map} "null"
-			my set_property bad_pixel_map_type $detprops {bad_pixel_map type} "null"
+			my set_parameter_from_key bad_pixel_map $detprops {bad_pixel_map} "null"
+			my set_parameter_value bad_pixel_map_type $detprops {bad_pixel_map type} "null"
 			
 			# Scintillator
-			my set_property scintillator_material_id $detprops {scintillator material_id} "null"
-			my set_from_key scintillator_thickness $detprops {scintillator thickness} 0
+			my set_parameter_value scintillator_material_id $detprops {scintillator material_id} "null"
+			my set_parameter_from_key scintillator_thickness $detprops {scintillator thickness} 0
 
 			# Filters
-			if { [::ctsimu::json_exists_and_not_null $detprops {filters front}] } {
-				if { [::ctsimu::json_type $detprops {filters front}] == "array" } {
-					set filters [::ctsimu::json_extract $detprops {filters front}]
-					::rl_json::json foreach filter_json $filters {
-						set new_filter [::ctsimu::filter new]
-						$new_filter set_from_json $filter_json
-					}
-					lappend _filters_front $new_filter
-				}
-			}			
+			set _filters_front [::ctsimu::add_filters_to_list $_filters_front $detprops {filters front}]
 
 			# Frame averaging:
-			my set_property frame_average $jobj {acquisition frame_average} 1
+			my set_parameter_value frame_average $jobj {acquisition frame_average} 1
 
 			# Multisampling (software-specific)
-			my set_from_key multisampling $jobj {simulation aRTist multisampling_detector} "3x3"
+			my set_parameter_from_key multisampling $jobj {simulation aRTist multisampling_detector} "3x3"
 
 			::ctsimu::info "Done reading detector parameters."
 
 
 			# Primary energy mode
-			my set_from_key primary_energy_mode $jobj {simulation aRTist primary_energies}
+			my set_parameter_from_key primary_energy_mode $jobj {simulation aRTist primary_energies}
+			my set_parameter_from_key primary_intensity_mode $jobj {simulation aRTist primary_intensities}
 
 			# Primary energy mode needs different settings:
-			if { [ my get primary_energy_mode ] == 1 } {
+			if { ([ my get primary_energy_mode ] == 1) || ([ my get primary_intensity_mode] == 1) } {
 				::ctsimu::info "Primary energy mode."
 				my set gray_value_mode "linear"
-				my set imin 0
-				my set imax 60000; # doesn't matter in factor/offset mode
+				my set imin "null"
+				my set imax "null"
 				my set factor 1.0
 				my set offset 0.0
 				
@@ -351,14 +366,22 @@ namespace eval ::ctsimu {
 				my set mtf10_freq 10.0
 				my set mtf_file ""
 
-				my set integration_time 1
 				my set bit_depth 32
 
 				my set type "real"
+
+				if { [ my get primary_intensity_mode] == 1 } {
+					my set intensity_rescale_factor [expr [my pixel_area_m2] * [my get integration_time] ]
+					if { $intensity_rescale_factor != 0 } {
+						my set factor [expr 1.0 / $intensity_rescale_factor]
+					} else {
+						::ctsimu::warning "The pixel area or the integration time is zero. Gray value renormalization will not work as expected."
+					}
+				}
 			}
 		}
 
-		method set_in_aRTist { { apply_to_scene 0 } } {
+		method set_in_aRTist { } {
 			if { [::ctsimu::aRTist_available] } {
 				# Set the detector to auto-size mode.
 				# We set the number of pixels and the pixel size,
@@ -478,6 +501,11 @@ namespace eval ::ctsimu {
 
 			if { [ my get primary_energy_mode ] == 1 } {
 				dict set detector Global UnitOut {primary energy (J)}
+				set ::Xdetector(AutoD) off
+				set ::Xdetector(Scale) [my get integration_time]
+				set ::Xdetector(NrOfFrames) 1; # no need for averaging
+			} elseif { [ my get primary_intensity_mode ] == 1 } {
+				dict set detector Global UnitOut {primary intensity (J/m²/s)}
 				set ::Xdetector(AutoD) off
 				set ::Xdetector(Scale) [my get integration_time]
 				set ::Xdetector(NrOfFrames) 1; # no need for averaging
@@ -601,8 +629,9 @@ namespace eval ::ctsimu {
 			# Apply detector filters
 			foreach filter $_filters_front {
 				aRTist::Verbose { "Filtering by $materialID, Thickness: $thickness" }
-				Engine::UpdateMaterials [$filter material_id]
-				set sensitivitytext [xrEngine FilterSpectrum $sensitivitytext [$filter material_id] [Engine::quotelist --Thickness [expr {[$filter thickness] / 10.0}]]]
+				set aRTist_material_id [$_material_manager aRTist_id [$filter material_id]]
+				Engine::UpdateMaterials $aRTist_material_id
+				set sensitivitytext [xrEngine FilterSpectrum $sensitivitytext $aRTist_material_id [Engine::quotelist --Thickness [expr {[$filter thickness] / 10.0}]]]
 			}
 
 			set sensitivity [my ParseSpectrum $sensitivitytext 3]
@@ -659,13 +688,13 @@ namespace eval ::ctsimu {
 
 				# compute effective pixel area in units of m^2
 				if { $SRb <= 0.0 } {
-					set pixelarea [expr { $pixelSizeX * $pixelSizeY * 1e-6 }]
+					set pixelarea [my pixel_area_m2]
 				} else {
 					# estimate effective area from gaussian unsharpness
 					package require math::special
 					set FractionX [math::special::erf [expr { $pixelSizeX / $SRb / sqrt(2.0) }]]
 					set FractionY [math::special::erf [expr { $pixelSizeY / $SRb / sqrt(2.0) }]]
-					set pixelarea [expr { ($pixelSizeX / $FractionX) * ($pixelSizeY / $FractionY) * 1e-6 }]
+					set pixelarea [expr [my pixel_area_m2] / ($FractionX * $FractionY)]
 				}
 
 				# compute total photon count onto the effective area
@@ -687,7 +716,7 @@ namespace eval ::ctsimu {
 					# If linear interpolation is used instead of GVmin and GVmax:
 					set GVatMaxInput 0.0
 					set GVatNoInput 0.0
-					set physical_pixel_area [expr { $pixelSizeX * $pixelSizeY * 1e-6 }]
+					set physical_pixel_area [my pixel_area_m2]
 					
 					if { [my get gray_value_mode] == "linear"} {
 						# Factor / offset method for gray value reproduction.

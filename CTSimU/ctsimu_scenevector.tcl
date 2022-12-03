@@ -365,9 +365,9 @@ namespace eval ::ctsimu {
 				 [::ctsimu::json_exists_and_not_null $json_object y] && \
 				 [::ctsimu::json_exists_and_not_null $json_object z] } {
 				 	my set_reference "world"
-				 	if { [$_c0 set_from_key $json_object {x}] && \
-				 	     [$_c1 set_from_key $json_object {y}] && \
-				 	     [$_c2 set_from_key $json_object {z}] } {
+				 	if { [$_c0 set_parameter_from_key $json_object {x}] && \
+				 	     [$_c1 set_parameter_from_key $json_object {y}] && \
+				 	     [$_c2 set_parameter_from_key $json_object {z}] } {
 				 	     	# Success
 				 	     	return 1
 				 	     }
@@ -376,9 +376,9 @@ namespace eval ::ctsimu {
 				 [::ctsimu::json_exists_and_not_null $json_object v] && \
 				 [::ctsimu::json_exists_and_not_null $json_object w] } {
 				 	my set_reference "local"
-				 	if { [$_c0 set_from_key $json_object {u}] && \
-				 	     [$_c1 set_from_key $json_object {v}] && \
-				 	     [$_c2 set_from_key $json_object {w}] } {
+				 	if { [$_c0 set_parameter_from_key $json_object {u}] && \
+				 	     [$_c1 set_parameter_from_key $json_object {v}] && \
+				 	     [$_c2 set_parameter_from_key $json_object {w}] } {
 				 	     	# Success
 				 	     	return 1
 				 	     }
@@ -387,9 +387,9 @@ namespace eval ::ctsimu {
 				 [::ctsimu::json_exists_and_not_null $json_object s] && \
 				 [::ctsimu::json_exists_and_not_null $json_object t] } {
 				 	my set_reference "sample"
-				 	if { [$_c0 set_from_key $json_object {r}] && \
-				 	     [$_c1 set_from_key $json_object {s}] && \
-				 	     [$_c2 set_from_key $json_object {t}] } {
+				 	if { [$_c0 set_parameter_from_key $json_object {r}] && \
+				 	     [$_c1 set_parameter_from_key $json_object {s}] && \
+				 	     [$_c2 set_parameter_from_key $json_object {t}] } {
 				 	     	# Success
 				 	     	return 1
 				 	     }

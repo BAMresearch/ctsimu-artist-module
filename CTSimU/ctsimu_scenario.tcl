@@ -60,6 +60,9 @@ namespace eval ::ctsimu {
 			set _stage    [::ctsimu::stage new]
 			set _detector [::ctsimu::detector new]
 
+			$_source initialize $_material_manager
+			$_detector initialize $_material_manager
+
 			my reset
 		}
 
@@ -351,7 +354,8 @@ namespace eval ::ctsimu {
 			set _initial_SOD $_SOD
 			set _initial_ODD $_ODD
 			
-			$_detector initialize $_material_manager $_initial_SDD $_initial_source_Xray_current			
+			$_source initialize $_material_manager
+			$_detector initialize $_material_manager $_initial_SDD $_initial_source_Xray_current
 			
 			if { $apply_to_scene == 1} {
 				$_detector place_in_scene $stageCS
@@ -413,7 +417,7 @@ namespace eval ::ctsimu {
 					# a higher-density material:
 					set ::Xsetup(SpaceMaterial) [ [$_material_manager get [my get environment_material]] aRTist_id ]
 
-					$_detector set_in_aRTist $apply_to_scene
+					$_detector set_in_aRTist
 
 					${::ctsimu::ctsimu_module_namespace}::setFrameNumber $frame
 					Engine::RenderPreview

@@ -12,11 +12,13 @@ namespace eval ::ctsimu {
 		variable _native_unit
 		variable _drifts;         # list of drift objects
 		variable _current_value;  # value at current frame (obeying drifts)
+		variable _value_has_changed; # parameter value changed since last frame?
 
 		constructor { { native_unit "" } { standard 0 } } {
 			my set_standard_value $standard
 			my set_native_unit    $native_unit
 			set _drifts           [list]
+			set _value_has_changed 1
 		}
 
 		destructor {
@@ -34,7 +36,8 @@ namespace eval ::ctsimu {
 				$drift destroy
 			}
 			set _drifts [list]
-						
+			
+			set _value_has_changed 1
 			set _current_value $_standard_value
 		}
 
@@ -64,6 +67,10 @@ namespace eval ::ctsimu {
 			# Should be used after `set_frame`.
 			return $_current_value
 		}
+		
+		method has_changed { } {
+			return $_value_has_changed
+		}
 
 		# Setters
 		# -------------------------
@@ -77,6 +84,10 @@ namespace eval ::ctsimu {
 			# Set the parameter's standard value.
 			set _standard_value $value
 			set _current_value $value
+		}
+		
+		method acknowledge_change { { new_change_state 0} } {
+			set _value_has_changed $new_change_state
 		}
 
 		# General
@@ -241,14 +252,14 @@ namespace eval ::ctsimu {
 			}
 
 			# Check if the value has changed when compared to the previous value:
-			set value_has_changed 0
+			set _value_has_changed 0
 			if { $_current_value != $new_value } {
-				set value_has_changed 1
+				set _value_has_changed 1
 				set _current_value $new_value
 			}
 
 			# Return 1 if the parameter's value has changed, 0 if not:
-			return $value_has_changed
+			return $_value_has_changed
 		}
 	}
 }

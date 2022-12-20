@@ -799,7 +799,7 @@ proc showProjection {} {
 	variable ctsimu_scenario
 
 	applyCurrentParameters
-	$ctsimu_scenario set_frame [$ctsimu_scenario get current_frame] 0 1
+	$ctsimu_scenario set_frame [$ctsimu_scenario get current_frame] 1
 }
 
 proc nextProjection {} {

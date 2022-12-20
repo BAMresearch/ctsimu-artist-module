@@ -392,7 +392,7 @@ namespace eval ::ctsimu {
 			return 1
 		}
 
-		method set_frame { frame { force 0 } { apply_to_scene 0 } } {
+		method set_frame { frame { apply_to_scene 0 } } {
 			my set current_frame $frame
 
 			set stage_rotation_angle_in_rad [::ctsimu::in_rad [my get_current_stage_rotation_angle]]
@@ -402,8 +402,8 @@ namespace eval ::ctsimu {
 
 			$_material_manager set_frame $frame [my get n_frames]
 			$_sample_manager set_frame $stageCS $frame [my get n_frames]
-			$_detector set_frame $stageCS $frame [my get n_frames]
 			$_source set_frame $stageCS $frame [my get n_frames]
+			$_detector set_frame $stageCS $frame [my get n_frames]
 			
 			if { $apply_to_scene } {
 				$_sample_manager update_scene $stageCS
@@ -417,6 +417,7 @@ namespace eval ::ctsimu {
 					# a higher-density material:
 					set ::Xsetup(SpaceMaterial) [ [$_material_manager get [my get environment_material]] aRTist_id ]
 
+					$_source set_in_aRTist
 					$_detector set_in_aRTist
 
 					${::ctsimu::ctsimu_module_namespace}::setFrameNumber $frame

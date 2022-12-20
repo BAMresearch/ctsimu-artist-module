@@ -244,6 +244,80 @@ namespace eval ::ctsimu {
 
 		return $values
 	}
+	
+	proc load_csv_into_tab_separated_string { filename } {
+		# $file will contain the file pointer
+		set file [open $filename]
+
+		# $input will contain the contents of the file
+		set input [read $file]
+
+		# Clean up
+		close $file
+
+		# $lines will be an array containing each line of test.txt
+		set lines [split $input "\n"]
+
+		# Loop through each line
+		set text ""
+		set i 0
+		foreach line $lines {
+			# skip empty lines
+			if {[string length $line] > 0} {
+				# skip comments
+			    if { ![regexp {^\s*#} $line] } {
+
+			    	if {$i > 0} {
+			    		append text "\n"
+			    	}
+
+			    	# split on comma or white space
+			    	set entries [split $line " \t,"]
+			    	set j 0
+			    	foreach entry $entries {
+			    		if {$j > 0} {
+			    			append text "\t"
+			    		}
+			    		append text $entry
+			    		incr j
+			    	}
+			    	incr i
+			    }
+			}
+		}
+
+		return $text
+	}
+
+	proc load_csv_into_list { filename } {
+		# $file will contain the file pointer to test.txt (file must exist)
+		set file [open $filename]
+
+		# $input will contain the contents of the file
+		set input [read $file]
+
+		# Clean up
+		close $file
+
+		# $lines will be an array containing each line of test.txt
+		set lines [split $input "\n"]
+
+		# Loop through each line
+		set csvList {}
+		foreach line $lines {
+			# skip empty lines
+			if {[string length $line] > 0} {
+				# skip comments
+			    if { ![regexp {^\s*#} $line] } {
+			    	# split on comma or white space
+			    	set entries [split $line " \t,"]
+			    	lappend csvList $entries 
+			    }
+			}
+		}
+
+		return $csvList
+	}
 
 	# Checkers for valid JSON data
 	# -----------------------------
@@ -604,8 +678,8 @@ namespace eval ::ctsimu {
 				::rl_json::json foreach filter_json $filters {
 					set new_filter [::ctsimu::filter new]
 					$new_filter set_from_json $filter_json
+					lappend filter_list $new_filter
 				}
-				lappend filter_list $new_filter
 			} elseif { [::ctsimu::json_type $jobj $key_sequence] == "object" } {
 				# If no array is given, maybe just
 				# one filter is defined as an object...?

@@ -143,33 +143,39 @@ namespace eval ::ctsimu {
 			
 			# Create a unique string:
 			set us "detector"
-			append us "[my get type]"
-			append us "[my get integration_time]"
-			append us "[my get imin]"
-			append us "[my get imax]"
-			append us "[my get factor]"
-			append us "[my get offset]"
-			append us "[my get gv_characteristics_file]"
-			append us "[my get efficiency]"
-			append us "[my get efficiency_characteristics_file]"
-			append us "[my get snr_at_imax]"
-			append us "[my get noise_characteristics_file]"
-			append us "[my get basic_spatial_resolution]"
-			append us "[my get mtf10_freq]"
-			append us "[my get mtf_file]"
-			append us "[my get scintillator_thickness]"
+			append us "_[my get type]"
+			append us "_[my get columns]"
+			append us "_[my get rows]"
+			append us "_[my get pitch_u]"
+			append us "_[my get pitch_v]"
+			append us "_[my get integration_time]"
+			append us "_[my get imin]"
+			append us "_[my get imax]"
+			append us "_[my get factor]"
+			append us "_[my get offset]"
+			append us "_[my get gv_characteristics_file]"
+			append us "_[my get efficiency]"
+			append us "_[my get efficiency_characteristics_file]"
+			append us "_[my get snr_at_imax]"
+			append us "_[my get noise_characteristics_file]"
+			append us "_[my get basic_spatial_resolution]"
+			append us "_[my get mtf10_freq]"
+			append us "_[my get mtf_file]"
+			append us "_[my get scintillator_thickness]"
 			if { [my get scintillator_material_id] != "null" } {
-				append us "[ [$_material_manager get [my get scintillator_material_id]] density ]"
-				append us "[ [$_material_manager get [my get scintillator_material_id]] composition ]"
+				append us "_[$_material_manager density [my get scintillator_material_id]]"
+				append us "_[$_material_manager composition [my get scintillator_material_id]]"
 			}			
 			
 			foreach filter $_filters_front {
-				append us "[ $filter thickness]"
+				append us "_[ $filter thickness]"
 				if { [$filter material_id] != "null" } {
-					append us "[ [$_material_manager get [$filter material_id]] density ]"
-					append us "[ [$_material_manager get [$filter material_id]] composition ]"
+					append us "_[$_material_manager density [$filter material_id]]"
+					append us "_[$_material_manager composition [$filter material_id]]"
 				}
 			}
+			
+			::ctsimu::info "Detector unique string: $us"
 			
 			return [md5::md5 -hex $us]
 		}
@@ -394,6 +400,8 @@ namespace eval ::ctsimu {
 				# Generate the detector if it has changed:
 				set current_hash [my hash]
 				if { $current_hash != $_previous_hash } {
+					set _previous_hash $current_hash
+					
 					# Check if a temp file already exists:
 					set detector_temp_file [my current_temp_file]
 					
@@ -567,6 +575,9 @@ namespace eval ::ctsimu {
 					aRTist::Verbose { "$Emin\t$dE\t$Emax\t$EBin" }
 					set grid [seq [expr {$Emin + $dE}] $dE [expr {$Emax + $dE / 10.}]]
 					set Emin [lindex $grid end]
+					
+					set minEnergy 0
+					set maxEnergy 1000
 
 					# compute sensitivity
 					set options [Engine::quotelist \
@@ -672,7 +683,7 @@ namespace eval ::ctsimu {
 				set Esum     [expr { $Esum    + $Nphotons * $signal }]
 				set Esqusum  [expr { $Esqusum + $Nphotons * $signal**2 }]
 
-				::ctsimu::status_info "Calculating signal statistics for $keV keV..."
+				#::ctsimu::status_info "Calculating signal statistics for $keV keV..."
 			}
 			::ctsimu::status_info "Calculating detector characteristics..."
 

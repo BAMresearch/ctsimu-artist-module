@@ -117,6 +117,11 @@ namespace eval ::ctsimu {
 			# Returns the parameter object behind a given `property`
 			return [dict get $_properties $property]
 		}
+		
+		method changed { property } {
+			# Has the property changed its value since the last frame?
+			return [ [my parameter $property] has_changed]
+		}
 
 		method current_coordinate_system { } {
 			return $_cs_current
@@ -183,6 +188,10 @@ namespace eval ::ctsimu {
 				set param [::ctsimu::parameter new $native_unit $value]
 				dict set _properties $property $param
 			}
+		}
+		
+		method acknowledge_change { property { new_change_state 0} } {
+			[my parameter $property] acknowledge_change $new_change_state
 		}
 
 		method set_parameter { property parameter } {

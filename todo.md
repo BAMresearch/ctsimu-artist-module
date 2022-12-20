@@ -1,6 +1,8 @@
 + Weiter bei:
-	- Source: ComputeSpectrum
-	- loading external spectrum files
+	- Spot Profiles -> test
+	- Decide on multisampling values AFTER source AND detector have been set up.
+	- External spot profiles
+	- Scattering
 
 + Implement detector properties -> aRTist
 	- efficiency (replaces sensitivity?)

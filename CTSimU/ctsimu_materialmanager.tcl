@@ -53,6 +53,14 @@ namespace eval ::ctsimu {
 
 			::ctsimu::fail "Material not defined: $material_id"
 		}
+		
+		method density { material_id } {
+			return [ [ [my get $material_id] density ] current_value ]
+		}
+		
+		method composition { material_id } {
+			return [ [ [my get $material_id] composition ] current_value ]
+		}
 
 		method aRTist_id { material_id } {
 			return [[my get $material_id] aRTist_id]

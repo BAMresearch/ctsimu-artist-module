@@ -47,6 +47,8 @@ namespace eval ::ctsimu {
 
 		method reset { } {
 			# Reset to standard settings.
+			set _previous_hash "0"
+			set _previous_hash_spot "0"
 
 			# Reset the '::ctsimu::part' that handles the coordinate system:
 			next; # call reset of parent class ::ctsimu::part
@@ -84,13 +86,16 @@ namespace eval ::ctsimu {
 			my set spot_sigma_u            0  "mm"
 			my set spot_sigma_v            0  "mm"
 			my set spot_sigma_w            0  "mm"
+			my set multisampling        "20"  "string"
 			
 			# Intensity map
 			my set intensity_map_file     ""  "string"; # map file is parameter, can have drift file
-			my set intensity_map_type     "float"  "string"
-			my set intensity_map_dim_x     0  ""
-			my set intensity_map_dim_y     0  ""
-			my set intensity_map_dim_z     0  ""
+			my set intensity_map_datatype   "float"  "string"
+			my set intensity_map_dim_x      0 ""
+			my set intensity_map_dim_y      0 ""
+			my set intensity_map_dim_z      0 ""
+			my set intensity_map_headersize 0 ""
+			my set intensity_map_endian     "little" "string"
 
 			# Spectrum
 			my set spectrum_monochromatic  0   "bool"
@@ -131,9 +136,7 @@ namespace eval ::ctsimu {
 
 			# Spectrum file:
 			append us [my get spectrum_file]
-			
-			::ctsimu::info "Source unique string: $us"
-			
+				
 			return [md5::md5 -hex $us]
 		}
 		
@@ -149,9 +152,7 @@ namespace eval ::ctsimu {
 			append us "_[my get spot_sigma_v]"
 			append us "_[my get spot_sigma_w]"
 			append us "_[my get intensity_map_file]"
-			
-			::ctsimu::info "Spot unique string: $us"
-			
+				
 			return [md5::md5 -hex $us]
 		}
 
@@ -226,12 +227,23 @@ namespace eval ::ctsimu {
 			my set_parameter_from_key spot_sigma_v $sourceprops {spot sigma v}
 			my set_parameter_from_key spot_sigma_w $sourceprops {spot sigma w}
 
+			# If a finite spot size is provided but no Gaussian sigmas,
+			# the Gaussian width is assumed to be the spot size.
+			if { [my get spot_sigma_u] <= 0 } {
+				my set spot_sigma_u [my get spot_size_u]
+			}
+			if { [my get spot_sigma_v] <= 0 } {
+				my set spot_sigma_v [my get spot_size_v]
+			}
+
 			# Intensity map
-			my set_parameter_from_key intensity_map_file  $sourceprops {spot intensity_map}
-			my set_parameter_value    intensity_map_type  $sourceprops {spot intensity_map type}
-			my set_parameter_value    intensity_map_dim_x $sourceprops {spot intensity_map dim_x}
-			my set_parameter_value    intensity_map_dim_y $sourceprops {spot intensity_map dim_y}
-			my set_parameter_value    intensity_map_dim_z $sourceprops {spot intensity_map dim_z}
+			my set_parameter_from_key intensity_map_file      $sourceprops {spot intensity_map}
+			my set_parameter_value    intensity_map_datatype  $sourceprops {spot intensity_map type} "float"
+			my set_parameter_value    intensity_map_dim_x     $sourceprops {spot intensity_map dim_x} 0
+			my set_parameter_value    intensity_map_dim_y     $sourceprops {spot intensity_map dim_y} 0
+			my set_parameter_value    intensity_map_dim_z     $sourceprops {spot intensity_map dim_z} 0
+			my set_parameter_value    intensity_map_endian    $sourceprops {spot intensity_map endian} "little"
+			my set_parameter_value    intensity_map_headersize  $sourceprops {spot intensity_map headersize} 0
 
 			# Spectrum
 			my set_parameter_from_key spectrum_monochromatic $sourceprops {spectrum monochromatic}
@@ -354,13 +366,11 @@ namespace eval ::ctsimu {
 					}
 				}
 				
-				# Spot size is not part of hash, treat it here
+				# Spot size is not part of standard hash, treat it here
 				# and check if it has changed since last frame:
 				set current_hash_spot [my hash_spot]
 				if { $current_hash_spot != $_previous_hash_spot } {
 					set _previous_hash_spot $current_hash_spot
-				    
-				    ::ctsimu::info "Spot size has changed."
 									 
 					# aRTist only supports 2D spot profiles					
 					set sigmaX    [my get spot_sigma_u]
@@ -368,16 +378,9 @@ namespace eval ::ctsimu {
 					set spotSizeX [my get spot_size_u]
 					set spotSizeY [my get spot_size_v]
 					
-					# If a finite spot size is provided, but no Gaussian sigmas,
-					# the spot size is assumed to be the Gaussian width.
-					if { $sigmaX <= 0 } {
-						set sigmaX $spotSizeX
-					}
-					if { $sigmaY <= 0 } {
-						set sigmaY $spotSizeY
-					}
+					::ctsimu::info "Spot size: x=$spotSizeX, y=$spotSizeY, sigma_x=$sigmaX, sigma_y=$sigmaY"
 
-					if { ($sigmaX <= 0) || ($sigmaY <= 0) } {
+					if { ($sigmaX <= 0) || ($sigmaY <= 0) || ($spotSizeX <= 0) || ($spotSizeY <= 0) } {
 						# Point source						
 						set ::Xsource_private(SpotWidth) 0
 						set ::Xsource_private(SpotHeight) 0
@@ -386,19 +389,24 @@ namespace eval ::ctsimu {
 						set ::Xsetup(SourceSampling) point
 
 						::XSource::SelectSpotType
-
-						# Set detector multisampling to achieve partial volume effect:
-						set ::Xsetup(DetectorSampling) 3x3
-						#set ::Xsetup(DetectorSampling) {source dependent}
 					} else {
-						# Source multisampling:
-						# Create a Gaussian spot profile, and activate an additional
-						# 2x2 multisampling for the detector.
-						my make_gaussian_spot_profile $sigmaX $sigmaY
-						set ::Xsetup(DetectorSampling) 2x2
+						set ::Xsource_private(SpotWidth) $spotSizeX
+						set ::Xsource_private(SpotHeight) $spotSizeY
+						set ::Xsetup_private(SGSx) $spotSizeX
+						set ::Xsetup_private(SGSy) $spotSizeY
+						set ::Xsetup(SourceSampling) [my get multisampling]
+						::XSource::SelectSpotType
+						::XSource::SourceSizeModified
+						
+						# 2D spot intensity profile
+						if { [my get intensity_map_file] != "" } {
+							# Load spot intensity map file:
+							my load_spot_image
+						} else {
+							# Create Gaussian spot profile image
+							my make_gaussian_spot_profile $sigmaX $sigmaY
+						}
 					}
-				} else {
-					::ctsimu::info "Spot size has NOT changed."
 				}
 			}
 		}
@@ -624,12 +632,56 @@ namespace eval ::ctsimu {
 			set Xsource_private(SpotWidth) [expr 2.3548*$sigmaX]
 			set Xsource_private(SpotHeight) [expr 2.3548*$sigmaY]
 
-			set ::Xsetup(SourceSampling) 20
-			::XSource::SelectSpotType
-
 			::ctsimu::info "Setting Gaussian spot size. sigmaX=$sigmaX, sigmaY=$sigmaY."
 
 			::XSource::SetSpotProfile
+		}
+		
+		method load_spot_image { } {
+			# adapted from xsource.tcl to allow read RAW images of arbitrary size
+			set spot_image_file_absolute_path [::ctsimu::get_absolute_path [my get intensity_map_file]]
+			
+			::ctsimu::info "Loading spot image: $spot_image_file_absolute_path"
+			
+			set spotimg [::ctsimu::image new $spot_image_file_absolute_path]
+			$spotimg set_width    [my get intensity_map_dim_x]
+			$spotimg set_height   [my get intensity_map_dim_y]
+			$spotimg set_depth    [my get intensity_map_dim_z]
+			$spotimg set_datatype [my get intensity_map_datatype]
+			$spotimg set_endian   [my get intensity_map_endian]
+			$spotimg set_headersize [my get intensity_map_headersize]
+			
+			set img [$spotimg load_image]
+			
+			$spotimg destroy
+			
+			if { [catch {
+				set tmp [Image::aRTistImage %AUTO%]
+				$tmp ShallowCopy $img
+				$img Delete
+				set img $tmp
+			} err errdict] } {
+				catch { $img Delete }
+				catch { $tmp Delete }
+				::ctsimu::fail "Error loading spot image."
+				return -options $errdict $err
+			}
+
+			::XSource::ClearSpot
+			set ::Xsource_private(SpotProfile) $img
+			::XRayProject::AddFile Source SpotProfile $spot_image_file_absolute_path
+
+			set ::Xsource_private(SpotWidth)  [my get spot_size_u]
+			set ::Xsource_private(SpotHeight) [my get spot_size_v]
+			::XSource::SourceSizeModified
+
+			$::XSource::widget(ClearButton) state !disabled
+			$::XSource::widget(ShowButton) state !disabled
+			catch { unset ::Xsource_private(SourceGrid) }
+
+			::SceneView::RedrawRequest
+			
+			::ctsimu::info "Successfully loaded spot image."
 		}
 	}
 }

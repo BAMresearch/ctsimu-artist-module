@@ -43,6 +43,7 @@ namespace eval ::ctsimu {
 
 		method reset { } {
 			# Reset to standard settings.
+			set _previous_hash "0"
 			
 			# Reset the '::ctsimu::part' that handles the coordinate system:
 			next; # call reset of parent class ::ctsimu::part
@@ -174,8 +175,6 @@ namespace eval ::ctsimu {
 					append us "_[$_material_manager composition [$filter material_id]]"
 				}
 			}
-			
-			::ctsimu::info "Detector unique string: $us"
 			
 			return [md5::md5 -hex $us]
 		}
@@ -343,9 +342,6 @@ namespace eval ::ctsimu {
 
 			# Frame averaging:
 			my set_parameter_value frame_average $jobj {acquisition frame_average} 1
-
-			# Multisampling (software-specific)
-			my set_parameter_from_key multisampling $jobj {simulation aRTist multisampling_detector} "3x3"
 
 			::ctsimu::info "Done reading detector parameters."
 

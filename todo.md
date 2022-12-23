@@ -1,6 +1,4 @@
 + Weiter bei:
-	- Spot Profiles -> test
-	- Decide on multisampling values AFTER source AND detector have been set up.
 	- External spot profiles
 	- Scattering
 

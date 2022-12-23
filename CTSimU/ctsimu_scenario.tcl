@@ -254,11 +254,11 @@ namespace eval ::ctsimu {
 		}
 
 		method set_next_frame { { apply_to_scene 0 } } {
-			my set_frame [expr [my get current_frame]+1] 0 $apply_to_scene
+			my set_frame [expr [my get current_frame]+1] $apply_to_scene
 		}
 
 		method set_previous_frame { { apply_to_scene 0 } } {
-			my set_frame [expr [my get current_frame]-1] 0 $apply_to_scene
+			my set_frame [expr [my get current_frame]-1] $apply_to_scene
 		}
 
 		method load_json_scene { json_filename { apply_to_scene 0 } } {
@@ -386,7 +386,26 @@ namespace eval ::ctsimu {
 			if { $apply_to_scene == 1} {
 				$_sample_manager load_meshes $stageCS $_material_manager
 			}
-
+			
+			# Multisampling
+			# -----------------
+			if { [::ctsimu::aRTist_available] } {
+				if { ([$_source get spot_sigma_u] == 0) || \
+					 ([$_source get spot_sigma_v] == 0) } {
+					# For point sources, set the detector multisampling
+					# to 3x3 as default value.
+					$_detector set multisampling "3x3"
+					$_source set multisampling "point"
+				} else {
+					$_detector set multisampling "2x2"
+					$_source set multisampling "20"
+				}
+			}
+			
+			# any user-specific multisampling options?
+			$_detector set_parameter_from_key multisampling $jsonstring {simulation aRTist multisampling_detector}
+			$_source set_parameter_from_key multisampling $jsonstring {simulation aRTist multisampling_spot}
+			
 			::ctsimu::status_info "Scenario loaded."
 			my _set_json_load_status 1
 			return 1
@@ -488,7 +507,7 @@ namespace eval ::ctsimu {
 					#aRTist::ProgressQuantum $nProjections
 
 					for {set projNr [my get start_proj_nr]} {$projNr < $nProjections} {incr projNr} {
-						my set_frame $projNr 0 1
+						my set_frame $projNr 1
 
 						set pnr [expr $projNr+1]
 						set prcnt [expr round((100.0*($projNr+1.0))/$nProjections)]

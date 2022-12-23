@@ -71,7 +71,6 @@ The following list provides the source order and links to the descriptions of ea
 * **[`ctsimu_drift.tcl`](drift.md)**
 
 	Class to handle the drift of an arbitrary parameter for a given number of frames, including interpolation.
-
     
 * **[`ctsimu_matrix.tcl`](matrix.md)**
 
@@ -80,6 +79,10 @@ The following list provides the source order and links to the descriptions of ea
 * **[`ctsimu_vector.tcl`](vector.md)**
 
 	Basic vector class.
+
+* **[`ctsimu_image.tcl`](image.md)**
+
+	Image reader using aRTist's built-in loading functions.
 
 * **[`ctsimu_helpers.tcl`](helpers.md)**
 

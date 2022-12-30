@@ -490,7 +490,34 @@ namespace eval ::ctsimu {
 					if {[::ctsimu::json_exists_and_not_null $geometry [list deviation rotation $axis] ]} {
 						set rot_dev [::ctsimu::deviation new "rad"]
 						$rot_dev set_type "rotation"
-						$rot_dev set_axis "$axis"
+						
+						# Prior to 0.9, all deviations were meant to take place
+						# before the stage rotation. This means they need to be
+						# stored as scene vectors to designate a constant deviation axis.
+						set dev_axis "$axis"
+						switch $axis {
+							"u" { 
+								set dev_axis [::ctsimu::scenevector new]
+								$dev_axis set_reference "world"
+								set vec [[my u] vector_for_frame 0]
+								$dev_axis set_simple [$vec x] [$vec y] [$vec z]
+							}
+							"v" { 
+								set dev_axis [::ctsimu::scenevector new]
+								$dev_axis set_reference "world"
+								set vec [[[my w] vector_for_frame 0] cross [[my u] vector_for_frame 0]]
+								$vec to_unit_vector
+								$dev_axis set_simple [$vec x] [$vec y] [$vec z]
+							}
+							"w" { 
+								set dev_axis [::ctsimu::scenevector new]
+								$dev_axis set_reference "world"
+								set vec [[my w] vector_for_frame 0]
+								$dev_axis set_simple [$vec x] [$vec y] [$vec z]
+							}
+						} 
+						
+						$rot_dev set_axis $dev_axis
 						$rot_dev set_known_to_reconstruction $known_to_recon
 						[$rot_dev amount] set_from_json [::ctsimu::json_extract $geometry [list deviation rotation $axis]]
 						lappend _deviations $rot_dev

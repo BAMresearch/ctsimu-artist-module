@@ -4,7 +4,6 @@ package require fileutil
 package require csv
 
 variable BasePath [file dirname [info script]]
-source -encoding utf-8 [file join $BasePath ctsimu_output_metadata.tcl]
 
 namespace eval ::ctsimu {
 	set pi 3.1415926535897931
@@ -70,13 +69,12 @@ namespace eval ::ctsimu {
 
 	proc status_info {  message } {
 		# Shows a status message in the GUI of the aRTist module
-		if { [::ctsimu::aRTist_available] } {
-			if { $::ctsimu::ctsimu_module_namespace != 0} {
-				${::ctsimu::ctsimu_module_namespace}::showInfo $message
-				::ctsimu::info $message
-			} else {
-				::ctsimu::warning "aRTist module namespace not available."
-			}
+		if { $::ctsimu::ctsimu_module_namespace != 0} {
+			${::ctsimu::ctsimu_module_namespace}::showInfo $message
+			#::ctsimu::info $message
+		} else {
+			::ctsimu::info $message
+			#::ctsimu::warning "aRTist module namespace not available."
 		}
 	}
 

@@ -183,6 +183,14 @@ namespace eval ::ctsimu {
 			$_w destroy
 			set _w $w
 		}
+		
+		method set_u_w { u w } {
+			# Make a coordinate system from
+			# given u and w vector; v is calculated.
+			my set_u $u
+			my set_w $w
+			my set_v [$w cross $u]
+		}
 
 		method attach_to_stage { attached } {
 			# 0: not attached, 1: attached to stage.
@@ -525,13 +533,13 @@ namespace eval ::ctsimu {
 		# If m4x4 is set to 1, a 4x4 matrix will be returned
 		# instead of a 3x3 matrix.
 
-		set from_u [$csFrom u]
-		set from_v [$csFrom v]
-		set from_w [$csFrom w]
+		set from_u [[$csFrom u] get_unit_vector]
+		set from_v [[$csFrom v] get_unit_vector]
+		set from_w [[$csFrom w] get_unit_vector]
 
-		set to_u [$csTo u]
-		set to_v [$csTo v]
-		set to_w [$csTo w]
+		set to_u [[$csTo u] get_unit_vector]
+		set to_v [[$csTo v] get_unit_vector]
+		set to_w [[$csTo w] get_unit_vector]
 
 		# Create a 3x3 transformation matrix:
 		set T [::ctsimu::matrix new 3 3]
@@ -553,9 +561,16 @@ namespace eval ::ctsimu {
 
 		# Make a 4x4 matrix if necessary:
 		if {$m4x4 != 0} {
-			$T add_row [::ctsimu::vector new [list 0 0 0]]
-			$T add_col [::ctsimu::vector new [list 0 0 0 1]]
+			$T add_row [list 0 0 0]
+			$T add_col [list 0 0 0 1]
 		}
+		
+		$from_u destroy
+		$from_v destroy
+		$from_w destroy
+		$to_u destroy
+		$to_v destroy
+		$to_w destroy
 
 		return $T
 	}

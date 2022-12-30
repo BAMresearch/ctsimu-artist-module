@@ -139,7 +139,7 @@ namespace eval ::ctsimu {
 			return $v
 		}
 		
-		method vector_for_frame { frame nFrames { only_known_to_reconstruction 0 } } {
+		method vector_for_frame { frame { nFrames 0 } { only_known_to_reconstruction 0 } } {
 			# Create and return a ::ctsimu::vector
 			# for the given frame, respecting all drifts.
 			

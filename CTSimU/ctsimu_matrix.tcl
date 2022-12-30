@@ -5,7 +5,7 @@ source -encoding utf-8 [file join $BasePath ctsimu_vector.tcl]
 
 namespace eval ::ctsimu {
 	::oo::class create matrix {
-		variable _rows;   # row vectors that contain the data
+		variable _rows;   # lists for the elements of each row
 		variable _n_cols; # number of columns
 		variable _n_rows; # number of rows
 
@@ -15,10 +15,10 @@ namespace eval ::ctsimu {
 			set _n_rows $nRows
 
 			for { set r 0 } { $r < $_n_rows} { incr r } {
-				set row [::ctsimu::vector new]
+				set row [list]
 				for { set c 0 } { $c < $_n_cols} { incr c } {
 					# insert $_n_cols zeros into the row
-					$row add_element 0
+					lappend row 0
 				}
 
 				# append row vector to matrix:
@@ -27,10 +27,7 @@ namespace eval ::ctsimu {
 		}
 
 		destructor {
-			# Destroy stored row vectors that contain the matrix data.
-			foreach vec $_rows {
-				$vec destroy
-			}
+			
 		}
 		
 		method print { } {
@@ -44,11 +41,28 @@ namespace eval ::ctsimu {
 				}
 				for { set col 0 } { $col < $_n_cols} { incr col } {
 					append s "\t"
-					append s [[my get_row_vector $row] element $col]
+					append s [lindex $_rows $row $col]
 				}
 			}
 			append s "\]"
 			return $s
+		}
+		
+		method format_json { } {
+			set jmatrix [::rl_json::json new array]
+			foreach row $_rows {
+				set jrow [::rl_json::json new array]
+				foreach element $row {
+					::rl_json::json set jrow end+1 $element
+				}
+				::rl_json::json set jmatrix end+1 $jrow
+			}
+			
+			return $jmatrix
+		}
+		
+		method format_CERA { } {
+			return [join $_rows \n]
 		}
 
 		method n_rows { } {
@@ -73,19 +87,19 @@ namespace eval ::ctsimu {
 		
 		method element { col_index row_index } {
 			# Return the matrix element at the requested column and row.
-			return [[my get_row_vector $row_index] element $col_index]
+			return [lindex $_rows $row_index $col_index]
 		}
 		
-		method get_row_vector { row_index } {
+		method get_row { row_index } {
 			# Return the vector of the requested row index.
 			return [lindex $_rows $row_index]
 		}
 		
-		method get_col_vector { col_index } {
+		method get_col { col_index } {
 			# Return a new vector object for the requested column index.
-			set column_vector [::ctsimu::vector new]
+			set column_vector [list]
 			foreach row $_rows {
-				$column_vector add_element [$row element $col_index]
+				lappend column_vector [lindex $row $col_index]
 			}
 			
 			return $column_vector
@@ -97,7 +111,7 @@ namespace eval ::ctsimu {
 			# Set matrix element in given column and row to value.
 			if { $_n_rows > $row_index } {
 				if { $_n_cols > $col_index } {
-					[lindex $_rows $row_index] set_element $col_index $value
+					lset _rows $row_index $col_index $value
 				} else {
 					::ctsimu::fail "::ctsimu::matrix::set_element: Cannot set element at column index $col_index for a matrix that only has $_n_cols columns."
 				}
@@ -106,54 +120,61 @@ namespace eval ::ctsimu {
 			}
 		}
 
-		method set_row { index row_vector } {
-			# Set row at index to another row_vector.
+		method set_row { index row_value_list } {
+			# Set row at index to another row vector, given by the value list.
 			if {$_n_rows > $index} {
-				if {[$row_vector size] == $_n_cols} {
-					[lindex $_rows $index] destroy
-					lset _rows $index $row_vector
+				if {[llength $row_value_list] == $_n_cols} {
+					lset _rows $index $row_value_list
 				} else {
-					::ctsimu::fail "::ctsimu::matrix::set_row: Cannot set row vector with [$row_vector size] elements for a matrix that has $_n_cols columns."
+					::ctsimu::fail "::ctsimu::matrix::set_row: Cannot set row vector with [llength $row_vector] elements for a matrix that has $_n_cols columns."
 				}
 			} else {
 				::ctsimu::fail "::ctsimu::matrix::set_row: Cannot set row at index $index for a matrix that only has $_n_rows rows."
 			}
 		}
 		
-		method set_col { index col_vector } {
+		method set_col { index col_value_list } {
 			# Set column at index to another col_vector.
 			if {$_n_cols > $index} {
-				if {[$col_vector size] == $_n_rows} {
+				if {[llength $col_value_list] == $_n_rows} {
 					for {set row 0} {$row < $_n_rows} {incr row} {
-						my set_element $index $row [$col_vector element $row]
+						lset _rows $row $index [lindex $col_value_list $row]
 					}
 				} else {
-					::ctsimu::fail "::ctsimu::matrix::set_col: Cannot set column vector with [$col_vector size] elements for a matrix that has $_n_rows rows."
+					::ctsimu::fail "::ctsimu::matrix::set_col: Cannot set column vector with [llength $col_vector] elements for a matrix that has $_n_rows rows."
 				}
 			} else {
 				::ctsimu::fail "::ctsimu::matrix::set_col: Cannot set column at index $index for a matrix that only has $_n_cols columns."
 			}
 		}
 
-		method add_row { row_vector } {
-			# Add another row (must be a vector with _n_cols elements)
-			if {[$row_vector size] == $_n_cols} {
-				lappend _rows $row_vector
+		method add_row { row_value_list } {
+			# Add another row (must be a list with _n_cols elements)
+			if {[llength $row_value_list] == $_n_cols} {
+				lappend _rows $row_value_list
 				set _n_rows [expr $_n_rows + 1]
 			} else {
-				::ctsimu::fail "::ctsimu::matrix::add_row: Cannot add row vector with [$row_vector size] elements to a matrix that has $_n_cols columns."
+				::ctsimu::fail "::ctsimu::matrix::add_row: Cannot add row vector with [llength $row_value_list] elements to a matrix that has $_n_cols columns."
 			}
 		}
 
-		method add_col { col_vector } {
-			# Add another column (must be a vector with _n_rows elements)
-			if {[$col_vector size] == $_n_rows} {
+		method add_col { col_value_list } {
+			# Add another column (must be a list with _n_rows elements)
+			if {[llength $col_value_list] == $_n_rows} {
 				for { set r 0 } { $r < $_n_rows} { incr r } {
-					[lindex $_rows $r] add_element [$col_vector element $r]
+					lset _rows $r end+1 [lindex $col_value_list $r]
 				}
 				set _n_cols [expr $_n_cols + 1]
 			} else {
-				::ctsimu::fail "::ctsimu::matrix::add_col: Cannot add column vector with [$col_vector size] elements to a matrix that has $_n_rows rows."
+				::ctsimu::fail "::ctsimu::matrix::add_col: Cannot add column vector with [llength $col_value_list] elements to a matrix that has $_n_rows rows."
+			}
+		}
+		
+		method scale { factor } {
+			for {set r 0} {$r < $_n_rows} {incr r} {
+				for {set c 0} {$c < $_n_cols} {incr c} {
+					lset _rows $r $c [expr [lindex $_rows $r $c]*$factor]
+				}				
 			}
 		}
 
@@ -163,12 +184,38 @@ namespace eval ::ctsimu {
 			if {$_n_cols == $vecNElements} {
 				set result [::ctsimu::vector new]
 				foreach row $_rows {
-					$result add_element [$row dot $col_vector]
+					set s 0
+					for {set i 0} {$i < $_n_cols} {incr i} {
+						# manual computation of dot product: row_vector * col_vector
+						set s [expr $s + [lindex $row $i]*[$col_vector element $i]]
+					}
+					$result add_element $s
 				}
 				return $result
 			} else {
-				::ctsimu::fail "::ctsimu::matrix::multiply_vector: Cannot multiply matrix with $nCol columns and $nRow rows with vector of $vecNElements rows."
+				::ctsimu::fail "::ctsimu::matrix::multiply_vector: Cannot multiply matrix with $_n_cols columns and $_n_rows rows with vector of $vecNElements rows."
 			}
+		}
+		
+		method multiply { M } {
+			# Return the matrix product of this*M.
+			set result_rows [my n_rows]
+			set result_cols [$M n_cols]
+			
+			set result [::ctsimu::matrix new $result_cols $result_rows]
+			
+			for {set row 0} {$row < $result_rows} {incr row} {
+				for {set col 0} {$col < $result_cols} {incr col} {
+					set s 0
+					for {set i 0} {$i < [expr min($_n_cols, [$M n_rows])]} {incr i} {
+						set s [expr $s + [lindex $_rows $row $i]*[$M element $col $i]]
+					}
+					
+					$result set_element $col $row $s
+				}
+			}
+			
+			return $result
 		}
 	}
 
@@ -178,14 +225,14 @@ namespace eval ::ctsimu {
 		# given axis vector by the given angle (in rad).
 		set unitAxis [$axis get_unit_vector]
 
-		set cs [expr cos($angle_in_rad)]
-		set sn [expr sin($angle_in_rad)]
-
 		set nx [$unitAxis x]
 		set ny [$unitAxis y]
 		set nz [$unitAxis z]
 
 		$unitAxis destroy
+		
+		set cs [expr cos($angle_in_rad)]
+		set sn [expr sin($angle_in_rad)]
 
 		# New rotation matrix
 		set R [::ctsimu::matrix new 3 0]
@@ -194,19 +241,19 @@ namespace eval ::ctsimu {
 		set c00 [expr $nx*$nx*(1-$cs)+$cs]
 		set c01 [expr $nx*$ny*(1-$cs)-$nz*$sn]
 		set c02 [expr $nx*$nz*(1-$cs)+$ny*$sn]
-		$R add_row [::ctsimu::vector new [list $c00 $c01 $c02]]
+		$R add_row [list $c00 $c01 $c02]
 
 		# Row 1
 		set c10 [expr $ny*$nx*(1-$cs)+$nz*$sn]
 		set c11 [expr $ny*$ny*(1-$cs)+$cs]
 		set c12 [expr $ny*$nz*(1-$cs)-$nx*$sn]
-		$R add_row [::ctsimu::vector new [list $c10 $c11 $c12]]
+		$R add_row [list $c10 $c11 $c12]
 
 		# Row 2
 		set c20 [expr $nz*$nx*(1-$cs)-$ny*$sn]
 		set c21 [expr $nz*$ny*(1-$cs)+$nx*$sn]
 		set c22 [expr $nz*$nz*(1-$cs)+$cs]
-		$R add_row [::ctsimu::vector new [list $c20 $c21 $c22]]
+		$R add_row [list $c20 $c21 $c22]
 
 		return $R
 	}

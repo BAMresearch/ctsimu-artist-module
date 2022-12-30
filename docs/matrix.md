@@ -33,8 +33,8 @@ This module adds the following function to the `::ctsimu` namespace:
 ### Getter Functions
 
 * `element { col_index row_index }` — Returns the matrix element at the requested column and row.
-* `get_row_vector { row_index }` — Returns the vector of the requested `row` index. This is *not* a copy of the row vector. Manipulating its elements will manipulate the matrix. Use the vector method `get_copy` to get a new, independent copy of the row vector.
-* `get_col_vector { col_index }` — Returns a vector for the requested column index. This is a new vector object and not a copy. Manipulating its elements will *not* manipulate the matrix. This vector should be destroyed independently when not needed anymore.
+* `get_row { row_index }` — Returns the vector of the requested `row` index. This is *not* a copy of the row vector. Manipulating its elements will manipulate the matrix. Use the vector method `get_copy` to get a new, independent copy of the row vector.
+* `get_col { col_index }` — Returns a vector for the requested column index. This is a new vector object and not a copy. Manipulating its elements will *not* manipulate the matrix. This vector should be destroyed independently when not needed anymore.
 
 ### Setter Functions
 

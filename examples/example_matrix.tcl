@@ -16,16 +16,15 @@ puts [$M print]
 
 # Print row vectors:
 for {set row 0} {$row < [$M n_rows]} {incr row} {
-	puts "Row vector $row: [[$M get_row_vector $row] print]"
+	puts "Row vector $row: [$M get_row $row]"
 }
 
 # Print column vectors:
 for {set col 0} {$col < [$M n_cols]} {incr col} {
 	# Each column vector is new vector object
 	# and should be destroyed when not used anymore.
-	set col_vector [$M get_col_vector $col]
-	puts "Col vector $col: [$col_vector print]"
-	$col_vector destroy
+	set col_vector [$M get_col $col]
+	puts "Col vector $col: $col_vector"
 }
 
 # All elements in a list:
@@ -40,9 +39,9 @@ for {set i 0} {$i < [$M size]} {incr i} {
 $M set_element 2 0 3.14159
 
 # Manipulate a row in the matrix:
-$M set_row 1 [::ctsimu::vector new [list 50 60 70 80]]
+$M set_row 1 [list 50 60 70 80]
 
 # Manipulate a column in the matrix:
-$M set_col 3 [::ctsimu::vector new [list 40 800 120]]
+$M set_col 3 [list 40 800 120]
 
 puts [$M print]

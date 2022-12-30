@@ -10,7 +10,7 @@ proc Info {} {
 	return [dict create \
 		Name        CTSimU \
 		Description "CTSimU Scenario Loader" \
-		Version     "0.8.16" \
+		Version     "0.8.17" \
 	]
 }
 
@@ -4763,6 +4763,7 @@ MidpointZ = 0 # $midpointZ
 VoxelSizeX = $voxelsizeU
 VoxelSizeY = $voxelsizeU
 VoxelSizeZ = $voxelsizeV
+Datatype = $ceradataTypeOutput
 OutputDatatype = $ceradataTypeOutput
 
 [CustomKeys]
@@ -4969,6 +4970,15 @@ GlobalI0Value = $globalI0
 		set geomjson {
 			{
 				"version": {"major":1, "minor":0},
+				"openCTJSON":     {
+					"versionMajor": 1,
+					"versionMinor": 0,
+					"revisionNumber": 0,
+					"variant": "FreeTrajectoryCBCTScan"
+				},
+				"units": {
+					"length": "Millimeter"
+				},
 				"volumeName": "",
 				"projections": {
 					"numProjections": 0,

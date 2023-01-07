@@ -22,8 +22,7 @@ source [file join $BasePath ctsimu_main.tcl]
 ::ctsimu::set_module_namespace $ns
 ::ctsimu::set_module_directory $BasePath
 
-# The currently loaded CTSimU scenario:
-variable ctsimu_scenario
+variable ctsimu_scenario; # the currently loaded CTSimU scenario
 variable ctsimu_batchmanager
 set ctsimu_scenario [::ctsimu::scenario new]
 set ctsimu_batchmanager [::ctsimu::batchmanager new]

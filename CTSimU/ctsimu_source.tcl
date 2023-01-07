@@ -267,18 +267,19 @@ namespace eval ::ctsimu {
 					
 					# Current:
 					set ::Xsource(Exposure) [my get current]
+					
+					# Voltage:
+					set ::Xsource(Voltage) [my get voltage]
 
 					# Generate the spectrum if source parameters have changed:
 					if { [my get spectrum_monochromatic] == 1 } {
 						# Monochromatic spectrum
 						set ::Xsource(Tube) Mono
+						my compute_spectrum
 					} else {
 						# Polychromatic spectrum.
 						set ::Xsource(Tube) General
 						set ::Xsource(Resolution) [my get spectrum_resolution]
-						
-						# Voltage:
-						set ::Xsource(Voltage) [my get voltage]
 
 						# Target type:
 						if { [my get target_type] == "transmission" } {

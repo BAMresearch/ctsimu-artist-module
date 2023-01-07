@@ -25,6 +25,7 @@ namespace eval ::ctsimu {
 		variable _vector_u
 		variable _vector_w
 		variable _deviations
+		variable _legacy_deviations; # for deviations prior to file format 1.0
 		variable _name
 		variable _id; # aRTist's id for the object
 		variable _properties
@@ -52,6 +53,7 @@ namespace eval ::ctsimu {
 			# Translational and rotational deviations
 			# (themselves including drifts):
 			set _deviations [list]
+			set _legacy_deviations [list]
 
 			# A name for this part:
 			# The object's name will be passed on to the coordinate
@@ -79,6 +81,11 @@ namespace eval ::ctsimu {
 			}
 			set _deviations [list]
 			
+			foreach dev $_legacy_deviations {
+				$dev destroy
+			}
+			set _legacy_deviations [list]
+			
 			# Delete all existing properties:
 			foreach {key property} $_properties {
 				$property destroy
@@ -99,6 +106,11 @@ namespace eval ::ctsimu {
 				$dev destroy
 			}
 			set _deviations [list]
+			
+			foreach dev $_legacy_deviations {
+				$dev destroy
+			}
+			set _legacy_deviations [list]
 			
 			# Reset all existing properties:
 			foreach {key property} $_properties {
@@ -473,7 +485,7 @@ namespace eval ::ctsimu {
 						$pos_dev set_axis "$axis"
 						$pos_dev set_known_to_reconstruction $known_to_recon
 						[$pos_dev amount] set_from_json [::ctsimu::json_extract $geometry [list deviation position $axis]]
-						lappend _deviations $pos_dev
+						lappend _deviations $pos_dev; # _legacy_deviations not necessary here.
 					}
 				}
 
@@ -483,10 +495,9 @@ namespace eval ::ctsimu {
 					# File formats prior to version 0.9 only supported
 					# rotations around u, v and w, in the order wv'u'',
 					# and ts'r'' for samples. We need to take care
-					# to keep this order here. We also add support
-					# for x, y, z (zy'x''), just because we can.
-					# The list ::ctsimu::valid_axes is already in the
-					# correct order for legacy rotations.
+					# to keep this order here; it is ensured by the order
+					# of elements in the `valid_axes` list. This means we
+					# also add support for x, y, z (zy'x''), just because we can.
 					if {[::ctsimu::json_exists_and_not_null $geometry [list deviation rotation $axis] ]} {
 						set rot_dev [::ctsimu::deviation new "rad"]
 						$rot_dev set_type "rotation"
@@ -494,33 +505,10 @@ namespace eval ::ctsimu {
 						# Prior to 0.9, all deviations were meant to take place
 						# before the stage rotation. This means they need to be
 						# stored as scene vectors to designate a constant deviation axis.
-						set dev_axis "$axis"
-						switch $axis {
-							"u" { 
-								set dev_axis [::ctsimu::scenevector new]
-								$dev_axis set_reference "world"
-								set vec [[my u] vector_for_frame 0]
-								$dev_axis set_simple [$vec x] [$vec y] [$vec z]
-							}
-							"v" { 
-								set dev_axis [::ctsimu::scenevector new]
-								$dev_axis set_reference "world"
-								set vec [[[my w] vector_for_frame 0] cross [[my u] vector_for_frame 0]]
-								$vec to_unit_vector
-								$dev_axis set_simple [$vec x] [$vec y] [$vec z]
-							}
-							"w" { 
-								set dev_axis [::ctsimu::scenevector new]
-								$dev_axis set_reference "world"
-								set vec [[my w] vector_for_frame 0]
-								$dev_axis set_simple [$vec x] [$vec y] [$vec z]
-							}
-						} 
-						
-						$rot_dev set_axis $dev_axis
+						$rot_dev set_axis "$axis"
 						$rot_dev set_known_to_reconstruction $known_to_recon
 						[$rot_dev amount] set_from_json [::ctsimu::json_extract $geometry [list deviation rotation $axis]]
-						lappend _deviations $rot_dev
+						lappend _legacy_deviations $rot_dev
 					}
 				}
 			}
@@ -546,7 +534,14 @@ namespace eval ::ctsimu {
 			
 			$cs make_from_vectors $center $u $w [my is_attached_to_stage]
 			$cs make_unit_coordinate_system
-
+			
+			# Legacy rotational deviations (prior to file format 1.0)
+			# all took place before any stage rotation:
+			# ----------------------------------------------------------
+			foreach legacy_deviation $_legacy_deviations {
+				$cs deviate $legacy_deviation $stageCS $frame $nFrames $only_known_to_reconstruction
+			}
+			
 			# Potential stage rotation:
 			# ------------------------------------
 			# Potential rotation around the w axis (in rad).

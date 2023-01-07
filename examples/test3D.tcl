@@ -1,7 +1,7 @@
 source [file join ../CTSimU/ctsimu_main.tcl]
 
 set S [ctsimu::scenario new]
-$S load_json_scene "Test3D.json"
+$S load_json_scene "Test3D_all_move_small_angles.json"
 $S set_frame 0 1
 $S start_scan
 

@@ -41,7 +41,7 @@ namespace eval ::ctsimu {
 		}
 
 		method kick_off { global_scenario } {
-			# This function is meant to execute only once the
+			# This function is meant to execute only once, when the
 			# batch manager has started. It checks if a CSV list
 			# has to be imported from the settings and if 
 			# the batch manager was waiting for an aRTist restart,

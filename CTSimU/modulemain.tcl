@@ -389,12 +389,13 @@ proc InitGUI { parent } {
 
 	set CTScan  [FoldFrame $model.frmCTScan -text "Simulation"     -padding $pad]
 	dataform $CTScan {
-		{Output Folder}           outputFolder    folder   {}
-		{Projection Base Name}    outputBaseName  string   {}
-		{Start at Projection Nr.} startProjNr     integer  {}
-		{File Format}             fileFormat      choice   { "TIFF" "tiff" "RAW" "raw" }
-		{Data Type}               dataType        choice   { "uint16" "uint16" "float32" "float32" }
-		{ }                       scanBtn         buttons  { "Run scenario" startScan 12 "Stop" stopScan 7 }
+		{Output Folder}           outputFolder        folder   {}
+		{Projection Base Name}    outputBaseName      string   {}
+		{Start at Projection Nr.} startProjNr         integer  {}
+		{Scatter image interval}  scatterImgInterval  integer  {}
+		{File Format}             fileFormat          choice   { "TIFF" "tiff" "RAW" "raw" }
+		{Data Type}               dataType            choice   { "uint16" "uint16" "float32" "float32" }
+		{ }                       scanBtn             buttons  { "Run scenario" startScan 12 "Stop" stopScan 7 }
 	}
 
 	set buttons [ttk::frame $general.frmButtons]
@@ -567,6 +568,8 @@ proc fillCurrentParameters {} {
 	set GUISettings(dataType)             [$ctsimu_scenario get output_datatype]
 	set GUISettings(includeFinalAngle)    [$ctsimu_scenario get include_final_angle]
 	set GUISettings(startProjNr)          [$ctsimu_scenario get start_proj_nr]
+	
+	set GUISettings(scatterImgInterval)   [$ctsimu_scenario get scattering_image_interval]
 
 	# General settings
 	set GUISettings(showStageInScene)     [$ctsimu_scenario get show_stage]
@@ -638,6 +641,7 @@ proc applyCurrentParameters {} {
 	$ctsimu_scenario set current_frame       $GUISettings(projNr)
 	$ctsimu_scenario set include_final_angle $GUISettings(includeFinalAngle)
 	$ctsimu_scenario set start_proj_nr       $GUISettings(startProjNr)
+	$ctsimu_scenario set scattering_image_interval  $GUISettings(scatterImgInterval)
 	
 	applyCurrentSettings
 }

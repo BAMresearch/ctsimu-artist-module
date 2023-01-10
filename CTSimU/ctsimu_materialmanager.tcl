@@ -63,7 +63,11 @@ namespace eval ::ctsimu {
 		}
 
 		method aRTist_id { material_id } {
-			return [[my get $material_id] aRTist_id]
+			if {$material_id != "null" } {
+				return [[my get $material_id] aRTist_id]
+			} else {
+				return "void"
+			}
 		}
 
 		method add_material { m } {

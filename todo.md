@@ -1,21 +1,10 @@
-+ Weiter bei:
-	- External spot profiles
-	- Scattering
-
 + Implement detector properties -> aRTist
+	- Unsharpness mode, mtf10frequency, MTF file, long range unsharpness
 	- efficiency (replaces sensitivity?)
 	- SNR curve
-	- Unsharpness mode, mtf10frequency, MTF file
 	- Should a change in the beam current cause a detector-re-generation? (imin/imax mode) No -> be more explicit in JSON scenario documentation.
-+ Implement source properties -> aRTist
 
 + aRTist-specific JSON parameters
-+ Flat Field Correction, Dark Field Correction
-+ Primary Energies Mode
-+ FF correction script
-+ Recon Configs & Projection Matrix Generation
-
-+ Scattering: only simulate McRay scatter image every n degrees.
 
 # Future
 + Materials manager / JSON: chemical composition: number fractions vs. mass fractions

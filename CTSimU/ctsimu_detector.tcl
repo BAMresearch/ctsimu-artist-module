@@ -370,10 +370,10 @@ namespace eval ::ctsimu {
 
 				my set bit_depth 32
 
-				my set type "real"
+				#my set type "ideal"
 
 				if { [ my get primary_intensity_mode] == 1 } {
-					my set intensity_rescale_factor [expr [my pixel_area_m2] * [my get integration_time] ]
+					set intensity_rescale_factor [expr [my pixel_area_m2] * [my get integration_time] ]
 					if { $intensity_rescale_factor != 0 } {
 						my set factor [expr 1.0 / $intensity_rescale_factor]
 					} else {
@@ -533,7 +533,7 @@ namespace eval ::ctsimu {
 			set spectrum [my ParseSpectrum $spectrumtext 2]
 			set sensitivitytext ""
 
-			if {([my get type] == "real") && ([my get primary_energy_mode] == 0)} {
+			if {[my get type] == "real"} {
 				# Scintillator:
 				set scintillatorMaterialID [$_material_manager aRTist_id [my get scintillator_material_id]]
 				set density     [Materials::get $scintillatorMaterialID density]
@@ -586,7 +586,7 @@ namespace eval ::ctsimu {
 					if {([my get scintillator_thickness] > 0) && ($scintillatorMaterialID != "void")} {
 						set data [xrEngine GenerateDetectorSensitivity $scintillatorMaterialID $options [join $grid \n]]
 					} else {
-						::ctsimu::fail "A scintillator material of non-zero thickness must be defined for a \'real\' detector."
+						::ctsimu::fail "For a \'real\' detector, a scintillator material of non-zero thickness must be defined."
 					}
 
 					foreach line [split $data \n] {
@@ -727,8 +727,6 @@ namespace eval ::ctsimu {
 					
 					if { [my get gray_value_mode] == "linear"} {
 						# Factor / offset method for gray value reproduction.
-						::ctsimu::info "Factor: $factor, Offset: $offset, maxInput: $maxinput"
-
 						# The factor must be converted to describe
 						# an energy density characteristics in aRTist:
 						set factor [expr double([my get factor]) * double($physical_pixel_area)]

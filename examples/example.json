@@ -439,6 +439,7 @@
 			"multisampling_detector": {"value": null, "drift": null},
 			"multisampling_spot": {"value": "30", "drift": null},
 			"scattering_mcray_photons": {"value": "5e+007", "drift": null},
+			"scattering_image_interval": {"value": 10, "drift": null},
 			"long_range_unsharpness":
 			{
 				"extension": {"value": 2, "unit":  "mm", "drift": null},

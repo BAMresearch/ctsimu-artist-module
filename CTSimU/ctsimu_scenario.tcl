@@ -90,6 +90,13 @@ namespace eval ::ctsimu {
 			my set include_final_angle    0
 			my set start_proj_nr          0
 			my set scan_direction     "CCW"
+			
+			# Scattering using McRay
+			# interval: re-calculate scatter image every n images:
+			my set scattering_on                  0
+			my set scattering_image_interval      1
+			my set scattering_current_image_step -1
+			my set scattering_mcray_photons      2e7
 
 			# Number of dark and flat field images:
 			my set n_darks                0
@@ -304,7 +311,6 @@ namespace eval ::ctsimu {
 
 			# Dark and flat field correction settings
 			# ------------------------------------------
-
 			my set n_darks [::ctsimu::get_value $jsonstring {acquisition dark_field number} 0]
 			# aRTist can currently only take ideal dark field images.
 			# Averaging=1 and ideal mode are therefore currently forced.
@@ -416,6 +422,12 @@ namespace eval ::ctsimu {
 			$_detector set_parameter_from_key multisampling $jsonstring {simulation aRTist multisampling_detector}
 			$_source set_parameter_from_key multisampling $jsonstring {simulation aRTist multisampling_spot}
 			
+			# Scattering
+			# -----------------
+			my set scattering_on [::ctsimu::get_value_in_unit "bool" $jsonstring {acquisition scattering} 0]
+			my set scattering_image_interval [::ctsimu::get_value $jsonstring {simulation aRTist scattering_image_interval value} [my get scattering_image_interval]]
+			my set scattering_mcray_photons [::ctsimu::get_value $jsonstring {simulation aRTist scattering_mcray_photons value} [my get scattering_mcray_photons]]
+			
 			::ctsimu::status_info "Scenario loaded."
 			my _set_json_load_status 1
 			return 1
@@ -448,6 +460,33 @@ namespace eval ::ctsimu {
 
 					$_source set_in_aRTist
 					$_detector set_in_aRTist
+					
+					# Scattering:
+					if { ([my get scattering_on] == 1) && ([my get scattering_image_interval] > 0) } {
+						set ::Xscattering(AutoBase) min
+						set ::Xscattering(nPhotons) [my get scattering_mcray_photons]
+						
+						if { [my get scattering_image_interval] > 1 } {
+							set ::Xscattering(McRayInitFile) 1
+							
+							# Do we have to calculate a new scatter image?
+							# This is the case if the scattering image step has changed.
+							set this_scattering_image_step [expr floor($frame/[my get scattering_image_interval])]
+							if { $this_scattering_image_step != [my get scattering_current_image_step] } {
+								my set scattering_current_image_step $this_scattering_image_step
+								set ::Xscattering(Mode) McRay
+							} else {
+								# External file loading is set by aRTist automatically.
+							}
+						} else {
+							# A scatter image is calculated for each frame.
+							set ::Xscattering(McRayInitFile) 0
+							set ::Xscattering(Mode) McRay
+						}						
+					} else {
+						set ::Xscattering(Mode) off
+						set ::Xscattering(McRayInitFile) 0
+					}
 
 					${::ctsimu::ctsimu_module_namespace}::setFrameNumber $frame
 					Engine::RenderPreview
@@ -506,31 +545,33 @@ namespace eval ::ctsimu {
 				# Create flat field and dark field images.
 				my generate_flats_and_darks
 			}
+			
+			my set scattering_current_image_step -1
 
-		#	if { [my is_running] } {
-		#		# Run actual scan.
-		#		set nProjections [my get n_projections]
-		#		set projCtrFmt [my get projection_counter_format]
-		#
-		#		if {$nProjections > 0} {
-		#			#aRTist::InitProgress
-		#			#aRTist::ProgressQuantum $nProjections
-		#
-		#			for {set projNr [my get start_proj_nr]} {$projNr < $nProjections} {incr projNr} {
-		#				my set_frame $projNr 1
+			if { [my is_running] } {
+				# Run actual scan.
+				set nProjections [my get n_projections]
+				set projCtrFmt [my get projection_counter_format]
+		
+				if {$nProjections > 0} {
+					#aRTist::InitProgress
+					#aRTist::ProgressQuantum $nProjections
+		
+					for {set projNr [my get start_proj_nr]} {$projNr < $nProjections} {incr projNr} {
+						my set_frame $projNr 1
 
-		#				set pnr [expr $projNr+1]
-		#				set prcnt [expr round((100.0*($projNr+1.0))/$nProjections)]
-		#				::ctsimu::status_info "Taking projection $pnr/$nProjections... ($prcnt%)"
-		#				set fileNameSuffix [format $projCtrFmt $projNr]
-		#				my save_projection_image $projNr $fileNameSuffix
+						set pnr [expr $projNr+1]
+						set prcnt [expr round((100.0*($projNr+1.0))/$nProjections)]
+						::ctsimu::status_info "Taking projection $pnr/$nProjections... ($prcnt%)"
+						set fileNameSuffix [format $projCtrFmt $projNr]
+						my save_projection_image $projNr $fileNameSuffix
 
-		#				if {[my is_running] == 0} {break}
-		#			}
+						if {[my is_running] == 0} {break}
+					}
 
-		#			#aRTist::ProgressFinished
-		#		}
-		#	}
+					#aRTist::ProgressFinished
+				}
+			}
 
 			# Check if we are still successfully running.
 			# If so, print a "done" message after stopping the simulation.
@@ -1010,159 +1051,7 @@ namespace eval ::ctsimu {
 			my stop_scan 1
 			return 1			
 		}
-		
-		method projection_matrix_quick { mode } {
-			# A quicker method to compute projection matrices.
-			# Faster than the general case for arbitrary volumeCS/imageCS.
-			
-			# mode: "clFDK" or "CERA" (they have different detector coordinate systems)
-
-			# See dissertation: Matthias Ebert: "Non-ideal projection data in X-ray computed tomography"
-			# and:
-			# Hartley, Zisserman: "Multiple view geometry in computer vision" (2004), Chapter 6
-
-			# Scale of the detector CS in units of the world CS (e.g. mm -> pixel)
-			set scale_u  1.0
-			set scale_v  1.0
-			set scale_w -1.0
-			
-			set psu [$_detector get pitch_u]
-			set psv [$_detector get pitch_v]
-			set nu [$_detector get columns]
-			set nv [$_detector get rows]
-			
-			set detector [[$_detector recon_coordinate_system] get_copy]
-
-			if { $mode=="CERA" } {
-				# CERA's detector CS has its origin in the lower left corner instead of the centre.
-				# Let's move there:
-				set halfWidth  [expr $psu*$nu / 2.0]
-				set halfHeight [expr $psv*$nv / 2.0]
 				
-				[$detector u] scale $halfWidth
-				[$detector v] scale $halfHeight
-
-				[$detector center] subtract [$detector u]
-				[$detector center] add [$detector v]
-				
-				[$detector u] to_unit_vector
-				[$detector v] to_unit_vector
-
-				# The v axis points up instead of down:
-				#set csDetector [rotateCoordinateSystem $csDetector $uD 3.141592653589793]
-				[$detector v] invert
-				[$detector w] invert
-
-				# The CERA detector also has a pixel CS instead of a mm CS:
-				set scale_u [expr 1.0 / $psu]
-				set scale_v [expr 1.0 / $psv]
-				set scale_w 1.0
-			}
-
-			# Save a source CS as seen from the detector CS. This is convenient to
-			# later get the SDD, ufoc and vfoc:
-			set sourceFromDetector [[$_source recon_coordinate_system] get_copy]
-			$sourceFromDetector change_reference_frame $::ctsimu::world $detector
-			
-			# Make the stage CS the new world CS:
-			set source [[$_source recon_coordinate_system] get_copy]
-			$source   change_reference_frame $::ctsimu::world [$_stage recon_coordinate_system]
-			$detector change_reference_frame $::ctsimu::world [$_stage recon_coordinate_system]
-			set stage $::ctsimu::world
-	
-			# Translation vector from stage (O) to source (S):
-			set xfoc [[$source center] x]
-			set yfoc [[$source center] y]
-			set zfoc [[$source center] z]
-
-			# Focus point on detector: principal, perpendicular ray.
-			# In the detector coordinate system, ufoc and vfoc are the u and v coordinates
-			# of the source center; SDD (perpendicular to detector plane) is source w coordinate.
-			set ufoc [[$sourceFromDetector center] x]
-			set vfoc [[$sourceFromDetector center] y]
-			set SDD [expr abs([[$sourceFromDetector center] z])]
-			
-			if { $mode == "CERA" } {
-				# mm -> px
-				set ufoc [expr $ufoc*$scale_u - 0.5]
-				set vfoc [expr $vfoc*$scale_v - 0.5]
-			}
-			
-			# Mirror matrix:
-			set M [::ctsimu::matrix new 4 0]
-			$M add_row [list 1 0  0 0]
-			$M add_row [list 0 1  0 0]
-			$M add_row [list 0 0 -1 0]
-			$M add_row [list 0 0  0 1]
-			puts "M:"
-			puts [$M print]
-			
-			# Move origin to source (the origin of the camera CS)
-			set F [::ctsimu::matrix new 4 0]
-			$F add_row [list 1 0 0 $xfoc]
-			$F add_row [list 0 1 0 $yfoc]
-			$F add_row [list 0 0 1 $zfoc]
-			puts "F:"
-			puts [$F print]
-			
-			# Rotations:
-			set R [::ctsimu::basis_transform_matrix $stage $detector]
-			puts "R:"
-			puts [$R print]
-			
-			# Projection onto detector and scaling (world units -> volume units):
-			set S [::ctsimu::matrix new 3 0]
-			$S add_row [list [expr -$SDD*$scale_u] 0 0]
-			$S add_row [list 0 [expr -$SDD*$scale_v] 0]
-			$S add_row [list 0 0 $scale_w]
-			puts "S:"
-			puts [$S print]
-			
-			# Shift in detector CS: (ufoc and vfoc must be in scaled units)
-			set T [::ctsimu::matrix new 3 0]
-			$T add_row [list 1 0 $ufoc]
-			$T add_row [list 0 1 $vfoc]
-			$T add_row [list 0 0 1]
-			puts "T:"
-			puts [$T print]
-			puts "-----------"
-			
-			# Multiply matrices into projection matrix P:
-			set FM   [$F multiply $M]
-			set RFM  [$R multiply $FM]
-			set SRFM [$S multiply $RFM]
-			set P    [$T multiply $SRFM]
-						
-			$M destroy
-			$F destroy
-			$R destroy
-			$S destroy
-			$T destroy
-			$FM destroy
-			$RFM destroy
-			$SRFM destroy
-			$sourceFromDetector destroy
-			$source destroy
-			$detector destroy
-			
-			puts "P prenorm:"
-			puts [$P print]
-			puts "-----------"
-			
-			# Renormalize:
-			set lower_right [$P element 3 2]
-			if {$lower_right != 0} {
-				$P scale [expr 1.0/$lower_right]
-				$P set_element 3 2 1.0; # avoids rounding issues
-			}
-			
-			puts "P:"
-			puts [$P print]
-			puts "-----------"
-			
-			return $P
-		}
-		
 		method projection_matrix { { volumeCS 0 } { imageCS 0 } { mode 0 } } {
 			# Calculate a projection matrix for the current geometry.
 			#
@@ -1186,12 +1075,6 @@ namespace eval ::ctsimu {
 			#     Pre-defined modes. Either "openCT" or "CERA" are supported.
 			#     They override the `volumeCS` and `imageCS`, which can be set
 			#     to `0` when using one of the pre-defined modes.
-			# 
-			# mirror : boolean int (0 or 1)
-			#     Whether or not a mirror operation should be applied to the
-			#     reconstruction volume. For many 3D processing softwares,
-			#     this parameter should be set to `1` to avoid having to
-			#     mirror the volume after loading it into the software.
 			# 
 			# Returns
 			# -------
@@ -1262,8 +1145,7 @@ namespace eval ::ctsimu {
 
 					# openCT's image CS is in mm units. We assume that all
 					# other coordinate systems are in mm as well here (at least
-					# when imported from JSON file). No scaling of the basis vectors is necessary,
-					# but we need to invert the image w axis.
+					# when imported from JSON file). No scaling of the basis vectors is necessary.
 					# [$image u] scale 1.0
 					# [$image v] scale 1.0
 					# [$image w] scale 1.0
@@ -1274,14 +1156,12 @@ namespace eval ::ctsimu {
 					# of the lower left pixel of the projection image.
 					[$image center] set_x [expr -([$_detector physical_width] - [$_detector get pitch_u]) / 2.0]
 					[$image center] set_y [expr  ([$_detector physical_height] - [$_detector get pitch_v]) / 2.0]
-					# image.center.z = 0
 
 					# CERA's unit of the image CS is in px, so we need to
 					# scale the image CS basis vectors by the pixel size.
 					# Also, v points up instead of down.
 					[$image u] scale [$_detector get pitch_u]
 					[$image v] scale [expr -[$_detector get pitch_v]]
-					#[$image w] scale 1.0
 					
 					[$volume w] invert; # mirror volume
 				}
@@ -1295,13 +1175,6 @@ namespace eval ::ctsimu {
 			}
 			
 			set source [ [$_source recon_coordinate_system] get_copy]
-			
-			#puts "Original Source:"
-			#puts [$source print]
-			#puts "Original Image:"
-			#puts [$image print]
-			#puts "Original Volume:"
-			#puts [$volume print]
 			
 			# The scale factors are derived from the lengths of the basis
 			# vectors of the volume CS.
@@ -1328,16 +1201,7 @@ namespace eval ::ctsimu {
 			$source change_reference_frame $::ctsimu::world $volume
 			$image  change_reference_frame $::ctsimu::world $volume
 			$volume change_reference_frame $::ctsimu::world $volume
-			
-			#puts "Source:"
-			#puts [$source print]
-			#puts "Image:"
-			#puts [$image print]
-			#puts "Volume:"
-			#puts [$volume print]
-			#puts "Source from Image:"
-			#puts [$source_from_image print]
-			
+					
 			# Translation vector from volume to source:
 			set xfoc [[$source center] x]
 			set yfoc [[$source center] y]
@@ -1349,18 +1213,6 @@ namespace eval ::ctsimu {
 			set ufoc [expr [ [$source_from_image center] x] / $scale_image_u]
 			set vfoc [expr [ [$source_from_image center] y] / $scale_image_v]
 			set SDD  [expr abs([ [$source_from_image center] z])]
-			
-			# Mirror matrix:
-			#set M [::ctsimu::matrix new 4 0]
-			#$M add_row [list 1 0 0 0]
-			#$M add_row [list 0 1 0 0]
-			#$M add_row [list 0 0 1 0]
-			#$M add_row [list 0 0 0 1]
-			#if { $mirror == 1 } {
-			#	$M set_element 2 2 -1; # mirror z coordinate: third col, third row
-			#}
-			#puts "M:"
-			#puts [$M print]
 			
 			# Scale matrix: volume units -> world units
 			set A [::ctsimu::matrix new 4 0]

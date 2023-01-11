@@ -118,7 +118,7 @@
 			"v": {"value": 0.8, "unit": "mm", "uncertainty": 0, "uncertainty_unit": "mm"}
 		},
 		"bit_depth":  {"value": 16},
-		"integration_time": {"value": 1, "unit": "s", "uncertainty": 0.0, "uncertainty_unit": "s"},
+		"integration_time": {"value": 3, "unit": "s", "uncertainty": 0.0, "uncertainty_unit": "s"},
 		"dead_time":  null,
 		"image_lag":  null,
 		"grey_value":
@@ -145,11 +145,10 @@
 			"value": 1,
 			"scale_signal_and_noise": false
 		},
-		"sharpness":
+		"unsharpness":
 		{
-			"basic_spatial_resolution": null,
-			"mtf10_frequency": null,
-			"mtf": null
+			"basic_spatial_resolution": {"value": 1, "unit": "mm", "drift": [{"value": [-0.5, 10], "unit": "mm"}]},
+			"mtf": {"value": "Felix_edge_080kV_0250uA_gain4_2000ms_mtf.txt", "drift": [{"value": ["Felix edge_080kV_0250uA_gain4_2000ms_mtf.txt", "Florian edge_180kV-180uA_mtf.txt"]}]}
 		},		
 		"bad_pixel_map":
 		{
@@ -272,14 +271,7 @@
 			"ideal": true
 		},
 		"pixel_binning": {"u": 1, "v": 1},
-		"scattering": false,
-		"drift":
-		{
-			"detector": null,
-			"source":   null,
-			"stage":    null,
-			"samples":  null
-		}
+		"scattering": false
 	},
 
 	"materials":
@@ -320,5 +312,20 @@
 			"density": {"value": 4.51, "unit": "g/cm^3", "uncertainty": 0, "uncertainty_unit": "g/cm^3"},
 			"composition": "CsI"
 		}
-	]
+	],
+	
+	"simulation":
+	{
+		"aRTist":
+		{
+			"scattering_mcray_photons": {"value": "5e+007", "drift": null},
+			"scattering_image_interval": {"value": 30, "drift": null},
+			"_long_range_unsharpness":
+			{
+				"extension": {"value": 2, "unit":  "mm", "drift": null},
+				"ratio":     {"value": 60, "unit": "%", "drift": null}
+			},
+			"primary_energies": false
+		}
+	}
 }

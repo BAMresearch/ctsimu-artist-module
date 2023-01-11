@@ -26,6 +26,8 @@ namespace eval ::ctsimu {
 
 		constructor { native_unit } {
 			my reset
+			set _interpolation 1
+			
 			my set_native_unit $native_unit
 		}
 
@@ -34,7 +36,6 @@ namespace eval ::ctsimu {
 			# Clears the trajectory list as well.
 			# Used by the constructor as initialization function.
 			set _known_to_reconstruction 1
-			set _interpolation           1
 			set _trajectory              [list ]
 		}
 
@@ -177,7 +178,7 @@ namespace eval ::ctsimu {
 							return [ lindex $_trajectory $leftIndex ]
 						}
 
-						if { $_interpolation } {
+						if { $_interpolation == 1 } {
 							# Linear interpolation...
 							set rightIndex [expr int($leftIndex+1)]
 
@@ -193,6 +194,8 @@ namespace eval ::ctsimu {
 
 							# Weight for the left bin is 1-rightWeight.
 							set leftWeight [expr 1.0 - $rightWeight]
+							
+							# ::ctsimu::info "Drift interpolation between [ lindex $_trajectory $leftIndex ] and [lindex $_trajectory $rightIndex]"
 
 							# Linear interpolation between left and right trajectory point:
 							return [expr {$leftWeight*[lindex $_trajectory $leftIndex] + $rightWeight*[lindex $_trajectory $rightIndex]} ]

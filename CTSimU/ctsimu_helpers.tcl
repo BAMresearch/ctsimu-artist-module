@@ -297,7 +297,7 @@ namespace eval ::ctsimu {
 		# Clean up
 		close $file
 
-		# $lines will be an array containing each line of test.txt
+		# $lines will be an array containing each line of the file
 		set lines [split $input "\n"]
 
 		# Loop through each line
@@ -578,6 +578,15 @@ namespace eval ::ctsimu {
 		if { $native_unit == "" } {
 			return $value
 		} elseif { $native_unit == "string" } {
+			# Check if $value is still in quotation marks.
+			# If so, remove them.
+			if { [string index $value 0] == "\"" } {
+				set value [string range $value 1 end]
+				
+				if { [string index $value end] == "\"" } {
+					set value [string range $value 0 end-1]
+				}
+			}			
 			return $value; # this is a string, e.g. spectrum file
 		} else {
 			if { $native_unit == "mm" } {

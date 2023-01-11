@@ -2,6 +2,7 @@ package require TclOO
 package require fileutil
 package require md5
 package require rl_json
+package require math::interpolate
 
 variable BasePath [file dirname [info script]]
 source -encoding utf-8 [file join $BasePath ctsimu_sample.tcl]
@@ -101,12 +102,11 @@ namespace eval ::ctsimu {
 			# Unsharpness:
 			my set unsharpness_mode "off" "string"
 				# Valid unsharpness modes:
-				# "off", "basic_spatial_resolution", "mtf10freq", "mtffile"
-			my set basic_spatial_resolution 0.1 "mm"
-			my set mtf10_freq       10.0 "lp/mm"
-			my set mtf_file         "" "string"
-			my set long_range_unsharpness 0 "mm"
-			my set long_range_ratio 0
+				# "off", "basic_spatial_resolution", "mtffile"
+			my set basic_spatial_resolution  0   "mm"
+			my set mtf_file                 ""   "string"
+			my set long_range_unsharpness    0   "mm"
+			my set long_range_ratio          0
 			
 			# Bad pixel map
 			my set bad_pixel_map      "" "string"
@@ -114,7 +114,7 @@ namespace eval ::ctsimu {
 			
 			# Scintillator
 			my set scintillator_material_id "" "string"
-			my set scintillator_thickness   0.1 "mm"
+			my set scintillator_thickness    0  "mm"
 		}
 
 		method physical_width { } {
@@ -160,7 +160,6 @@ namespace eval ::ctsimu {
 			append us "_[my get snr_at_imax]"
 			append us "_[my get noise_characteristics_file]"
 			append us "_[my get basic_spatial_resolution]"
-			append us "_[my get mtf10_freq]"
 			append us "_[my get mtf_file]"
 			append us "_[my get scintillator_thickness]"
 			if { [my get scintillator_material_id] != "null" } {
@@ -304,19 +303,15 @@ namespace eval ::ctsimu {
 			# Unsharpness:
 			my set unsharpness_mode "off" "string"
 				# Valid unsharpness modes:
-				# "off", "basic_spatial_resolution", "mtf10freq", "mtffile"
+				# "off", "basic_spatial_resolution", "mtffile"
 
-			my set_parameter_from_key basic_spatial_resolution $detprops {unsharpness basic_spatial_resolution} 0			
-			my set_parameter_from_key mtf10_freq $detprops {unsharpness mtf10_frequency} 0
-			my set_parameter_from_key mtf_file $detprops {unsharpness mtf} "null"
+			my set_parameter_from_possible_keys basic_spatial_resolution $detprops {{unsharpness basic_spatial_resolution} {sharpness basic_spatial_resolution}} 0
+			my set_parameter_from_possible_keys mtf_file $detprops {{unsharpness mtf} {sharpness mtf}} "null"
 			
 			# Decide on unsharpness mode:
 			if { [my get mtf_file] != "null" } {
 				my set unsharpness_mode "mtffile"
 				::ctsimu::info "Unsharpness mode: [my get unsharpness_mode] ([my get mtf_file])"
-			} elseif { [my get mtf10_freq] != 0 } {
-				my set unsharpness_mode "mtf10freq"
-				::ctsimu::info "Unsharpness mode: [my get unsharpness_mode] ([my get mtf10_freq])"
 			} elseif { [my get basic_spatial_resolution] > 0 } {
 				my set unsharpness_mode "basic_spatial_resolution"
 				::ctsimu::info "Unsharpness mode: [my get unsharpness_mode] ([my get basic_spatial_resolution])"
@@ -365,7 +360,6 @@ namespace eval ::ctsimu {
 
 				my set unsharpness_mode "off"
 				my set basic_spatial_resolution 1.0
-				my set mtf10_freq 10.0
 				my set mtf_file ""
 
 				my set bit_depth 32
@@ -436,6 +430,17 @@ namespace eval ::ctsimu {
 
 				# Pixel multisampling:
 				set ::Xsetup(DetectorSampling) [my get multisampling]
+				
+				# Long range unsharpness
+				if { ([my get long_range_unsharpness] > 0) && ([my get long_range_ratio] > 0) } {
+					set ::Xdetector(LRRatio) [my get long_range_ratio]
+					set ::Xdetector(LRUnsharpness) [my get long_range_unsharpness]
+					set ::Xdetector(UnsharpnessOn) 1
+					::XDetector::UnsharpnessOverrideSet
+				} else {
+					set ::Xdetector(UnsharpnessOn) 0
+					::XDetector::UnsharpnessOverrideSet
+				}
 
 				::XDetector::UpdateGeometry %W
 			}
@@ -516,9 +521,29 @@ namespace eval ::ctsimu {
 			}
 
 			# Unsharpness:
-			dict set detector Unsharpness Resolution [expr {2.0 * [my get basic_spatial_resolution]}]
 			dict set detector Unsharpness LRUnsharpness [my get long_range_unsharpness]
 			dict set detector Unsharpness LRRatio [my get long_range_ratio]
+			
+			switch [my get unsharpness_mode] {
+				"off" {
+					dict set detector Unsharpness Resolution 0
+				}
+				"basic_spatial_resolution" {
+					dict set detector Unsharpness Resolution [expr {2.0 * [my get basic_spatial_resolution]}]
+				}
+				"mtffile" {
+					dict set detector Unsharpness Resolution 0
+					
+					::ctsimu::warning "MTF File: [my get mtf_file]"
+					
+					set mtf_absolute_path [::ctsimu::get_absolute_path [my get mtf_file]]
+					if { [file exists $mtf_absolute_path] } {
+						dict set detector MTF [::XDetector::LoadMTF $mtf_absolute_path]
+					} else {
+						::ctsimu::fail "MTF file not found: $mtf_absolute_path"
+					}
+				}
+			}
 
 			# Load currently used X-ray spectrum:
 			set spectrumtext [join [XSource::GetFullSpectrum] \n]
@@ -853,6 +878,35 @@ namespace eval ::ctsimu {
 							set SNR          [expr {sqrt(1.0 / $NSR2)}]
 							dict set detector Noise $intensity $SNR
 							::ctsimu::debug "Noise: $intensity [expr {$intensity * $amplification}] $SNR"
+						}
+					} elseif { [my get noise_mode] == "file" } {
+						set snr_file_abspath [::ctsimu::get_absolute_path [my get noise_characteristics_file]]
+						if { [file exists $snr_file_abspath] } {
+							set snrcurve [::ctsimu::load_csv_into_list $snr_file_abspath]
+							
+							# Prepare a list of gray values and corresponding intensities.
+							# Later needed for re-interpolating the intensity for a
+							# given gray value.
+							set gv_intensity_pairs [list]
+							dict for {intensity grayvalue} [dict get $detector Characteristic] {
+								lappend gv_intensity_pairs $grayvalue $intensity
+							}
+							
+							foreach el $snrcurve {
+								if { [llength $el] >= 2 } {
+									set gray_value [lindex $el 0]
+									set snr        [lindex $el 1]
+									
+									# Get intensity for gray value:
+									set intensity [::math::interpolate::interp-linear $gv_intensity_pairs $gray_value]
+									
+									dict set detector Noise $intensity $snr
+								} else {
+									::ctsimu::fail "SNR file must contain at least two columns: gray value, SNR."
+								}								
+							}
+						} else {
+							::ctsimu::fail "SNR file not found: $snr_file_abspath"
 						}
 					}
 

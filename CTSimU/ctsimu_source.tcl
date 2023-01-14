@@ -63,6 +63,9 @@ namespace eval ::ctsimu {
 				$filter destroy				
 			}
 			set _window_filters [list ]
+			
+			# The current timestamp, necessary for hashing.
+			my set timestamp [clock seconds]
 
 			# Declare all source parameters and their native units.
 			# --------------------------------------------------------
@@ -86,11 +89,11 @@ namespace eval ::ctsimu {
 			my set spot_sigma_u            0  "mm"
 			my set spot_sigma_v            0  "mm"
 			my set spot_sigma_w            0  "mm"
-			my set multisampling        "20"  "string"
+			my set multisampling           "20"  "string"
 			
 			# Intensity map
-			my set intensity_map_file     ""  "string"; # map file is parameter, can have drift file
-			my set intensity_map_datatype   "float"  "string"
+			my set intensity_map_file       ""  "string"; # map file is parameter, can have drift file
+			my set intensity_map_datatype   "float32"  "string"
 			my set intensity_map_dim_x      0 ""
 			my set intensity_map_dim_y      0 ""
 			my set intensity_map_dim_z      0 ""
@@ -108,7 +111,7 @@ namespace eval ::ctsimu {
 			# relevant for the generation of the spectrum.
 			
 			# Create a unique string:
-			set us "source"
+			set us "source_[my get timestamp]"
 			append us "_[my get voltage]"
 			append us "_[my get target_thickness]"
 			append us "_[my get target_angle_incidence]"
@@ -144,7 +147,7 @@ namespace eval ::ctsimu {
 			# Returns a hash for the spot profile
 			
 			# Create a unique string:
-			set us "source_spot"
+			set us "source_spot_[my get timestamp]"
 			append us "_[my get spot_size_u]"
 			append us "_[my get spot_size_v]"
 			append us "_[my get spot_size_w]"
@@ -238,7 +241,7 @@ namespace eval ::ctsimu {
 
 			# Intensity map
 			my set_parameter_from_key intensity_map_file      $sourceprops {spot intensity_map}
-			my set_parameter_value    intensity_map_datatype  $sourceprops {spot intensity_map type} "float"
+			my set_parameter_value    intensity_map_datatype  $sourceprops {spot intensity_map type} "float32"
 			my set_parameter_value    intensity_map_dim_x     $sourceprops {spot intensity_map dim_x} 0
 			my set_parameter_value    intensity_map_dim_y     $sourceprops {spot intensity_map dim_y} 0
 			my set_parameter_value    intensity_map_dim_z     $sourceprops {spot intensity_map dim_z} 0
@@ -578,7 +581,7 @@ namespace eval ::ctsimu {
 			global Xsource Xsource_private
 			variable ComputedSpectra
 
-			set spectrumString [::ctsimu::load_csv_into_tab_separated_string $file]
+			set spectrumString [::ctsimu::load_csv_into_tab_separated_string $file 1]	
 
 			# build comments
 			set description "X-ray tube ($Xsource(Tube)): $Xsource(TargetMaterial), $Xsource(Voltage) kV, $Xsource(TargetAngle)\u00B0"

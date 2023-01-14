@@ -5,7 +5,7 @@ source -encoding utf-8 [file join $BasePath ctsimu_helpers.tcl]
 
 namespace eval ::ctsimu {
 	set valid_endians [list "little" "big"]
-	set valid_datatypes [list "float" "double" "uint8" "int8" "uint16" "int16" "uint32" "int32"]
+	set valid_datatypes [list "float32" "float64" "uint8" "int8" "uint16" "int16" "uint32" "int32"]
 	
 	::oo::class create image {
 		variable _fname;  # file name
@@ -18,7 +18,7 @@ namespace eval ::ctsimu {
 		variable _endian
 		variable _headersize
 
-		constructor { fname { width 0 } { height 0 } { depth 1 } { datatype "float" } { endian "little" } { headersize 0 } } {
+		constructor { fname { width 0 } { height 0 } { depth 1 } { datatype "float32" } { endian "little" } { headersize 0 } } {
 			my set_filename $fname
 			my set_width  $width
 			my set_height $height

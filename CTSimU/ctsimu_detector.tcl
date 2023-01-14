@@ -54,6 +54,9 @@ namespace eval ::ctsimu {
 				$filter destroy				
 			}
 			set _filters_front [list ]
+			
+			# The current timestamp, necessary for hashing.
+			my set timestamp [clock seconds]
 
 			# Declare all detector parameters and their native units.
 			# --------------------------------------------------------
@@ -86,9 +89,8 @@ namespace eval ::ctsimu {
 			my set imax             60000
 			my set factor           1.0
 			my set offset           0.0
-			my set gv_characteristics_file "" "string"
-			my set efficiency       1.0
-			my set efficiency_characteristics_file "" "string"
+			my set gv_characteristics_file "null" "string"
+			my set efficiency_characteristics_file "null" "string"
 			my set gv_max           60000; # max. achievable gray value, set by the generate function
 			my set ff_rescale_factor 1.0; # for flat field correction script
 			
@@ -143,7 +145,7 @@ namespace eval ::ctsimu {
 			# relevant for the generation of the detector.
 			
 			# Create a unique string:
-			set us "detector"
+			set us "detector_[my get timestamp]"
 			append us "_[my get type]"
 			append us "_[my get columns]"
 			append us "_[my get rows]"
@@ -155,7 +157,6 @@ namespace eval ::ctsimu {
 			append us "_[my get factor]"
 			append us "_[my get offset]"
 			append us "_[my get gv_characteristics_file]"
-			append us "_[my get efficiency]"
 			append us "_[my get efficiency_characteristics_file]"
 			append us "_[my get snr_at_imax]"
 			append us "_[my get noise_characteristics_file]"
@@ -280,7 +281,6 @@ namespace eval ::ctsimu {
 				::ctsimu::info "Gray value mode: [my get gray_value_mode] (imin: [my get imin], imax: [my get imax])"
 			}
 			
-			my set_parameter_from_possible_keys efficiency  $detprops {{grey_value efficiency} {gray_value efficiency}} "null"
 			my set_parameter_from_possible_keys efficiency_characteristics_file $detprops {{grey_value efficiency_characteristics_file} {gray_value efficiency_characteristics_file}} "null"
 
 			
@@ -533,9 +533,7 @@ namespace eval ::ctsimu {
 				}
 				"mtffile" {
 					dict set detector Unsharpness Resolution 0
-					
-					::ctsimu::warning "MTF File: [my get mtf_file]"
-					
+										
 					set mtf_absolute_path [::ctsimu::get_absolute_path [my get mtf_file]]
 					if { [file exists $mtf_absolute_path] } {
 						dict set detector MTF [::XDetector::LoadMTF $mtf_absolute_path]
@@ -558,11 +556,32 @@ namespace eval ::ctsimu {
 			set spectrum [my ParseSpectrum $spectrumtext 2]
 			set sensitivitytext ""
 
-			if {[my get type] == "real"} {
-				# Scintillator:
+			if { [my get efficiency_characteristics_file] != "null" } {
+				# Detector characteristics is given by efficiency file.
+				set efficiency_values [::ctsimu::read_csv_file [my get efficiency_characteristics_file]]
+				
+				set kVs          [dict get $efficiency_values 0]
+				set efficiencies [dict get $efficiency_values 1]
+				
+				for {set i 0} {$i < [llength $kVs]} {incr i} {
+					set kV         [lindex $kVs $i]
+					set efficiency [lindex $efficiencies $i]
+					
+					# Assume an attenuation probability of 1
+					# for all photons, but scale their deposited
+					# energy by the attenuation probability (=efficiency)
+					# from the file:
+					set attenuation 1.0
+					set deposit    [expr $kV*$efficiency]
+					
+					append sensitivitytext "$kV $attenuation $deposit\n"
+				}				
+			} elseif {[my get type] == "real"} {
+				# Calculate characteristics based on given scintillator:
 				set scintillatorMaterialID [$_material_manager aRTist_id [my get scintillator_material_id]]
 				set density     [Materials::get $scintillatorMaterialID density]
 				set composition [Materials::get $scintillatorMaterialID composition]
+				
 				set scintillatorSteps  2
 				set keys        [list $composition $density [my get scintillator_thickness] $scintillatorSteps [my get min_energy] [my get max_energy]]
 
@@ -779,7 +798,6 @@ namespace eval ::ctsimu {
 						set GVatMax [my get imax]
 
 						set amplification  [expr {double($GVatMax) / double($energyPerPixel) }]
-						set maxinput $energyPerPixel
 
 						set GVatMaxInput $GVatMax
 
@@ -802,31 +820,32 @@ namespace eval ::ctsimu {
 						set nEntries [expr min([llength $energies], [llength $grayvalues])]
 
 						if { $nEntries > 0 } {
-							set maxInput     [lindex $energies 0]
-							set GVatMaxInput [lindex $grayvalues 0]
-
 							for {set i 0} {$i < $nEntries} {incr i} {
 								set inputEnergyDensity [expr [lindex $energies $i] / $physical_pixel_area]
 								set grayValue [lindex $grayvalues $i]
 								dict set detector Characteristic $inputEnergyDensity $grayValue
-
-								if { $inputEnergyDensity < $maxInput } {
-									set maxInput $inputEnergyDensity
-									set GVatMaxInput $grayValue
-								}
 							}
-
-							# Min / max method for gray value reproduction.
-							set GVatMax $GVatMaxInput
-
-							set amplification  [expr {double($GVatMax) / double($energyPerPixel) }]
-							set maxinput $energyPerPixel
-
-							dict set detector Exposure TargetValue $GVatMax
-							my set gv_max $GVatMax
 						} else {
 							::ctsimu::fail "The gray value characteristics file does not contain any valid entries."
-						}						
+						}	
+							
+						# Find the maximum gray value
+						# ------------------------------					
+						# Prepare a list of gray values and corresponding intensities.
+						# Later needed for re-interpolating the intensity for a
+						# given gray value.
+						set intensity_gv_pairs [list]
+						dict for {intensity grayvalue} [dict get $detector Characteristic] {
+							lappend intensity_gv_pairs $intensity $grayvalue
+						}
+						
+						set GVatMax [::math::interpolate::interp-linear $intensity_gv_pairs $maxinput]
+						set GVatMaxInput $GVatMax
+
+						set amplification  [expr {double($GVatMax) / double($energyPerPixel) }]
+
+						dict set detector Exposure TargetValue $GVatMax
+						my set gv_max $GVatMax											
 					}
 					
 					dict set detector Quantization ValueMin 0

@@ -193,7 +193,7 @@ namespace eval ::ctsimu {
 				close $csvfile
 			}
 		} err ] } {
-			::ctsimu::fail "Cannot read CSV file: $absfilename"
+			::ctsimu::fail "Cannot read CSV or TSV file: $absfilename"
 			return 0
 		}
 
@@ -211,7 +211,9 @@ namespace eval ::ctsimu {
 				continue
 			}
 
-			set entries [::csv::split $line]
+			# split on comma or tab
+			#set entries [::csv::split $line]
+			set entries [split $line "\t,"]
 			set col 0
 			foreach entry $entries {
 				if { $colsExpected == 0 } {
@@ -224,7 +226,7 @@ namespace eval ::ctsimu {
 						lappend lst $entry
 						dict set values $col $lst
 					} else {
-						::ctsimu::fail "Error reading CSV file: number of columns in line $l is higher than expected number of columns ($colsExpected)."
+						::ctsimu::fail "Error reading CSV or TSV file: number of columns in line $l is higher than expected number of columns ($colsExpected)."
 					}
 				}
 
@@ -237,13 +239,14 @@ namespace eval ::ctsimu {
 				}
 			} else {
 				set colsExpected $col
+				::ctsimu::info "$colsExpected columns in $absfilename"
 			}
 		}
 
 		return $values
 	}
 	
-	proc load_csv_into_tab_separated_string { filename } {
+	proc load_csv_into_tab_separated_string { filename { skip_x_le_0 0 } } {
 		# $file will contain the file pointer
 		set file [open $filename]
 
@@ -269,12 +272,19 @@ namespace eval ::ctsimu {
 			    		append text "\n"
 			    	}
 
-			    	# split on comma or white space
-			    	set entries [split $line " \t,"]
+			    	# split on comma or tab
+			    	set entries [split $line "\t,"]
 			    	set j 0
-			    	foreach entry $entries {
+			    	foreach entry $entries {			    		
 			    		if {$j > 0} {
 			    			append text "\t"
+			    		} elseif {$entry <= 0} {
+			    			if { $skip_x_le_0 == 1 } {
+			    				# If the x value is <= 0, skip this line.
+			    				# Necessary for X-ray spectra:
+			    				# aRTist does not support acceleration energies <= 0.
+			    				continue
+			    			}
 			    		}
 			    		append text $entry
 			    		incr j
@@ -307,8 +317,8 @@ namespace eval ::ctsimu {
 			if {[string length $line] > 0} {
 				# skip comments
 			    if { ![regexp {^\s*#} $line] } {
-			    	# split on comma or white space
-			    	set entries [split $line " \t,"]
+			    	# split on comma or tab
+			    	set entries [split $line "\t,"]
 			    	lappend csvList $entries 
 			    }
 			}

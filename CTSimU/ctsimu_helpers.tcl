@@ -630,14 +630,14 @@ namespace eval ::ctsimu {
 		return 0
 	}
 
-	proc json_convert_to_native_unit { native_unit value_and_unit } {
+	proc json_convert_to_native_unit { native_unit value_and_unit { fallback_json_unit ""} } {
 		# Like the previous function `convert_to_native_unit`, but takes
 		# a JSON object `value_and_unit` that must contain a `value` and
 		# an associated `unit`.
 		# Checks which native unit is requested, converts
 		# JSON `value` accordingly.
 		if { $native_unit == "" } {
-			# No unit given, simply return value.
+			# No native unit given, simply return value.
 			return [::ctsimu::get_value $value_and_unit value]
 		} elseif { $native_unit == "bool" } {
 			# This is not a value/unit pair.
@@ -653,7 +653,7 @@ namespace eval ::ctsimu {
 
 		if { [::rl_json::json exists $value_and_unit value] } {
 			set value [::rl_json::json get $value_and_unit value]
-			set unit ""
+			set unit $fallback_json_unit
 			if { [::rl_json::json exists $value_and_unit unit] } {
 				# The unit does not necessarily have to exist.
 				# For example, in the case of strings it is clear

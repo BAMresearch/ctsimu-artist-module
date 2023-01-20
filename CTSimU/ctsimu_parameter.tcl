@@ -190,8 +190,8 @@ namespace eval ::ctsimu {
 				set _current_value $_standard_value
 
 				# Drifts:
-				if { [::ctsimu::json_exists_and_not_null $json_parameter_object drift] } {
-					set jsonDrifts [::ctsimu::json_extract $json_parameter_object drift]
+				if { [::ctsimu::json_exists_and_not_null $json_parameter_object drifts] } {
+					set jsonDrifts [::ctsimu::json_extract $json_parameter_object drifts]
 					set jsonType [::ctsimu::json_type $jsonDrifts]
 
 					if {$jsonType == "array"} {

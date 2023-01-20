@@ -90,9 +90,9 @@ namespace eval ::ctsimu {
 			my reset
 
 			# Get JSON unit
-			set jsonUnit ""
+			set jsonUnit [my native_unit]
 			if { [::ctsimu::json_exists_and_not_null $json_object {unit}] } {
-				set jsonUnit [::ctsimu::get_value $json_object {unit} "null"]
+				set jsonUnit [::ctsimu::get_value $json_object {unit} [my native_unit]]
 			}
 
 			# Get drift value(s)
@@ -102,7 +102,7 @@ namespace eval ::ctsimu {
 				if {$jsonValueType == "number"} {
 					::ctsimu::info "Drift value is a number."
 					set jsonValue [::ctsimu::get_value $json_object {value}]
-					lappend _trajectory [::ctsimu::json_convert_to_native_unit $_native_unit $jsonValue]
+					lappend _trajectory [::ctsimu::convert_to_native_unit $jsonUnit $_native_unit $jsonValue]
 					return 1
 				} elseif {$jsonValueType == "array"} {
 					::ctsimu::info "Drift value is an array."
@@ -112,22 +112,20 @@ namespace eval ::ctsimu {
 					}
 					return 1
 				}
-			} else {
-				if { [::ctsimu::json_exists_and_not_null $json_object file] } {
-					set jsonValueType [::ctsimu::json_type $json_object file]
-					if {$jsonValueType == "string"} {
-						::ctsimu::info "Drift values from a file."
-						set csvFilename [::ctsimu::get_value $json_object {file}]
-						set values [::ctsimu::read_csv_file $csvFilename]
-						set firstColumn [dict get $values 0]
-						foreach v $firstColumn {
-							lappend _trajectory $v
-						}
-
-						::ctsimu::info "Imported drift trajectory:"
-						::ctsimu::info $_trajectory
-						return 1
+			} elseif { [::ctsimu::json_exists_and_not_null $json_object file] } {
+				set jsonValueType [::ctsimu::json_type $json_object file]
+				if {$jsonValueType == "string"} {
+					::ctsimu::info "Drift values from a file."
+					set csvFilename [::ctsimu::get_value $json_object {file}]
+					set values [::ctsimu::read_csv_file $csvFilename]
+					set firstColumn [dict get $values 0]
+					foreach v $firstColumn {
+						lappend _trajectory $v
 					}
+
+					::ctsimu::info "Imported drift trajectory:"
+					::ctsimu::info $_trajectory
+					return 1
 				}
 			}
 

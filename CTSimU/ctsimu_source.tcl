@@ -508,7 +508,7 @@ namespace eval ::ctsimu {
 				# Filter by window layers (JSON supports more than one window)
 				foreach window $_window_filters {
 					set thickness [$window thickness]
-					set materialID [$window material_id]
+					set materialID [$_material_manager aRTist_id [$window material_id]]
 
 					if { $thickness > 0 } {
 						::ctsimu::info "Filtering with window: $thickness mm $materialID."
@@ -523,7 +523,7 @@ namespace eval ::ctsimu {
 				# Filter by external filters (JSON supports more than one filter)
 				foreach filter $_filters {
 					set thickness [$filter thickness]
-					set materialID [$filter material_id]
+					set materialID [$_material_manager aRTist_id [$filter material_id]]
 					
 					if { $thickness > 0 } {
 						::ctsimu::info "Filtering with external filter: $thickness mm $materialID."
@@ -589,7 +589,7 @@ namespace eval ::ctsimu {
 			# Add window materials to description (JSON supports more than one window)
 			foreach window $_window_filters {
 				set thickness [$window thickness]
-				set materialID [$window material_id]
+				set materialID [$_material_manager aRTist_id [$window material_id]]
 				
 				if { $thickness > 0 } {
 					append description ", $thickness mm $materialID"
@@ -599,7 +599,7 @@ namespace eval ::ctsimu {
 			# Filter by external filters (JSON supports more than one filter)
 			foreach filter $_filters {
 				set thickness [$window thickness]
-				set materialID [$window material_id]
+				set materialID [$_material_manager aRTist_id [$window material_id]]
 				
 				if { $thickness > 0 } {
 					aRTist::Info { "Filtering with external filter: $thickness mm $materialID."}

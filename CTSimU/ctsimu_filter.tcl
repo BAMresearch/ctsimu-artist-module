@@ -32,8 +32,7 @@ namespace eval ::ctsimu {
 		method material_id { } {
 			return $_material_id
 		}
-
-
+		
 		method thickness { } {
 			return [$_thickness current_value]
 		}

@@ -207,7 +207,9 @@ namespace eval ::ctsimu {
 			# Pivot point for rotations.
 			# Set a standard pivot which refers to the object's center:
 			$_pivot set_simple 0 0 0
-			$_pivot set_reference [$_axis reference]
+			# Set "sample" as the "most local" pivot reference.
+			# Will be converted to "local" if necessary:
+			$_pivot set_reference "sample"
 			if { [::ctsimu::json_exists_and_not_null $json_obj pivot] } {
 				# If another pivot is defined in the
 				# JSON file, take this one instead...

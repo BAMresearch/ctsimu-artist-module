@@ -387,7 +387,7 @@ namespace eval ::ctsimu {
 				if { [$_center set_from_json [::ctsimu::json_extract_from_possible_keys $geometry {{center} {centre}}]] } {
 					# success
 				} else {
-					::ctsimu::fail "Part \'[my name]\': failed setting the object center from the JSON file."
+					::ctsimu::fail "Part [my name]: failed setting the object center from the JSON file."
 					return 0
 				}
 
@@ -398,7 +398,7 @@ namespace eval ::ctsimu {
 					 [$_vector_w set_from_json [::ctsimu::json_extract_from_possible_keys $geometry {{vector_w} {vector_t}}]] } {
 					# success
 				} else {
-					::ctsimu::fail "Part \'[my name]\' is placed in world coordinate system, but its vectors u and w (or r and t, for samples) are not properly defined (each with an x, y and z component)."
+					::ctsimu::fail "Part [my name] is placed in world coordinate system, but its vectors u and w (or r and t, for samples) are not properly defined (each with an x, y and z component)."
 					return 0
 				}
 			} elseif { ([::ctsimu::json_exists_and_not_null $geometry {center u}] || [::ctsimu::json_exists_and_not_null $geometry {centre u}]) && \
@@ -417,7 +417,7 @@ namespace eval ::ctsimu {
 				if { [$_center set_from_json [::ctsimu::json_extract_from_possible_keys $geometry {{center} {centre}}]] } {
 					# success
 				} else {
-					::ctsimu::fail "Part \'[my name]\': failed setting the object center from the JSON file."
+					::ctsimu::fail "Part [my name]: failed setting the object center from the JSON file."
 					return 0
 				}
 
@@ -429,11 +429,11 @@ namespace eval ::ctsimu {
 					 [$_vector_w set_from_json [::ctsimu::json_extract $geometry {vector_t}]] } {
 					# success
 				} else {
-					::ctsimu::fail "Part \'[my name]\' is placed in stage system, but its vectors r and t are not properly defined (each with a u, v and w component)."
+					::ctsimu::fail "Part [my name] is placed in stage system, but its vectors r and t are not properly defined (each with a u, v and w component)."
 					return 0
 				}
 			} else {
-				::ctsimu::fail "Failed to set geometry for part \'[my name]\'. Found no valid center definition in JSON file."
+				::ctsimu::fail "Failed to set geometry for part [my name]. Found no valid center definition in JSON file."
 				return 0
 			}
 

@@ -83,6 +83,30 @@ namespace eval ::ctsimu {
 			set sizeR [expr [my get original_physical_size_r] * [my get scaling_factor_r]]
 			set sizeS [expr [my get original_physical_size_s] * [my get scaling_factor_s]]
 			set sizeT [expr [my get original_physical_size_t] * [my get scaling_factor_t]]
+			
+			# Additional resizing based on the unit of the mesh file.
+			# aRTist assumes mm.
+			set u [my get unit]
+			set scaler 1
+			if { $u == "mm" } {
+				# Good. Do nothing.
+			} elseif { $u == "m" } {
+				set scaler 1000
+			} elseif { $u == "dm" } {
+				set scaler 100
+			} elseif { $u == "cm" } {
+				set scaler 10
+			} elseif { $u == "um" } {
+				set scaler 1e-3
+			} elseif { $u == "nm" } {
+				set scaler 1e-6
+			}
+			
+			if { $scaler != 1 } {
+				set sizeR [expr $sizeR * $scaler]
+				set sizeS [expr $sizeS * $scaler]
+				set sizeT [expr $sizeT * $scaler]
+			}
 
 			if { [::ctsimu::aRTist_available] } {
 				::PartList::Invoke [my id] SetSize $sizeR $sizeS $sizeT

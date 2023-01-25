@@ -34,6 +34,9 @@ Note: the aRTist package file (`.artp`) should not be part of the git repository
 
 ## Version History
 
+### 0.8.17
++ Small updates and fixes in reconstruction config file outputs.
+
 ### 0.8.16
 + Added aRTist-specific JSON option to create primary intensity images (as an alternative to primary energy images).
 

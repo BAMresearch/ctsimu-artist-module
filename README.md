@@ -153,6 +153,9 @@ The following table lists the JSON parameters defined by the [CTSimU file format
 	- detector: external noise characteristics files
 	- `known_to_reconstruction` parameter for geometrical deviations and drifts is obeyed when calculating projection matrices.
 
+### 0.8.17
++ Small updates and fixes in reconstruction config file outputs.
+
 ### 0.8.16
 + Added aRTist-specific JSON option to create primary intensity images (as an alternative to primary energy images).
 

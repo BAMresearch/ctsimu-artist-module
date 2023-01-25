@@ -36,13 +36,14 @@ namespace eval ::ctsimu {
 
 				if { [::ctsimu::aRTist_available] } {
 					dict set ::Materials::MatList [my aRTist_id] $values
+					::Engine::ClearMaterials
 				}
 			}
 		}
 
 		method set_frame { frame nFrames { forced 0 } } {
 			# Return a bitwise OR of both return values.
-			# If a value has changed, the return value will be 1.
+			# If any of the values has changed, the result will be 1.
 			set value_changed [expr { [$_density set_frame $frame $nFrames] || \
 			                          [$_composition set_frame $frame $nFrames] }]
 

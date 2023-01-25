@@ -441,12 +441,12 @@ namespace eval ::ctsimu {
 
 			set stageCS [$_stage current_coordinate_system]
 
-			$_material_manager set_frame $frame [my get n_frames]
 			$_sample_manager set_frame $stageCS $frame [my get n_frames]
 			$_source set_frame $stageCS $frame [my get n_frames]
 			$_detector set_frame $stageCS $frame [my get n_frames]
 			
 			if { $apply_to_scene } {
+				$_material_manager set_frame $frame [my get n_frames]
 				$_sample_manager update_scene $stageCS
 				$_detector place_in_scene $stageCS
 				$_source place_in_scene $stageCS

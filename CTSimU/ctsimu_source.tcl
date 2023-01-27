@@ -27,12 +27,12 @@ namespace eval ::ctsimu {
 
 		destructor {
 			foreach filter $_filters {
-				$filter destroy				
+				$filter destroy
 			}
 			set _filters [list ]
 
 			foreach filter $_window_filters {
-				$filter destroy				
+				$filter destroy
 			}
 			set _window_filters [list ]
 
@@ -55,15 +55,15 @@ namespace eval ::ctsimu {
 
 			# Empty filter lists:
 			foreach filter $_filters {
-				$filter destroy				
+				$filter destroy
 			}
 			set _filters [list ]
 
 			foreach filter $_window_filters {
-				$filter destroy				
+				$filter destroy
 			}
 			set _window_filters [list ]
-			
+
 			# The current timestamp, necessary for hashing.
 			my set timestamp [clock seconds]
 
@@ -74,14 +74,14 @@ namespace eval ::ctsimu {
 			my set manufacturer           ""  "string"
 			my set voltage                130 "kV"
 			my set current                0.1 "mA"
-			
+
 			# Target
 			my set target_material_id     "W" "string"
 			my set target_type            "reflection" "string"
 			my set target_thickness       10  "mm"
 			my set target_angle_incidence 45  "deg"
 			my set target_angle_emission  45  "deg"
-			
+
 			# Spot
 			my set spot_size_u             0  "mm"
 			my set spot_size_v             0  "mm"
@@ -90,7 +90,7 @@ namespace eval ::ctsimu {
 			my set spot_sigma_v            0  "mm"
 			my set spot_sigma_w            0  "mm"
 			my set multisampling           "20"  "string"
-			
+
 			# Intensity map
 			my set intensity_map_file       ""  "string"; # map file is parameter, can have drift file
 			my set intensity_map_datatype   "float32"  "string"
@@ -109,7 +109,7 @@ namespace eval ::ctsimu {
 		method hash { } {
 			# Returns a hash of all properties that are
 			# relevant for the generation of the spectrum.
-			
+
 			# Create a unique string:
 			set us "source_[my get timestamp]"
 			append us "_[my get voltage]"
@@ -119,8 +119,8 @@ namespace eval ::ctsimu {
 			if { [my get target_material_id] != "null" } {
 				append us "_[$_material_manager density [my get target_material_id]]"
 				append us "_[$_material_manager composition [my get target_material_id]]"
-			}			
-			
+			}
+
 			foreach filter $_filters {
 				append us "_[ $filter thickness]"
 				if { [$filter material_id] != "null" } {
@@ -139,13 +139,13 @@ namespace eval ::ctsimu {
 
 			# Spectrum file:
 			append us [my get spectrum_file]
-				
+
 			return [md5::md5 -hex $us]
 		}
-		
+
 		method hash_spot { } {
 			# Returns a hash for the spot profile
-			
+
 			# Create a unique string:
 			set us "source_spot_[my get timestamp]"
 			append us "_[my get spot_size_u]"
@@ -155,7 +155,7 @@ namespace eval ::ctsimu {
 			append us "_[my get spot_sigma_v]"
 			append us "_[my get spot_sigma_w]"
 			append us "_[my get intensity_map_file]"
-				
+
 			return [md5::md5 -hex $us]
 		}
 
@@ -163,18 +163,21 @@ namespace eval ::ctsimu {
 			return [file join ${::TempFile::tempdir} "CTSimU_Spectrum_[my hash].xrs"]
 		}
 
-		method set_frame { stageCS frame nFrames { w_rotation_in_rad 0 } } {
-			# Update filter list:
-			foreach filter $_filters {
-				$filter set_frame $frame $nFrames				
-			}
+		method set_frame { stageCS frame nFrames { w_rotation_in_rad 0 } { apply_to_scene 1 } } {
+			#puts "Source --- Apply to scene: $apply_to_scene"
+			if { $apply_to_scene } {
+				# Update filter list:
+				foreach filter $_filters {
+					$filter set_frame $frame $nFrames
+				}
 
-			foreach filter $_window_filters {
-				$filter set_frame $frame $nFrames				
+				foreach filter $_window_filters {
+					$filter set_frame $frame $nFrames
+				}
 			}
 
 			# Call set_frame of parent class '::ctsimu::part':
-			next $stageCS $frame $nFrames $w_rotation_in_rad
+			next $stageCS $frame $nFrames $w_rotation_in_rad $apply_to_scene
 		}
 
 		method set_from_json { jobj stage } {
@@ -189,7 +192,7 @@ namespace eval ::ctsimu {
 
 			set sourceGeometry [::ctsimu::json_extract $jobj {geometry source}]
 			my set_geometry $sourceGeometry $stage
-			
+
 			# Source properties:
 			set sourceprops [::ctsimu::json_extract $jobj {source}]
 
@@ -206,11 +209,11 @@ namespace eval ::ctsimu {
 					my set_name "[my get manufacturer] [my get model]"
 				}
 			}
-			
+
 			if { ![my set_parameter_from_key voltage $sourceprops {voltage}] } {
 				::ctsimu::warning "No voltage provided for the X-ray source."
 			}
-			
+
 			if { ![my set_parameter_from_key current $sourceprops {current}] } {
 				::ctsimu::warning "No current provided for the X-ray source."
 			}
@@ -265,12 +268,12 @@ namespace eval ::ctsimu {
 				set current_hash [my hash]
 				if { $current_hash != $_previous_hash } {
 					set _previous_hash $current_hash
-					
+
 					set ::Xsource(Name) [my name]
-					
+
 					# Current:
 					set ::Xsource(Exposure) [my get current]
-					
+
 					# Voltage:
 					set ::Xsource(Voltage) [my get voltage]
 
@@ -312,7 +315,7 @@ namespace eval ::ctsimu {
 									set ::Xsource(WindowThickness) [$window thickness]
 									set ::Xsource(WindowMaterial) [$_material_manager aRTist_id [$window material_id]]
 								}
-							}								
+							}
 						}
 
 						# External filters
@@ -343,23 +346,23 @@ namespace eval ::ctsimu {
 									}
 								}
 								incr i
-							}								
+							}
 						}
-						
+
 						# Load spectrum from a file?
 						if { [my get spectrum_file] != "" } {
 							set spectrum_file_absolute_path [::ctsimu::get_absolute_path [my get spectrum_file]]
-							
+
 							my load_spectrum $spectrum_file_absolute_path
 						} else {
 							# Check if a temp file already exists:
 							set spectrum_temp_file [my current_temp_file]
-							
+
 							if { ![file exists $spectrum_temp_file] } {
 								# Generate spectrum and save as
 								# temp file:
 								my compute_spectrum
-								
+
 								::ctsimu::info "Saving temporary spectrum file: $spectrum_temp_file"
 								::XSource::SaveSpectrum $spectrum_temp_file
 							} else {
@@ -369,23 +372,23 @@ namespace eval ::ctsimu {
 						}
 					}
 				}
-				
+
 				# Spot size is not part of standard hash, treat it here
 				# and check if it has changed since last frame:
 				set current_hash_spot [my hash_spot]
 				if { $current_hash_spot != $_previous_hash_spot } {
 					set _previous_hash_spot $current_hash_spot
-									 
-					# aRTist only supports 2D spot profiles					
+
+					# aRTist only supports 2D spot profiles
 					set sigmaX    [my get spot_sigma_u]
 					set sigmaY    [my get spot_sigma_v]
 					set spotSizeX [my get spot_size_u]
 					set spotSizeY [my get spot_size_v]
-					
+
 					::ctsimu::info "Spot size: x=$spotSizeX, y=$spotSizeY, sigma_x=$sigmaX, sigma_y=$sigmaY"
 
 					if { ($sigmaX <= 0) || ($sigmaY <= 0) || ($spotSizeX <= 0) || ($spotSizeY <= 0) } {
-						# Point source						
+						# Point source
 						set ::Xsource_private(SpotWidth) 0
 						set ::Xsource_private(SpotHeight) 0
 						set ::Xsetup_private(SGSx) 0
@@ -401,7 +404,7 @@ namespace eval ::ctsimu {
 						set ::Xsetup(SourceSampling) [my get multisampling]
 						::XSource::SelectSpotType
 						::XSource::SourceSizeModified
-						
+
 						# 2D spot intensity profile
 						if { [my get intensity_map_file] != "" } {
 							# Load spot intensity map file:
@@ -414,7 +417,7 @@ namespace eval ::ctsimu {
 				}
 			}
 		}
-		
+
 		method compute_spectrum { } {
 			# Adaption of `proc ComputeSpectrum` from stuff/xsource.tcl.
 			# Assumes that XSource properties are already set.
@@ -515,7 +518,7 @@ namespace eval ::ctsimu {
 						Engine::UpdateMaterials $materialID
 						# Thickness is in mm, XRayTools expects cm
 						xrEngine FilterSpectrum $materialID [Engine::quotelist --Thickness [expr {$thickness / 10.0}]]
-						
+
 						append description ", $thickness mm $materialID"
 					}
 				}
@@ -524,13 +527,13 @@ namespace eval ::ctsimu {
 				foreach filter $_filters {
 					set thickness [$filter thickness]
 					set materialID [$_material_manager aRTist_id [$filter material_id]]
-					
+
 					if { $thickness > 0 } {
 						::ctsimu::info "Filtering with external filter: $thickness mm $materialID."
 						Engine::UpdateMaterials $materialID
 						# Thickness is in mm, XRayTools expects cm
 						xrEngine FilterSpectrum $materialID [Engine::quotelist --Thickness [expr {$thickness / 10.0}]]
-						
+
 						append description ", $thickness mm $materialID"
 					}
 				}
@@ -554,10 +557,10 @@ namespace eval ::ctsimu {
 			::XSource::WriteXRS $fname
 			::XRayProject::AddFile Source spectrum $fname .xrs
 		}
-		
+
 		method engine_spectrum_string_to_XSource_list { engineString } {
 			set spectrum {}
-			foreach entry [split $engineString \n] {				
+			foreach entry [split $engineString \n] {
 				if { ![regexp {^\s*#} $entry] } {
 					set entries [split $entry]
 					#puts "Entries: $entries"
@@ -572,7 +575,7 @@ namespace eval ::ctsimu {
 
 			return $spectrum
 		}
-		
+
 		method load_spectrum { file } {
 			# Filter the loaded spectrum by external filters, but not by windows.
 
@@ -581,7 +584,7 @@ namespace eval ::ctsimu {
 			global Xsource Xsource_private
 			variable ComputedSpectra
 
-			set spectrumString [::ctsimu::load_csv_into_tab_separated_string $file 1]	
+			set spectrumString [::ctsimu::load_csv_into_tab_separated_string $file 1]
 
 			# build comments
 			set description "X-ray tube ($Xsource(Tube)): $Xsource(TargetMaterial), $Xsource(Voltage) kV, $Xsource(TargetAngle)\u00B0"
@@ -590,17 +593,17 @@ namespace eval ::ctsimu {
 			foreach window $_window_filters {
 				set thickness [$window thickness]
 				set materialID [$_material_manager aRTist_id [$window material_id]]
-				
+
 				if { $thickness > 0 } {
 					append description ", $thickness mm $materialID"
 				}
 			}
-		
+
 			# Filter by external filters (JSON supports more than one filter)
 			foreach filter $_filters {
 				set thickness [$window thickness]
 				set materialID [$_material_manager aRTist_id [$window material_id]]
-				
+
 				if { $thickness > 0 } {
 					aRTist::Info { "Filtering with external filter: $thickness mm $materialID."}
 					Engine::UpdateMaterials $materialID
@@ -640,13 +643,13 @@ namespace eval ::ctsimu {
 
 			::XSource::SetSpotProfile
 		}
-		
+
 		method load_spot_image { } {
 			# adapted from xsource.tcl to allow read RAW images of arbitrary size
 			set spot_image_file_absolute_path [::ctsimu::get_absolute_path [my get intensity_map_file]]
-			
+
 			::ctsimu::info "Loading spot image: $spot_image_file_absolute_path"
-			
+
 			set spotimg [::ctsimu::image new $spot_image_file_absolute_path]
 			$spotimg set_width    [my get intensity_map_dim_x]
 			$spotimg set_height   [my get intensity_map_dim_y]
@@ -654,11 +657,11 @@ namespace eval ::ctsimu {
 			$spotimg set_datatype [my get intensity_map_datatype]
 			$spotimg set_endian   [my get intensity_map_endian]
 			$spotimg set_headersize [my get intensity_map_headersize]
-			
+
 			set img [$spotimg load_image]
-			
+
 			$spotimg destroy
-			
+
 			if { [catch {
 				set tmp [Image::aRTistImage %AUTO%]
 				$tmp ShallowCopy $img
@@ -684,7 +687,7 @@ namespace eval ::ctsimu {
 			catch { unset ::Xsource_private(SourceGrid) }
 
 			::SceneView::RedrawRequest
-			
+
 			::ctsimu::info "Successfully loaded spot image."
 		}
 	}

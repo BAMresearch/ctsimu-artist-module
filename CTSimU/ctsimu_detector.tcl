@@ -28,12 +28,12 @@ namespace eval ::ctsimu {
 
 		destructor {
 			foreach filter $_filters_front {
-				$filter destroy				
+				$filter destroy
 			}
 			set _filters_front [list ]
 			next
 		}
-		
+
 		method initialize { material_manager { SDD 1000 } { current 1 } } {
 			# Necessary initialization after constructing, when the detector object
 			# shall be used fully (not just as a geometrical object).
@@ -45,22 +45,22 @@ namespace eval ::ctsimu {
 		method reset { } {
 			# Reset to standard settings.
 			set _previous_hash "0"
-			
+
 			# Reset the '::ctsimu::part' that handles the coordinate system:
 			next; # call reset of parent class ::ctsimu::part
 
 			# Empty filter list:
 			foreach filter $_filters_front {
-				$filter destroy				
+				$filter destroy
 			}
 			set _filters_front [list ]
-			
+
 			# The current timestamp, necessary for hashing.
 			my set timestamp [clock seconds]
 
 			# Declare all detector parameters and their native units.
 			# --------------------------------------------------------
-			
+
 			# General properties:
 			my set model            "" "string"
 			my set manufacturer     "" "string"
@@ -93,14 +93,14 @@ namespace eval ::ctsimu {
 			my set efficiency_characteristics_file "null" "string"
 			my set gv_max           60000; # max. achievable gray value, set by the generate function
 			my set ff_rescale_factor 1.0; # for flat field correction script
-			
+
 			# Noise:
 			my set noise_mode       "off" "string"
 				# Valid noise modes:
 				# "off", "snr_at_imax", "file"
 			my set snr_at_imax      100
 			my set noise_characteristics_file "" "string"
-			
+
 			# Unsharpness:
 			my set unsharpness_mode "off" "string"
 				# Valid unsharpness modes:
@@ -109,11 +109,11 @@ namespace eval ::ctsimu {
 			my set mtf_file                 ""   "string"
 			my set long_range_unsharpness    0   "mm"
 			my set long_range_ratio          0
-			
+
 			# Bad pixel map
 			my set bad_pixel_map      "" "string"
 			my set bad_pixel_map_type "" "string"
-			
+
 			# Scintillator
 			my set scintillator_material_id "" "string"
 			my set scintillator_thickness    0  "mm"
@@ -139,11 +139,11 @@ namespace eval ::ctsimu {
 			# using the image bit depth.
 			return [expr pow(2, [my get bit_depth])-1]
 		}
-		
+
 		method hash { } {
 			# Returns a hash of all properties that are
 			# relevant for the generation of the detector.
-			
+
 			# Create a unique string:
 			set us "detector_[my get timestamp]"
 			append us "_[my get type]"
@@ -166,8 +166,8 @@ namespace eval ::ctsimu {
 			if { [my get scintillator_material_id] != "null" } {
 				append us "_[$_material_manager density [my get scintillator_material_id]]"
 				append us "_[$_material_manager composition [my get scintillator_material_id]]"
-			}			
-			
+			}
+
 			foreach filter $_filters_front {
 				append us "_[ $filter thickness]"
 				if { [$filter material_id] != "null" } {
@@ -175,22 +175,34 @@ namespace eval ::ctsimu {
 					append us "_[$_material_manager composition [$filter material_id]]"
 				}
 			}
-			
+
 			return [md5::md5 -hex $us]
 		}
-		
+
 		method current_temp_file { } {
 			return [file join ${::TempFile::tempdir} "CTSimU_Detector_[my hash].aRTdet"]
 		}
 
-		method set_frame { stageCS frame nFrames { w_rotation_in_rad 0 } } {
+		method set_frame { stageCS frame nFrames { w_rotation_in_rad 0 } { apply_to_scene 1 } } {
+			#puts "Detector --- Apply to scene: $apply_to_scene"
 			# Update filter list:
-			foreach filter $_filters_front {
-				$filter set_frame $frame $nFrames				
+			if { $apply_to_scene } {
+				foreach filter $_filters_front {
+					$filter set_frame $frame $nFrames
+				}
+			} else {
+				# The detector's pixel pitch and size have not been
+				# updated if we only want to update geometry parameters
+				# without applying all parameter changes to the aRTist scene.
+				# In this case, this has to be done manually here:
+				[my parameter columns] set_frame $frame $nFrames
+				[my parameter rows] set_frame $frame $nFrames
+				[my parameter pitch_u] set_frame $frame $nFrames
+				[my parameter pitch_v] set_frame $frame $nFrames
 			}
 
 			# Call set_frame of parent class '::ctsimu::part':
-			next $stageCS $frame $nFrames $w_rotation_in_rad
+			next $stageCS $frame $nFrames $w_rotation_in_rad $apply_to_scene
 		}
 
 		method set_from_json { jobj stage } {
@@ -234,7 +246,7 @@ namespace eval ::ctsimu {
 					my set type "ideal"
 				}
 			}
-			
+
 			# Detector size:
 			if { ![my set_parameter_from_key columns $detprops {columns}] } {
 				::ctsimu::warning "Number of detector columns not found or invalid. Using standard value."
@@ -251,7 +263,7 @@ namespace eval ::ctsimu {
 			if { ![my set_parameter_from_key pitch_v   $detprops {pixel_pitch v}] } {
 				::ctsimu::warning "Pixel pitch in the v direction not found or invalid. Using standard value."
 			}
-			
+
 			if { ![my set_parameter_from_key bit_depth $detprops {bit_depth}] } {
 				::ctsimu::warning "Detector bit depth not found or invalid. Using standard value."
 			}
@@ -262,7 +274,7 @@ namespace eval ::ctsimu {
 
 			my set_parameter_from_key dead_time $detprops {dead_time}
 			my set_parameter_from_key image_lag $detprops {image_lag}
-			
+
 			my set_parameter_from_possible_keys imin $detprops {{grey_value imin} {gray_value imin}} "null"
 			my set_parameter_from_possible_keys imax $detprops {{grey_value imax} {gray_value imax}} "null"
 			my set_parameter_from_possible_keys factor $detprops {{grey_value factor} {gray_value factor}} "null"
@@ -280,10 +292,10 @@ namespace eval ::ctsimu {
 				my set gray_value_mode "imin_imax"
 				::ctsimu::info "Gray value mode: [my get gray_value_mode] (imin: [my get imin], imax: [my get imax])"
 			}
-			
+
 			my set_parameter_from_possible_keys efficiency_characteristics_file $detprops {{grey_value efficiency_characteristics_file} {gray_value efficiency_characteristics_file}} "null"
 
-			
+
 			# Noise:
 			my set_parameter_from_key snr_at_imax $detprops {noise snr_at_imax} "null"
 			my set_parameter_from_key noise_characteristics_file $detprops {noise noise_characteristics_file} "null"
@@ -299,7 +311,7 @@ namespace eval ::ctsimu {
 				my set noise_mode "off"
 				::ctsimu::info "Noise mode: [my get noise_mode]"
 			}
-						
+
 			# Unsharpness:
 			my set unsharpness_mode "off" "string"
 				# Valid unsharpness modes:
@@ -307,7 +319,7 @@ namespace eval ::ctsimu {
 
 			my set_parameter_from_possible_keys basic_spatial_resolution $detprops {{unsharpness basic_spatial_resolution} {sharpness basic_spatial_resolution}} 0
 			my set_parameter_from_possible_keys mtf_file $detprops {{unsharpness mtf} {sharpness mtf}} "null"
-			
+
 			# Decide on unsharpness mode:
 			if { [my get mtf_file] != "null" } {
 				my set unsharpness_mode "mtffile"
@@ -323,11 +335,11 @@ namespace eval ::ctsimu {
 			# Long range unsharpness is software-specific JSON parameter:
 			my set_parameter_from_key long_range_unsharpness $jobj {simulation aRTist long_range_unsharpness extension} 0
 			my set_parameter_from_key long_range_ratio $jobj {simulation aRTist long_range_unsharpness ratio} 0
-			
+
 			# Bad pixel map
 			my set_parameter_from_key bad_pixel_map $detprops {bad_pixel_map} "null"
 			my set_parameter_value bad_pixel_map_type $detprops {bad_pixel_map type} "null"
-			
+
 			# Scintillator
 			my set_parameter_value scintillator_material_id $detprops {scintillator material_id} "null"
 			my set_parameter_from_key scintillator_thickness $detprops {scintillator thickness} 0
@@ -353,7 +365,7 @@ namespace eval ::ctsimu {
 				my set imax "null"
 				my set factor 1.0
 				my set offset 0.0
-				
+
 				my set noise_mode "off"
 				my set SNR 100
 				my set noise_characteristics_file ""
@@ -386,22 +398,22 @@ namespace eval ::ctsimu {
 				Preferences::Set Detector AutoVar Size
 				set ::Xsetup_private(DGauto) Size
 				::XDetector::SelectAutoQuantity
-				
+
 				# Generate the detector if it has changed:
 				set current_hash [my hash]
 				if { $current_hash != $_previous_hash } {
 					set _previous_hash $current_hash
-					
+
 					# Check if a temp file already exists:
 					set detector_temp_file [my current_temp_file]
-					
+
 					if { ![file exists $detector_temp_file] } {
 						# Detector file does not exist.
 						# We generate one...
 						set aRTist_detector [my generate $_initial_SDD $_initial_current]
 						XDetector::write_aRTdet $detector_temp_file $aRTist_detector
 					}
-					
+
 					FileIO::OpenAnyGUI $detector_temp_file
 				}
 
@@ -430,7 +442,7 @@ namespace eval ::ctsimu {
 
 				# Pixel multisampling:
 				set ::Xsetup(DetectorSampling) [my get multisampling]
-				
+
 				# Long range unsharpness
 				if { ([my get long_range_unsharpness] > 0) && ([my get long_range_ratio] > 0) } {
 					set ::Xdetector(LRRatio) [my get long_range_ratio]
@@ -445,7 +457,7 @@ namespace eval ::ctsimu {
 				::XDetector::UpdateGeometry %W
 			}
 		}
-		
+
 		# From detectorCalc module:
 		# parse spectrum with n columns into flat list
 		# ignore superfluous columns, comments & blank lines
@@ -523,7 +535,7 @@ namespace eval ::ctsimu {
 			# Unsharpness:
 			dict set detector Unsharpness LRUnsharpness [my get long_range_unsharpness]
 			dict set detector Unsharpness LRRatio [my get long_range_ratio]
-			
+
 			switch [my get unsharpness_mode] {
 				"off" {
 					dict set detector Unsharpness Resolution 0
@@ -533,7 +545,7 @@ namespace eval ::ctsimu {
 				}
 				"mtffile" {
 					dict set detector Unsharpness Resolution 0
-										
+
 					set mtf_absolute_path [::ctsimu::get_absolute_path [my get mtf_file]]
 					if { [file exists $mtf_absolute_path] } {
 						dict set detector MTF [::XDetector::LoadMTF $mtf_absolute_path]
@@ -559,29 +571,29 @@ namespace eval ::ctsimu {
 			if { [my get efficiency_characteristics_file] != "null" } {
 				# Detector characteristics is given by efficiency file.
 				set efficiency_values [::ctsimu::read_csv_file [my get efficiency_characteristics_file]]
-				
+
 				set kVs          [dict get $efficiency_values 0]
 				set efficiencies [dict get $efficiency_values 1]
-				
+
 				for {set i 0} {$i < [llength $kVs]} {incr i} {
 					set kV         [lindex $kVs $i]
 					set efficiency [lindex $efficiencies $i]
-					
+
 					# Assume an attenuation probability of 1
 					# for all photons, but scale their deposited
 					# energy by the attenuation probability (=efficiency)
 					# from the file:
 					set attenuation 1.0
 					set deposit    [expr $kV*$efficiency]
-					
+
 					append sensitivitytext "$kV $attenuation $deposit\n"
-				}				
+				}
 			} elseif {[my get type] == "real"} {
 				# Calculate characteristics based on given scintillator:
 				set scintillatorMaterialID [$_material_manager aRTist_id [my get scintillator_material_id]]
 				set density     [Materials::get $scintillatorMaterialID density]
 				set composition [Materials::get $scintillatorMaterialID composition]
-				
+
 				set scintillatorSteps  2
 				set keys        [list $composition $density [my get scintillator_thickness] $scintillatorSteps [my get min_energy] [my get max_energy]]
 
@@ -615,7 +627,7 @@ namespace eval ::ctsimu {
 					aRTist::Verbose { "$Emin\t$dE\t$Emax\t$EBin" }
 					set grid [seq [expr {$Emin + $dE}] $dE [expr {$Emax + $dE / 10.}]]
 					set Emin [lindex $grid end]
-					
+
 					set minEnergy 0
 					set maxEnergy 1000
 
@@ -768,7 +780,7 @@ namespace eval ::ctsimu {
 					set GVatMaxInput 0.0
 					set GVatNoInput 0.0
 					set physical_pixel_area [my pixel_area_m2]
-					
+
 					if { [my get gray_value_mode] == "linear"} {
 						# Factor / offset method for gray value reproduction.
 						# The factor must be converted to describe
@@ -809,7 +821,7 @@ namespace eval ::ctsimu {
 
 						dict set detector Exposure TargetValue $GVatMax
 						my set gv_max $GVatMax
-						
+
 					} elseif { [my get gray_value_mode] == "file" } {
 						set csvFilename [my get gv_characteristics_file]
 						set values [::ctsimu::read_csv_file $csvFilename]
@@ -827,10 +839,10 @@ namespace eval ::ctsimu {
 							}
 						} else {
 							::ctsimu::fail "The gray value characteristics file does not contain any valid entries."
-						}	
-							
+						}
+
 						# Find the maximum gray value
-						# ------------------------------					
+						# ------------------------------
 						# Prepare a list of gray values and corresponding intensities.
 						# Later needed for re-interpolating the intensity for a
 						# given gray value.
@@ -838,28 +850,28 @@ namespace eval ::ctsimu {
 						dict for {intensity grayvalue} [dict get $detector Characteristic] {
 							lappend intensity_gv_pairs $intensity $grayvalue
 						}
-						
+
 						set GVatMax [::math::interpolate::interp-linear $intensity_gv_pairs $maxinput]
 						set GVatMaxInput $GVatMax
 
 						set amplification  [expr {double($GVatMax) / double($energyPerPixel) }]
 
 						dict set detector Exposure TargetValue $GVatMax
-						my set gv_max $GVatMax											
+						my set gv_max $GVatMax
 					}
-					
+
 					dict set detector Quantization ValueMin 0
 					dict set detector Quantization ValueMax [my max_gray_value]
 					dict set detector Quantization ValueQuantum 0
 
 					dict set detector Sensitivity $sensitivitytext
-					
+
 					# Flat field rescale factor:
 					my set ff_rescale_factor [my get gv_max]
 
 					if { [my get noise_mode] == "snr_at_imax" } {
 						set SNR [my get snr_at_imax]
-						
+
 						# compute maximum theoretical SNR
 						set SNR_ideal   [expr {sqrt($Ntotal)}]
 						set SNR_quantum [expr {$SNR_ideal * $swank}]
@@ -902,7 +914,7 @@ namespace eval ::ctsimu {
 						set snr_file_abspath [::ctsimu::get_absolute_path [my get noise_characteristics_file]]
 						if { [file exists $snr_file_abspath] } {
 							set snrcurve [::ctsimu::load_csv_into_list $snr_file_abspath]
-							
+
 							# Prepare a list of gray values and corresponding intensities.
 							# Later needed for re-interpolating the intensity for a
 							# given gray value.
@@ -910,19 +922,19 @@ namespace eval ::ctsimu {
 							dict for {intensity grayvalue} [dict get $detector Characteristic] {
 								lappend gv_intensity_pairs $grayvalue $intensity
 							}
-							
+
 							foreach el $snrcurve {
 								if { [llength $el] >= 2 } {
 									set gray_value [lindex $el 0]
 									set snr        [lindex $el 1]
-									
+
 									# Get intensity for gray value:
 									set intensity [::math::interpolate::interp-linear $gv_intensity_pairs $gray_value]
-									
+
 									dict set detector Noise $intensity $snr
 								} else {
 									::ctsimu::fail "SNR file must contain at least two columns: gray value, SNR."
-								}								
+								}
 							}
 						} else {
 							::ctsimu::fail "SNR file not found: $snr_file_abspath"

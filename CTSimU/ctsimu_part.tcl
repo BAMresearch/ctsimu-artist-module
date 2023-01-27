@@ -45,7 +45,7 @@ namespace eval ::ctsimu {
 			# The coordinates and orientation must be kept as
 			# ::ctsimu::scenevector objects to properly handle drifts.
 			# These are later used to assemble a coordinate
-			# system for the current frame.		
+			# system for the current frame.
 			set _center   [::ctsimu::scenevector new "mm"]
 			set _vector_u [::ctsimu::scenevector new]
 			set _vector_w [::ctsimu::scenevector new]
@@ -62,7 +62,7 @@ namespace eval ::ctsimu {
 
 			# aRTist id for the object:
 			my set_id $id
-			
+
 			# A general list of properties
 			# (all of them are of type ::ctsimu::parameter)
 			set _properties [dict create]
@@ -71,7 +71,7 @@ namespace eval ::ctsimu {
 		destructor {
 			$_cs_current destroy
 			$_cs_recon destroy
-			
+
 			$_center destroy
 			$_vector_u destroy
 			$_vector_w destroy
@@ -80,12 +80,12 @@ namespace eval ::ctsimu {
 				$dev destroy
 			}
 			set _deviations [list]
-			
+
 			foreach dev $_legacy_deviations {
 				$dev destroy
 			}
 			set _legacy_deviations [list]
-			
+
 			# Delete all existing properties:
 			foreach {key property} $_properties {
 				$property destroy
@@ -106,12 +106,12 @@ namespace eval ::ctsimu {
 				$dev destroy
 			}
 			set _deviations [list]
-			
+
 			foreach dev $_legacy_deviations {
 				$dev destroy
 			}
 			set _legacy_deviations [list]
-			
+
 			# Reset all existing properties:
 			foreach {key property} $_properties {
 				$property reset
@@ -129,7 +129,7 @@ namespace eval ::ctsimu {
 			# Returns the parameter object behind a given `property`
 			return [dict get $_properties $property]
 		}
-		
+
 		method changed { property } {
 			# Has the property changed its value since the last frame?
 			return [ [my parameter $property] has_changed]
@@ -164,20 +164,20 @@ namespace eval ::ctsimu {
 			# Get the name of the part.
 			return $_name
 		}
-		
+
 		method is_attached_to_stage { } {
 			# Return the 'attached to stage' property.
 			return $_attachedToStage
 		}
-		
-		
+
+
 		# Setters
 		# -------------------------
 		method set { property value { native_unit "undefined" }} {
 			# Set a simple property value in
 			# the _properties dict by setting the
 			# respective parameter's standard value.
-			
+
 			# Check if the property already exists:
 			if {[dict exists $_properties $property]} {
 				# Already exists in dict.
@@ -187,7 +187,7 @@ namespace eval ::ctsimu {
 
 				if {$native_unit != "undefined"} {
 					$param set_native_unit $native_unit
-				}				
+				}
 
 				$param set_standard_value $value
 			} else {
@@ -195,13 +195,13 @@ namespace eval ::ctsimu {
 				if {$native_unit == "undefined"} {
 					# If no native unit is specified, set to "no unit".
 					set native_unit ""
-				}	
+				}
 
 				set param [::ctsimu::parameter new $native_unit $value]
 				dict set _properties $property $param
 			}
 		}
-		
+
 		method acknowledge_change { property { new_change_state 0} } {
 			[my parameter $property] acknowledge_change $new_change_state
 		}
@@ -212,13 +212,13 @@ namespace eval ::ctsimu {
 			# `parameter` (should be a `::ctsimu::parameter` object).
 			# If there is already an entry under the given `property` key,
 			# this old parameter object will be deleted.
-			
+
 			# Check if the property already exists:
 			if {[dict exists $_properties $property]} {
 				# Already exists in dict. Get it and destroy it:
 				[my parameter $property] destroy
 			}
-			
+
 			# Set new property parameter:
 			dict set _properties $property $parameter
 		}
@@ -314,7 +314,7 @@ namespace eval ::ctsimu {
 
 			return 1
 		}
-		
+
 		method set_name { name } {
 			set _name $name
 			my set_cs_names
@@ -368,7 +368,7 @@ namespace eval ::ctsimu {
 			# If this part is not attached to the stage,
 			# the `$::ctsimu::world` coordinate system can be passed instead.
 			my reset
-			
+
 			# Try to set up the part from world coordinate notation (x, y, z).
 			# We also have to support legacy spelling of "centre" ;-)
 			if { ([::ctsimu::json_exists_and_not_null $geometry {center x}] || [::ctsimu::json_exists_and_not_null $geometry {centre x}]) && \
@@ -501,7 +501,7 @@ namespace eval ::ctsimu {
 					if {[::ctsimu::json_exists_and_not_null $geometry [list deviation rotation $axis] ]} {
 						set rot_dev [::ctsimu::deviation new "rad"]
 						$rot_dev set_type "rotation"
-						
+
 						# Prior to 0.9, all deviations were meant to take place
 						# before the stage rotation. This means they need to be
 						# stored as scene vectors to designate a constant deviation axis.
@@ -513,9 +513,9 @@ namespace eval ::ctsimu {
 				}
 			}
 
-			my set_frame $stageCS 0 1 0
+			my set_frame $stageCS 0 1 0 1
 		}
-			
+
 		method set_frame_cs { cs stageCS frame nFrames { only_known_to_reconstruction 0 } { w_rotation_in_rad 0 } } {
 			# Set up the given coordinate system 'cs' such
 			# that it complies with the 'frame' number
@@ -526,27 +526,29 @@ namespace eval ::ctsimu {
 			# usually not called from outside the object.
 
 			::ctsimu::debug "Setting frame CS for [$cs name]..."
-			
+
 			# Set up standard coordinate system at frame zero:
 			set center [$_center standard_vector]
 			set u [$_vector_u standard_vector]
 			set w [$_vector_w standard_vector]
-			
+
 			$cs make_from_vectors $center $u $w [my is_attached_to_stage]
 			$cs make_unit_coordinate_system
-			
+
 			# Legacy rotational deviations (prior to file format 1.0)
 			# all took place before any stage rotation:
 			# ----------------------------------------------------------
 			foreach legacy_deviation $_legacy_deviations {
 				$cs deviate $legacy_deviation $stageCS $frame $nFrames $only_known_to_reconstruction
 			}
-			
+
 			# Potential stage rotation:
 			# ------------------------------------
 			# Potential rotation around the w axis (in rad).
-			$cs rotate_around_w $w_rotation_in_rad
-			
+			if { $w_rotation_in_rad != 0 } {
+				$cs rotate_around_w $w_rotation_in_rad
+			}
+
 			# Deviations:
 			# ------------------------------------
 			foreach deviation $_deviations {
@@ -567,20 +569,21 @@ namespace eval ::ctsimu {
 			if { ([$vector_u_drift length] > 0) || ([$vector_w_drift length] > 0)} {
 				set new_u [[$cs u] get_copy]
 				set new_w [[$cs w] get_copy]
-				$new_u add $vector_u_drift 
-				$new_w add $vector_w_drift 
+				$new_u add $vector_u_drift
+				$new_w add $vector_w_drift
 
 				set new_center [[$cs center] get_copy]
 				$cs make_from_vectors $new_center $new_u $new_w [$cs is_attached_to_stage]
 				$cs make_unit_coordinate_system
 			}
-			
+
 			$center_drift destroy
 			$vector_u_drift destroy
 			$vector_w_drift destroy
 		}
-		
-		method set_frame { stageCS frame nFrames { w_rotation_in_rad 0 } } {
+
+		method set_frame { stageCS frame nFrames { w_rotation_in_rad 0 } { apply_to_scene 1 } } {
+			#puts "Part --- Apply to scene: $apply_to_scene"
 			# Set up the part for the given frame number, obeying all
 			# deviations and drifts.
 			#
@@ -588,7 +591,7 @@ namespace eval ::ctsimu {
 			# - stageCS:
 			#   A ::ctsimu::coordinate_system that represents the stage.
 			#   Only necessary if the coordinate system will be attached to the
-			#   stage. Otherwise, the world coordinate system can be passed as an 
+			#   stage. Otherwise, the world coordinate system can be passed as an
 			#   argument.
 			# - frame:
 			#   Frame number to set up.
@@ -600,14 +603,18 @@ namespace eval ::ctsimu {
 			#   of the sample stage.
 
 			# Set up the current CS obeying all drifts:
-			my set_frame_cs $_cs_current $stageCS $frame $nFrames 0 $w_rotation_in_rad
+			if { $apply_to_scene } {
+				my set_frame_cs $_cs_current $stageCS $frame $nFrames 0 $w_rotation_in_rad
+			}
 
 			# Set up the recon CS only obeying the drifts 'known to reconstruction':
 			my set_frame_cs $_cs_recon   $stageCS $frame $nFrames 1 $w_rotation_in_rad
 
 			# Set the frame for all elements of the properties dict:
-			dict for { key value } $_properties {
-				[my parameter $key] set_frame $frame $nFrames
+			if { $apply_to_scene } {
+				dict for { key value } $_properties {
+					[my parameter $key] set_frame $frame $nFrames
+				}
 			}
 		}
 
@@ -666,7 +673,7 @@ namespace eval ::ctsimu {
 						set rotAxis [$u get_copy]
 					} else {
 						::ctsimu::debug "   w axis of object [my id] already points in direction z."
-					}	
+					}
 				}
 
 				if { [$rotAxis length] != 0 } {
@@ -702,7 +709,7 @@ namespace eval ::ctsimu {
 					set rotAxisToU [$w get_copy]
 				} else {
 					::ctsimu::debug "   u axis of object [my id] already points in direction u."
-				}	
+				}
 			}
 
 			if { [$rotAxisToU length] != 0 } {

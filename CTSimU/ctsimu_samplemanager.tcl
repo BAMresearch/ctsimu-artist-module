@@ -35,7 +35,7 @@ namespace eval ::ctsimu {
 		method set_frame { stageCS frame nFrames } {
 			# Set current frame number (propagates to samples).
 			foreach s $_samples {
-				$s set_frame $stageCS $frame $nFrames
+				$s set_frame $stageCS $frame $nFrames 0 1
 			}
 		}
 
@@ -82,7 +82,7 @@ namespace eval ::ctsimu {
 		method load_meshes { stageCS material_manager } {
 			# Loads the mesh file of each part into aRTist.
 			::ctsimu::status_info "Loading surface meshes..."
-			
+
 			if { [::ctsimu::aRTist_available] } {
 				# Clear current part list:
 				::PartList::Clear
@@ -116,6 +116,6 @@ namespace eval ::ctsimu {
 				$s place_in_scene $stageCS
 				$s update_scaling_factor
 			}
-		}		
+		}
 	}
 }

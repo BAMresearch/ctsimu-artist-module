@@ -50,7 +50,7 @@ namespace eval ::ctsimu {
 		method print { } {
 			return "([$_c0 current_value], [$_c1 current_value], [$_c2 current_value]) in [my reference]"
 		}
-		
+
 		# Setters
 		# -------------------------
 		method set_reference { reference } {
@@ -63,17 +63,17 @@ namespace eval ::ctsimu {
 				::ctsimu::fail "{$reference} is not a valid reference string. Should be any of: {$valid_refs}."
 			}
 		}
-		
+
 		method set_native_unit { native_unit } {
 			# Set native unit of vector components.
-			# Necessary for the location of points such as 
+			# Necessary for the location of points such as
 			# the center points of coordinate systems,
 			# usually given in "mm" as native unit.
 			$_c0 set_native_unit $native_unit
 			$_c1 set_native_unit $native_unit
 			$_c2 set_native_unit $native_unit
 		}
-		
+
 		method set_simple { c0 c1 c2 } {
 			# Set a simple scene vector from three numbers,
 			# results in a scene vector without drifts.
@@ -87,7 +87,7 @@ namespace eval ::ctsimu {
 			$_c1 reset
 			$_c2 reset
 		}
-		
+
 		method set_component { i parameter } {
 			# Set the `i`th vector component to
 			# `parameter` (which must be a `::ctsimu::parameter`).
@@ -102,24 +102,24 @@ namespace eval ::ctsimu {
 				set _c2 $parameter
 			}
 		}
-		
+
 		# General
 		# -------------------------
 		method standard_vector { } {
 			# Create a ::ctsimu::vector that represents
 			# this vector without any drifts.
 
-			# Get vector components, respecting drifts:
+			# Get vector components, not respecting drifts:
 			set v0 [$_c0 standard_value]
 			set v1 [$_c1 standard_value]
 			set v2 [$_c2 standard_value]
-			
+
 			# Build a vector:
 			set v [::ctsimu::vector new [list $v0 $v1 $v2]]
-			
+
 			return $v
 		}
-		
+
 		method drift_vector { frame nFrames { only_known_to_reconstruction 0 } } {
 			# Create a ::ctsimu::vector that represents
 			# only the drift values for the given
@@ -127,33 +127,33 @@ namespace eval ::ctsimu {
 			# Can later be added to the standard
 			# value to get the resulting vector respecting
 			# all drifts.
-			
+
 			# Get vector components, respecting drifts:
 			set v0 [$_c0 get_total_drift_value_for_frame $frame $nFrames $only_known_to_reconstruction]
 			set v1 [$_c1 get_total_drift_value_for_frame $frame $nFrames $only_known_to_reconstruction]
 			set v2 [$_c2 get_total_drift_value_for_frame $frame $nFrames $only_known_to_reconstruction]
-			
+
 			# Build a vector:
 			set v [::ctsimu::vector new [list $v0 $v1 $v2]]
-			
+
 			return $v
 		}
-		
+
 		method vector_for_frame { frame { nFrames 0 } { only_known_to_reconstruction 0 } } {
 			# Create and return a ::ctsimu::vector
 			# for the given frame, respecting all drifts.
-			
+
 			# Get vector components, respecting drifts:
 			set v0 [$_c0 get_value_for_frame $frame $nFrames $only_known_to_reconstruction]
 			set v1 [$_c1 get_value_for_frame $frame $nFrames $only_known_to_reconstruction]
 			set v2 [$_c2 get_value_for_frame $frame $nFrames $only_known_to_reconstruction]
-			
+
 			# Build a vector:
 			set v [::ctsimu::vector new [list $v0 $v1 $v2]]
-			
+
 			return $v
 		}
-		
+
 		method in_world { point_or_direction local sample frame nFrames { only_known_to_reconstruction 0 } } {
 			# Create and return a ::ctsimu::vector
 			# in terms of the world coordinate system
@@ -185,9 +185,9 @@ namespace eval ::ctsimu {
 			#
 			# - only_known_to_reconstruction:
 			#   Only handle drifts that are known to the recon software.
-			
+
 			set v [my vector_for_frame $frame $nFrames $only_known_to_reconstruction]
-			
+
 			if { $_reference == "world" } {
 				# Already in world.
 				return $v
@@ -217,13 +217,13 @@ namespace eval ::ctsimu {
 				} else {
 					::ctsimu::fail "Transformation type point_or_direction must be either \"point\" or \"direction\"."
 				}
-				
+
 				$v destroy
 				$v_in_stage destroy
 				return $v_in_world
 			}
 		}
-		
+
 		method in_local { point_or_direction local sample frame nFrames { only_known_to_reconstruction 0 } } {
 			# Create and return a ::ctsimu::vector
 			# in terms of the local coordinate system
@@ -254,9 +254,9 @@ namespace eval ::ctsimu {
 			#
 			# - only_known_to_reconstruction:
 			#   Only handle drifts that are known to the recon software.
-			
+
 			set v [my vector_for_frame $frame $nFrames $only_known_to_reconstruction]
-			
+
 			if { $_reference == "world" } {
 				# Convert from world to local.
 				if { $point_or_direction == "point" } {
@@ -280,12 +280,12 @@ namespace eval ::ctsimu {
 				} elseif { $point_or_direction == "direction" } {
 					set v_in_stage [::ctsimu::change_reference_frame_of_direction $v $sample $::ctsimu::world]
 				}
-								
+
 				$v destroy
 				return $v_in_stage
 			}
 		}
-		
+
 		method in_sample { point_or_direction stage sample frame nFrames { only_known_to_reconstruction 0 } } {
 			# Create and return a ::ctsimu::vector
 			# in the sample coordinate system
@@ -319,9 +319,9 @@ namespace eval ::ctsimu {
 			#
 			# - only_known_to_reconstruction:
 			#   Only handle drifts that are known to the recon software.
-			
+
 			set v [my vector_for_frame $frame $nFrames $only_known_to_reconstruction]
-			
+
 			if { $_reference == "world" } {
 				# From world to local (i.e., the stage)...
 				# ...and a second time from world to sample
@@ -335,7 +335,7 @@ namespace eval ::ctsimu {
 				} else {
 					::ctsimu::fail "Transformation type point_or_direction must be either \"point\" or \"direction\"."
 				}
-				
+
 				$v destroy
 				$v_in_stage destroy
 				return $v_in_sample
@@ -357,10 +357,10 @@ namespace eval ::ctsimu {
 				return $v
 			}
 		}
-		
+
 		method set_from_json { json_object } {
 			# Sets up the scene vector from a CTSimU JSON
-			# object that describes a three-component vector.		
+			# object that describes a three-component vector.
 			if { [::ctsimu::json_exists_and_not_null $json_object x] && \
 				 [::ctsimu::json_exists_and_not_null $json_object y] && \
 				 [::ctsimu::json_exists_and_not_null $json_object z] } {

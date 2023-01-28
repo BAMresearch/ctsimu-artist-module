@@ -27,7 +27,7 @@ namespace eval ::ctsimu {
 		constructor { native_unit } {
 			my reset
 			set _interpolation 1
-			
+
 			my set_native_unit $native_unit
 		}
 
@@ -93,6 +93,11 @@ namespace eval ::ctsimu {
 			set jsonUnit [my native_unit]
 			if { [::ctsimu::json_exists_and_not_null $json_object {unit}] } {
 				set jsonUnit [::ctsimu::get_value $json_object {unit} [my native_unit]]
+			}
+
+			# Known to reconstruction
+			if { [::ctsimu::json_exists_and_not_null $json_object {known_to_reconstruction}] } {
+				my set_known_to_reconstruction [::ctsimu::get_value_in_unit "bool" $json_object {known_to_reconstruction} 1]
 			}
 
 			# Get drift value(s)
@@ -192,7 +197,7 @@ namespace eval ::ctsimu {
 
 							# Weight for the left bin is 1-rightWeight.
 							set leftWeight [expr 1.0 - $rightWeight]
-							
+
 							# ::ctsimu::info "Drift interpolation between [ lindex $_trajectory $leftIndex ] and [lindex $_trajectory $rightIndex]"
 
 							# Linear interpolation between left and right trajectory point:
@@ -212,7 +217,7 @@ namespace eval ::ctsimu {
 								set trajectoryValue0 [lindex $_trajectory [expr int($lastTrajectoryIndex-1)]]
 								set trajectoryValue1 [lindex $_trajectory $lastTrajectoryIndex]
 								set offsetValue $trajectoryValue1
-								
+
 								# We assume a linear interpolation function beyond the two
 								# last drift values. Taking the last frame as the zero point
 								# (i.e., the starting point) of this linear interpolation,
@@ -248,7 +253,7 @@ namespace eval ::ctsimu {
 						# to be confused with the frame number.
 						set m [expr {double($trajectoryValue1 - $trajectoryValue0)} ]
 						set driftValue [expr {$m*$xTraj + $offsetValue}]
-												
+
 						#::ctsimu::debug "Linear Interpolation"
 						#::ctsimu::debug "----------------------"
 						#::ctsimu::debug "trajectoryValue0: $trajectoryValue0"

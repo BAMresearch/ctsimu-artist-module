@@ -6,7 +6,7 @@ This submodule provides a basic vector class.
 ### Constructor
 
 * `constructor { { valueList {} } }`
-    
+
     Intialize a vector by passing a list to its constructor:
 
         set e1 [::ctsimu::vector new [list 1 0 0]]

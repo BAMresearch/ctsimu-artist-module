@@ -7,7 +7,7 @@ The following list provides the source order and links to the descriptions of ea
 * **`ctsimu_main.tcl`**
 
 	Main CTSimU module file which takes care of sourcing all other files. When using the CTSimU module in your own project, only source this file to get the whole package.
-    
+
 * **[`ctsimu_scenario.tcl`](scenario.md)**
 
 	A class to manage and set up a complete CTSimU scenario.
@@ -45,7 +45,7 @@ The following list provides the source order and links to the descriptions of ea
 	A class for a sample material.
 
 * **[`ctsimu_part.tcl`](part.md)**
-	
+
 	Parts are objects in the scene: detector, source, stage and samples.
 
 	They have a coordinate system and can define deviations from their standard geometries (translations and rotations around given axes). The center, vectors and deviations can all have drifts, allowing for an evolution through time.
@@ -71,7 +71,7 @@ The following list provides the source order and links to the descriptions of ea
 * **[`ctsimu_drift.tcl`](drift.md)**
 
 	Class to handle the drift of an arbitrary parameter for a given number of frames, including interpolation.
-    
+
 * **[`ctsimu_matrix.tcl`](matrix.md)**
 
 	Basic matrix class and a function to generate a 3D rotation matrix.

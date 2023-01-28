@@ -62,7 +62,7 @@ The module uses its own little logging system that invokes aRTist's logging syst
 ### Getters
 
 * `get_value { dictionary { keys {} } {fail_value 0} }` — Get the specific value of the parameter that is located at the given sequence of `keys` in the JSON dictionary. Returns the `fail_value` (standard is `0`) if the key sequence cannot be found or the value is set to `null`. Example from above:
-    
+
     `get_value $object {center x value}` returns `10.0`
 * `json_exists { dictionary { keys {} } }` — Passthrough of `::rl_json::json exists`.
 * `json_isnull { dictionary { keys {} } }` — Passthrough of `::rl_json::json isnull`.

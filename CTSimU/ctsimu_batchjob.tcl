@@ -47,7 +47,7 @@ namespace eval ::ctsimu {
 
 			return $formatString
 		}
-		
+
 		# Setters
 		# -------------------------
 		method set { property value } {
@@ -56,7 +56,7 @@ namespace eval ::ctsimu {
 		}
 
 		method set_format { format_string } {
-			# Converts a batch format string to individual 
+			# Converts a batch format string to individual
 			# output_fileformat and output_datatype.
 			switch $format_string {
 				"RAW float32" {

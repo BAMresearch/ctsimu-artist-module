@@ -26,7 +26,7 @@ namespace eval ::ctsimu {
 		variable _amount
 		variable _known_to_reconstruction
 
-		constructor { { native_unit "" } } {			
+		constructor { { native_unit "" } } {
 			# The axis and pivot point are ::ctsimu::scenevector
 			# objects that can handle vector drifts and
 			# conversion between coordinate systems:
@@ -34,7 +34,7 @@ namespace eval ::ctsimu {
 			set _pivot  [::ctsimu::scenevector new "mm"]
 			$_pivot set_simple 0 0 0
 			$_pivot set_reference "local"
-			
+
 			# The transformation amount is a
 			# ::ctsimu::parameter that can handle drifts.
 			set _amount [::ctsimu::parameter new $native_unit]
@@ -54,34 +54,34 @@ namespace eval ::ctsimu {
 			my set_axis ""
 			my set_known_to_reconstruction 1
 		}
-		
+
 		# Getters
 		# -------------------------
 		method type { } {
 			# Get the transformation type ("rotation" or "translation").
 			return $_type
-		}		
+		}
 
 		method axis { } {
 			# Get the transformation axis.
 			return $_axis
 		}
-		
+
 		method pivot { } {
 			# Get the pivot point.
 			return $_pivot
 		}
-		
+
 		method amount { } {
 			# Amount of the deviation.
 			return $_amount
 		}
-		
+
 		method native_unit { } {
 			# Returns the native unit of the deviation's amount.
 			return [$_amount native_unit]
 		}
-		
+
 		method known_to_reconstruction { } {
 			# Returns whether this deviation must be considered during a
 			# reconstruction (1) or not (0). This parameter is used
@@ -137,29 +137,29 @@ namespace eval ::ctsimu {
 				set _axis $axis
 			}
 		}
-		
+
 		method set_pivot { pivot } {
 			# Set the pivot point for rotations.
 			# Expects a ::ctsimu::scenevector.
 			$_pivot destroy
 			set _pivot pivot
 		}
-		
+
 		method set_known_to_reconstruction { known } {
 			# Sets the "known to reconstruction" attribute to
 			# true (known = 1) or false (known = 0).
 			set _known_to_reconstruction $known
 		}
-		
+
 		method set_amount_from_json { json_obj } {
 			# Set the deviation's amount from a JSON object, which
 			# is a parameter with a value and potentially a drift.
-			# 
+			#
 			# This function is usually not called from the outside,
 			# but used by `set_from_json`.
 			$_amount set_from_json $json_obj
 		}
-		
+
 		method set_from_json { json_obj } {
 			# Set up the deviation from a JSON deviation structure.
 			if { [::ctsimu::json_exists_and_not_null $json_obj type] } {
@@ -176,7 +176,7 @@ namespace eval ::ctsimu {
 				::ctsimu::fail "A deviation must provide a \"type\": either \"rotation\" or \"translation\"."
 				return 0
 			}
-			
+
 			# Transformation axis:
 			if { [::ctsimu::json_exists_and_not_null $json_obj axis] } {
 				if { [::ctsimu::json_type $json_obj axis] == "string" } {
@@ -203,7 +203,7 @@ namespace eval ::ctsimu {
 				::ctsimu::fail "A deviation must provide an \"axis\": any of {$::ctsimu::valid_axis_strings}"
 				return 0
 			}
-			
+
 			# Pivot point for rotations.
 			# Set a standard pivot which refers to the object's center:
 			$_pivot set_simple 0 0 0
@@ -220,10 +220,10 @@ namespace eval ::ctsimu {
 					return 0
 				}
 			}
-			
+
 			my set_amount_from_json [::ctsimu::json_extract $json_obj {amount}]
 			my set_known_to_reconstruction [::ctsimu::get_value_in_unit "bool" $json_obj {known_to_reconstruction} 1]
-			
+
 			return 1
 		}
 	}

@@ -8,7 +8,7 @@ set M [::ctsimu::matrix new $cols $rows]
 for {set i 0} {$i < [$M size]} {incr i} {
 	set col [expr int($i % $cols)]
 	set row [expr int(floor($i/$cols))]
-	
+
 	$M set_element $col $row [expr $i+1]
 }
 
@@ -31,7 +31,7 @@ for {set col 0} {$col < [$M n_cols]} {incr col} {
 for {set i 0} {$i < [$M size]} {incr i} {
 	set col [expr int($i % $cols)]
 	set row [expr int(floor($i/$cols))]
-	
+
 	puts "Element $i: [$M element $col $row]"
 }
 

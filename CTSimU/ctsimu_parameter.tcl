@@ -26,7 +26,7 @@ namespace eval ::ctsimu {
 			foreach drift $_drifts {
 				$drift destroy
 			}
-			
+
 			set _drifts [list]
 		}
 
@@ -36,7 +36,7 @@ namespace eval ::ctsimu {
 				$drift destroy
 			}
 			set _drifts [list]
-			
+
 			set _value_has_changed 1
 			set _current_value $_standard_value
 		}
@@ -67,7 +67,7 @@ namespace eval ::ctsimu {
 			# Should be used after `set_frame`.
 			return $_current_value
 		}
-		
+
 		method has_changed { } {
 			return $_value_has_changed
 		}
@@ -85,7 +85,7 @@ namespace eval ::ctsimu {
 			set _standard_value $value
 			set _current_value $value
 		}
-		
+
 		method acknowledge_change { { new_change_state 0} } {
 			set _value_has_changed $new_change_state
 		}
@@ -115,7 +115,7 @@ namespace eval ::ctsimu {
 							continue
 						}
 					}
-					
+
 					set total_drift [$d get_value_for_frame $frame $nFrames]
 				}
 			} else {
@@ -167,13 +167,13 @@ namespace eval ::ctsimu {
 				if { [my native_unit] == "string"} {
 					my set_standard_value [::ctsimu::get_value $json_parameter_object]
 					set success 1
-				}				
+				}
 			} elseif { [::ctsimu::json_type $json_parameter_object] == "boolean" } {
 				# Parameter is given as a boolean. Convert to 0 or 1.
 				if { [my native_unit] == "bool"} {
 					my set_standard_value [::ctsimu::json_convert_to_native_unit [my native_unit] $json_parameter_object]
 					set success 1
-				}				
+				}
 			} elseif { [::ctsimu::json_type $json_parameter_object] == "object" } {
 				# Parameter is hopefully a valid parameter object...
 

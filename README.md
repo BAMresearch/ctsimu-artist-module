@@ -241,7 +241,7 @@ The following table lists the JSON parameters defined by the [CTSimU file format
 
 ### 0.7.11
 
-+ Added support for CERA's RDabcu0v0 coordinate system to provide a reconstruction configuration alternative to the projection matrix approach. 
++ Added support for CERA's RDabcu0v0 coordinate system to provide a reconstruction configuration alternative to the projection matrix approach.
 
 ### 0.7.10
 

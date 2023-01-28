@@ -52,7 +52,7 @@ namespace eval ::ctsimu {
 
 			set stage_as_sample [::ctsimu::sample new "Stage"]
 			$stage_as_sample attach_to_stage 1
-			
+
 			# Prepare scene vectors for the stage sample.
 			# As it is attached to the stage, we simply need to
 			# create standard basis vectors:

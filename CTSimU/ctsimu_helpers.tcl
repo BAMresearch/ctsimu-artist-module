@@ -123,7 +123,7 @@ namespace eval ::ctsimu {
 
 		return 0
 	}
-	
+
 	proc read_json_file { filename } {
 		# Read JSON file, check its validity.
 
@@ -178,7 +178,7 @@ namespace eval ::ctsimu {
 
 	proc read_csv_file { filename } {
 		# Read CSV file, return dict of lists:
-		# one list for each column, columns identified by 
+		# one list for each column, columns identified by
 		# column number (0 ... N-1).
 
 		set absfilename [::ctsimu::get_absolute_path $filename]
@@ -245,7 +245,7 @@ namespace eval ::ctsimu {
 
 		return $values
 	}
-	
+
 	proc load_csv_into_tab_separated_string { filename { skip_x_le_0 0 } } {
 		# $file will contain the file pointer
 		set file [open $filename]
@@ -275,7 +275,7 @@ namespace eval ::ctsimu {
 			    	# split on comma or tab
 			    	set entries [split $line "\t,"]
 			    	set j 0
-			    	foreach entry $entries {			    		
+			    	foreach entry $entries {
 			    		if {$j > 0} {
 			    			append text "\t"
 			    		} elseif {$entry <= 0} {
@@ -319,7 +319,7 @@ namespace eval ::ctsimu {
 			    if { ![regexp {^\s*#} $line] } {
 			    	# split on comma or tab
 			    	set entries [split $line "\t,"]
-			    	lappend csvList $entries 
+			    	lappend csvList $entries
 			    }
 			}
 		}
@@ -360,7 +360,7 @@ namespace eval ::ctsimu {
 			set value [::rl_json::json get $json_obj value]
 			return [value_is_null $value]
 		}
-		
+
 		return 1
 	}
 
@@ -390,7 +390,7 @@ namespace eval ::ctsimu {
 
 		return $fail_value
 	}
-	
+
 	proc json_exists { dictionary { keys {} } } {
 		return [::rl_json::json exists $dictionary {*}$keys]
 	}
@@ -414,7 +414,7 @@ namespace eval ::ctsimu {
 	proc json_type { dictionary { keys {} } } {
 		return [::rl_json::json type [::rl_json::json extract $dictionary {*}$keys]]
 	}
-	
+
 	proc json_extract { dictionary keys } {
 		# Get the JSON sub-object that is located
 		# by a given sequence of `keys` in the JSON dictionary.
@@ -424,7 +424,7 @@ namespace eval ::ctsimu {
 
 		return "null"
 	}
-	
+
 	proc json_extract_from_possible_keys { dictionary key_sequences } {
 		# Searches the JSON object for each
 		# key sequence in the given list of key_sequences.
@@ -550,7 +550,7 @@ namespace eval ::ctsimu {
 
 		::ctsimu::fail "Not a valid unit of density: \'$unit\'"
 	}
-	
+
 	proc in_lp_per_mm { value unit } {
 		# Converts a resolution to line pairs per millimeter.
 		if {$value != "null"} {
@@ -592,11 +592,11 @@ namespace eval ::ctsimu {
 			# If so, remove them.
 			if { [string index $value 0] == "\"" } {
 				set value [string range $value 1 end]
-				
+
 				if { [string index $value end] == "\"" } {
 					set value [string range $value 0 end-1]
 				}
-			}			
+			}
 			return $value; # this is a string, e.g. spectrum file
 		} else {
 			if { $native_unit == "mm" } {
@@ -648,7 +648,7 @@ namespace eval ::ctsimu {
 				# This is already a string, not embedded in
 				# a value/unit pair.
 				return $value_and_unit
-			}			
+			}
 		}
 
 		if { [::rl_json::json exists $value_and_unit value] } {

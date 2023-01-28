@@ -19,7 +19,7 @@ Each part has its own coordinate system, and a parallel "ghost" coordinate syste
 * `set_geometry { geometry stageCS }` — Sets up the part from a JSON geometry definition. Here, `geometry` must be an `rl_json` object. The `stageCS` must be given as a `::ctsimu::coordinate_system` object. If this part is not attached to the stage, the `$::ctsimu::world` coordinate system can be passed instead.
 * `set_frame_cs { cs stageCS frame nFrames { only_known_to_reconstruction 0 } { w_rotation_in_rad 0 } }` — Set up the given coordinate system `cs`such that it complies with the `frame` number and all necessary drifts and deviations. (Assuming a total number of `nFrames`). This function is used by `set_frame` and is usually not called from outside the object.
 * `set_frame { stageCS frame nFrames { w_rotation_in_rad 0 } }` — Set up the part for the given frame number, obeying all deviations and drifts.
-	
+
 	- `stageCS:` A `::ctsimu::coordinate_system` that represents the stage. Only necessary if the coordinate system will be attached to the stage. Otherwise, the world coordinate system can be passed as an argument.
 	- `frame:` Frame number to set up.
 	- `nFrames:` Total number of frames in the CT scan.

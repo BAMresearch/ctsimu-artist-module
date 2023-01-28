@@ -3,7 +3,7 @@
 	{
 		"name": "Test3D",
 		"description": "",
-		
+
 		"contact": "David Plotzki/ Tamara Reuter",
 		"date_created": "2020-07-07",
 		"date_changed": "2020-07-17",
@@ -149,7 +149,7 @@
 		{
 			"basic_spatial_resolution": {"value": 1, "unit": "mm", "drift": [{"value": [-0.5, 10], "unit": "mm"}]},
 			"mtf": {"value": "Felix_edge_080kV_0250uA_gain4_2000ms_mtf.txt", "drift": [{"value": ["Felix edge_080kV_0250uA_gain4_2000ms_mtf.txt", "Florian edge_180kV-180uA_mtf.txt"]}]}
-		},		
+		},
 		"bad_pixel_map":
 		{
 			"file": null,
@@ -204,7 +204,7 @@
 					"thickness": {"value": 4.0, "unit": "mm", "uncertainty": 0.0, "uncertainty_unit": "mm"}
 				}
 			],
-			"filters": 
+			"filters":
 			[
 				{
 					"material_id": "Cu",
@@ -313,7 +313,7 @@
 			"composition": "CsI"
 		}
 	],
-	
+
 	"simulation":
 	{
 		"aRTist":

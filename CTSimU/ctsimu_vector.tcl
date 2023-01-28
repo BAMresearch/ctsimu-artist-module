@@ -32,7 +32,7 @@ namespace eval ::ctsimu {
 			# Return number of vector elements.
 			return [llength $_values]
 		}
-		
+
 		method get_copy { } {
 			# Return a copy of this vector
 			set newVector [::ctsimu::vector new [list 0]]
@@ -78,7 +78,7 @@ namespace eval ::ctsimu {
 			# Shortcut for vector element 2
 			return [my element 2]
 		}
-		
+
 		method w { } {
 			# Shortcut for vector element 3
 			return [my element 3]
@@ -91,22 +91,22 @@ namespace eval ::ctsimu {
 		method set_values { l } {
 			# Set vector elements to given value list.
 			set _values $l
-			
+
 			# Convert all elements to double to avoid problems:
 			for {set i 0} {$i < [my size]} {incr i} {
 				lset _values $i [expr double([my element $i])]
 			}
 		}
-		
+
 		method set { x {y "none"} {z "none"} {w "none"} } {
 			# Make a vector with three components (x, y, z).
 			set _values [list [expr double($x)]]
 			if {$y != "none"} {
 				my add_element $y
-				
+
 				if {$z != "none"} {
 					my add_element $z
-					
+
 					if {$w != "none"} {
 						my add_element $w
 					}
@@ -140,12 +140,12 @@ namespace eval ::ctsimu {
 			# Shortcut to set element 2 to given value.
 			my set_element 2 [expr double($value)]
 		}
-		
+
 		method set_w { value } {
 			# Shortcut to set element 3 to given value.
 			my set_element 3 [expr double($value)]
 		}
-		
+
 		method copy { other } {
 			# Copy other vector to this vector.
 			my set_values [$other get_values]
@@ -271,7 +271,7 @@ namespace eval ::ctsimu {
 				return [$diff length]
 			} else {
 				::ctsimu::fail "::ctsimu::vector::distance: Cannot treat vectors of different dimensions."
-			}	
+			}
 		}
 
 		method dot { other } {
@@ -344,7 +344,7 @@ namespace eval ::ctsimu {
 		method transform_by_matrix { M } {
 			# Multiply matrix M to this vector v: r=Mv,
 			# and set this vector to the result r of this transformation.
-			set r [$M multiply_vector [self]]		
+			set r [$M multiply_vector [self]]
 			my copy $r
 			$r destroy
 		}

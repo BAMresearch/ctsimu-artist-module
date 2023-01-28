@@ -4,7 +4,7 @@
 if { [::Modules::Available "CTSimU"] } {
 	set ctsimu [dict get [::Modules::Get "CTSimU"] Namespace]
 	if { ![winfo exists .ctsimu] } { ${ctsimu}::Run }
-		
+
 	# Vorsichtshalber mal die Batchliste leeren,
 	# falls da zufällig etwas drin ist:
 	${ctsimu}::clearBatchList
@@ -30,10 +30,10 @@ if { [::Modules::Available "CTSimU"] } {
 
 	# Batchjobs starten:
 	${ctsimu}::runBatch
-	
+
 	# Warten, bis das Modul alle Jobs abgearbeitet hat:
 	while { ![${ctsimu}::CanClose] } { update; after 100 }
-	
+
 	# Sicherheitshalber die Batchliste noch einmal speichern.
 	# Dadurch kann man später nachschauen, ob ein Run abgebrochen wurde oder Fehler aufgetaucht sind,
 	# z.B. indem man die CSV-Datei mal in Excel importiert.

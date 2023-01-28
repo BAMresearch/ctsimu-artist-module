@@ -73,7 +73,7 @@ namespace eval ::ctsimu {
 
 				return "CTSimU_[my id]"
 			}
-			
+
 			# Material is "void" or "none":
 			return [my id]
 		}
@@ -84,7 +84,7 @@ namespace eval ::ctsimu {
 
 		method density { } {
 			return $_density
-		} 
+		}
 
 		method composition { } {
 			return $_composition

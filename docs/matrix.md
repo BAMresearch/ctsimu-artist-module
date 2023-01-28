@@ -12,7 +12,7 @@ This module adds the following function to the `::ctsimu` namespace:
 ### Constructor
 
 * `constructor { nCols nRows }`
-    
+
     Initialize a matrix by providing the number of rows and columns to the constructor. The matrix will be filled with zeros.
 
         set cols 4

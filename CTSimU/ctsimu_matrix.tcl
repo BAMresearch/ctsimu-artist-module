@@ -27,9 +27,9 @@ namespace eval ::ctsimu {
 		}
 
 		destructor {
-			
+
 		}
-		
+
 		method print { } {
 			# Return a printable string for this matrix.
 			set s "\["
@@ -47,7 +47,7 @@ namespace eval ::ctsimu {
 			append s "\]"
 			return $s
 		}
-		
+
 		method format_json { } {
 			set jmatrix [::rl_json::json new array]
 			foreach row $_rows {
@@ -57,10 +57,10 @@ namespace eval ::ctsimu {
 				}
 				::rl_json::json set jmatrix end+1 $jrow
 			}
-			
+
 			return $jmatrix
 		}
-		
+
 		method format_CERA { } {
 			return [join $_rows \n]
 		}
@@ -74,34 +74,34 @@ namespace eval ::ctsimu {
 			# Return number of columns
 			return $_n_cols
 		}
-		
+
 		method size { } {
 			# Get the total number of matrix elements (n_cols * n_rows).
 			return [expr $_n_rows*$_n_cols]
 		}
-		
+
 		# Getters
 		# -------------------------
 		# Getters currently perform no checks for valid row and col numbers
 		# to improve speeds during calculations. Maybe add later...?
-		
+
 		method element { col_index row_index } {
 			# Return the matrix element at the requested column and row.
 			return [lindex $_rows $row_index $col_index]
 		}
-		
+
 		method get_row { row_index } {
 			# Return the vector of the requested row index.
 			return [lindex $_rows $row_index]
 		}
-		
+
 		method get_col { col_index } {
 			# Return a new vector object for the requested column index.
 			set column_vector [list]
 			foreach row $_rows {
 				lappend column_vector [lindex $row $col_index]
 			}
-			
+
 			return $column_vector
 		}
 
@@ -132,7 +132,7 @@ namespace eval ::ctsimu {
 				::ctsimu::fail "::ctsimu::matrix::set_row: Cannot set row at index $index for a matrix that only has $_n_rows rows."
 			}
 		}
-		
+
 		method set_col { index col_value_list } {
 			# Set column at index to another col_vector.
 			if {$_n_cols > $index} {
@@ -169,12 +169,12 @@ namespace eval ::ctsimu {
 				::ctsimu::fail "::ctsimu::matrix::add_col: Cannot add column vector with [llength $col_value_list] elements to a matrix that has $_n_rows rows."
 			}
 		}
-		
+
 		method scale { factor } {
 			for {set r 0} {$r < $_n_rows} {incr r} {
 				for {set c 0} {$c < $_n_cols} {incr c} {
 					lset _rows $r $c [expr [lindex $_rows $r $c]*$factor]
-				}				
+				}
 			}
 		}
 
@@ -196,25 +196,25 @@ namespace eval ::ctsimu {
 				::ctsimu::fail "::ctsimu::matrix::multiply_vector: Cannot multiply matrix with $_n_cols columns and $_n_rows rows with vector of $vecNElements rows."
 			}
 		}
-		
+
 		method multiply { M } {
 			# Return the matrix product of this*M.
 			set result_rows [my n_rows]
 			set result_cols [$M n_cols]
-			
+
 			set result [::ctsimu::matrix new $result_cols $result_rows]
-			
+
 			for {set row 0} {$row < $result_rows} {incr row} {
 				for {set col 0} {$col < $result_cols} {incr col} {
 					set s 0
 					for {set i 0} {$i < [expr min($_n_cols, [$M n_rows])]} {incr i} {
 						set s [expr $s + [lindex $_rows $row $i]*[$M element $col $i]]
 					}
-					
+
 					$result set_element $col $row $s
 				}
 			}
-			
+
 			return $result
 		}
 	}
@@ -230,7 +230,7 @@ namespace eval ::ctsimu {
 		set nz [$unitAxis z]
 
 		$unitAxis destroy
-		
+
 		set cs [expr cos($angle_in_rad)]
 		set sn [expr sin($angle_in_rad)]
 

@@ -183,7 +183,7 @@ namespace eval ::ctsimu {
 			$_w destroy
 			set _w $w
 		}
-		
+
 		method set_u_w { u w } {
 			# Make a coordinate system from
 			# given u and w vector; v is calculated.
@@ -203,7 +203,7 @@ namespace eval ::ctsimu {
 			# Shift center by given translation vector.
 			$_center add $translation_vector
 		}
-		
+
 		method translate_along_axis { axis distance } {
 			# Shift center along `axis` by given `distance`.
 			set t [$axis get_unit_vector]
@@ -232,22 +232,22 @@ namespace eval ::ctsimu {
 			my translate $t
 			$t destroy
 		}
-		
+
 		method translate_u { du } {
 			# Translate coordinate system in u direction by distance du.
 			my translate_along_axis $_u du
 		}
-		
+
 		method translate_v { dv } {
 			# Translate coordinate system in v direction by distance dv.
 			my translate_along_axis $_v dv
 		}
-		
+
 		method translate_w { dw } {
 			# Translate coordinate system in w direction by distance dw.
 			my translate_along_axis $_w dw
 		}
-		
+
 		method rotate { axis angle_in_rad } {
 			# Rotate coordinate system around the given axis vector
 			# by angle_in_rad. This does not move the center point,
@@ -362,12 +362,12 @@ namespace eval ::ctsimu {
 			set csFromCopy [$csFrom get_copy]
 			set csToCopy   [$csTo get_copy]
 
-			# -- ROTATIONS	
+			# -- ROTATIONS
 			# Rotation to bring w axis from -> to
 			set wFrom [$csFromCopy w]
 			set wTo   [$csToCopy w]
 			set rotationAxis [$wFrom cross $wTo]
-			
+
 			if { [$rotationAxis length] == 0 } {
 				if { [$wTo dot $wFrom] < 0 } {
 					# 180° flip; vectors point in opposite direction. Rotation axis is another CS basis vector.
@@ -452,11 +452,11 @@ namespace eval ::ctsimu {
 			#   Pass 1 if the known_to_reconstruction JSON parameter must be obeyed,
 			#   so only deviations that are known to the reconstruction software
 			#   will be handled. Other deviations will be ignored.
-			
+
 			set known_to_recon [$deviation known_to_reconstruction]
 			if { ($only_known_to_reconstruction==0) || ($known_to_recon==1) } {
 				set value [[$deviation amount] get_value_for_frame $frame $nFrames $only_known_to_reconstruction]
-				
+
 				if { [$deviation type] == "translation" } {
 					if { [$deviation native_unit] == "mm" } {
 						if { [my is_attached_to_stage] == 0} {
@@ -469,9 +469,9 @@ namespace eval ::ctsimu {
 							set translation_axis [[$deviation axis] in_world "direction" \
 									[self object] $::ctsimu::world \
 									$frame $nFrames $only_known_to_reconstruction]
-									
+
 							my translate_along_axis $translation_axis $value
-							
+
 							$translation_axis destroy
 						} else {
 							# Object is in stage coordinate system.
@@ -479,9 +479,9 @@ namespace eval ::ctsimu {
 							set translation_axis [[$deviation axis] in_local "direction" \
 									$stage [self object] \
 									$frame $nFrames $only_known_to_reconstruction]
-									
+
 							my translate_along_axis $translation_axis $value
-							
+
 							$translation_axis destroy
 						}
 					} else {
@@ -496,11 +496,11 @@ namespace eval ::ctsimu {
 									[self object] $::ctsimu::world $frame $nFrames $only_known_to_reconstruction]
 							set pivot_point [[$deviation pivot] in_world "point" \
 									[self object] $::ctsimu::world $frame $nFrames $only_known_to_reconstruction]
-								
+
 							my rotate_around_pivot_point $rotation_axis $value $pivot_point
-							
+
 							$rotation_axis destroy
-							$pivot_point destroy								
+							$pivot_point destroy
 						} else {
 							# Object is in stage coordinate system.
 							# --------------------------------------
@@ -510,11 +510,11 @@ namespace eval ::ctsimu {
 							set pivot_point [[$deviation pivot] in_local "point" \
 									$stage [self object] \
 									$frame $nFrames $only_known_to_reconstruction]
-									
+
 							my rotate_around_pivot_point $rotation_axis $value $pivot_point
-							
+
 							$rotation_axis destroy
-							$pivot_point destroy	
+							$pivot_point destroy
 						}
 					} else {
 						::ctsimu::fail "All rotational deviations must be given in units of angles (e.g., \"rad\")."
@@ -564,7 +564,7 @@ namespace eval ::ctsimu {
 			$T add_row [list 0 0 0]
 			$T add_col [list 0 0 0 1]
 		}
-		
+
 		$from_u destroy
 		$from_v destroy
 		$from_w destroy
@@ -574,7 +574,7 @@ namespace eval ::ctsimu {
 
 		return $T
 	}
-	
+
 	proc change_reference_frame_of_direction { vec csFrom csTo } {
 		# Returns the direction of vector `vec`, given in `csFrom`,
 		# in terms of `csTo` (simple multiplication with the basis transform matrix).

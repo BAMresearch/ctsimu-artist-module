@@ -42,8 +42,8 @@ CTSimU defines a [JSON-based file format](https://bamresearch.github.io/ctsimu-s
 
       $center_x set_parameter_from_possible_keys $geometry [list {center x} {centre x}]
 
-* `set_frame { frame nFrames { only_drifts_known_to_reconstruction 0 } }` — Prepares the `current_value` for the given `frame` number (assuming a total of `nFrames` frames). This takes into account all drifts. 
-    
+* `set_frame { frame nFrames { only_drifts_known_to_reconstruction 0 } }` — Prepares the `current_value` for the given `frame` number (assuming a total of `nFrames` frames). This takes into account all drifts.
+
     The parameter `only_drifts_known_to_reconstruction` can be set to `1` if this the new parameter value should only be calculated from drifts which are known to the reconstruction software.
 
     Returns `1` if the parameter value has changed from its previous state (due to drifts) and `0` if it has not changed.

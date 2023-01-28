@@ -35,7 +35,7 @@
 				"y": {"value":  0},
 				"z": {"value":  0}
 			},
-			
+
 			"deviations": [
 				{
 					"type": "translation",
@@ -90,7 +90,7 @@
 				"y": {"value":  0},
 				"z": {"value":  0}
 			},
-			
+
 			"deviations": []
 		},
 
@@ -111,7 +111,7 @@
 				"y": {"value":  0},
 				"z": {"value":  1}
 			},
-			
+
 			"deviations": []
 		}
 	},
@@ -265,7 +265,7 @@
 					"v": {"value": -0.2},
 					"w": {"value":  1}
 				},
-				
+
 				"deviations": []
 			}
 		},
@@ -296,7 +296,7 @@
 					"y": {"value":  1},
 					"z": {"value":  0}
 				},
-				
+
 				"deviations": []
 			}
 		}

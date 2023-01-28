@@ -58,7 +58,7 @@ proc Init {} {
 	if { [dict exists $prefs showStageInScene] } {
 		$ctsimu_scenario set show_stage [dict get $prefs showStageInScene]
 	}
-	
+
 	if { [dict exists $prefs restartArtistAfterBatchRun] } {
 		$ctsimu_batchmanager set restart_aRTist_after_each_run [dict get $prefs restartArtistAfterBatchRun]
 	}
@@ -66,11 +66,11 @@ proc Init {} {
 	if { [dict exists $prefs csvJobList] } {
 		$ctsimu_batchmanager set csv_list_to_import [dict get $prefs csvJobList]
 	}
-	
+
 	if { [dict exists $prefs nextBatchRun] } {
 		$ctsimu_batchmanager set next_run [dict get $prefs nextBatchRun]
 	}
-	
+
 	if { [dict exists $prefs waitingForRestart] } {
 		$ctsimu_batchmanager set waiting_for_restart [dict get $prefs waitingForRestart]
 	}
@@ -78,7 +78,7 @@ proc Init {} {
 	if { [dict exists $prefs cfgFileCERA] } {
 		$ctsimu_scenario set create_cera_config_file [dict get $prefs cfgFileCERA]
 	}
-	
+
 	if { [dict exists $prefs ceraOutputDatatype] } {
 		$ctsimu_scenario set cera_output_datatype [dict get $prefs ceraOutputDatatype]
 	}
@@ -86,7 +86,7 @@ proc Init {} {
 	if { [dict exists $prefs cfgFileOpenCT] } {
 		$ctsimu_scenario set create_openct_config_file [dict get $prefs cfgFileOpenCT]
 	}
-	
+
 	if { [dict exists $prefs openctOutputDatatype] } {
 		$ctsimu_scenario set openct_output_datatype [dict get $prefs openctOutputDatatype]
 	}
@@ -317,7 +317,7 @@ proc ChooseFile { mask } {
 
 	set fname [tk_getOpenFile -parent $toplevel -filetypes $mask]
 
-	if { $fname != "" } { 
+	if { $fname != "" } {
 		return [Utils::GetRelativePath $fname $BasePath]
 	}
 
@@ -331,11 +331,11 @@ proc ChooseFiles { mask } {
 
 	set fnames [tk_getOpenFile -parent $toplevel -filetypes $mask -multiple 1]
 
-	if { $fnames != "" } { 
+	if { $fnames != "" } {
 		set namesList { }
 
 		foreach fname $fnames {
-			if { $fname != "" } { 
+			if { $fname != "" } {
 				lappend namesList [Utils::GetRelativePath $fname $BasePath]
 			}
 		}
@@ -568,13 +568,13 @@ proc fillCurrentParameters {} {
 	set GUISettings(dataType)             [$ctsimu_scenario get output_datatype]
 	set GUISettings(includeFinalAngle)    [$ctsimu_scenario get include_final_angle]
 	set GUISettings(startProjNr)          [$ctsimu_scenario get start_proj_nr]
-	
+
 	set GUISettings(scatterImgInterval)   [$ctsimu_scenario get scattering_image_interval]
 
 	# General settings
 	set GUISettings(showStageInScene)     [$ctsimu_scenario get show_stage]
 	set GUISettings(restartArtistAfterBatchRun)  [$ctsimu_batchmanager get restart_aRTist_after_each_run]
-	
+
 	# Recon settings
 	set GUISettings(cfgFileCERA)          [$ctsimu_scenario get create_cera_config_file]
 	set GUISettings(ceraOutputDatatype)   [$ctsimu_scenario get cera_output_datatype]
@@ -593,7 +593,7 @@ proc applyCurrentSettings {} {
 
 	$ctsimu_scenario set show_stage                $GUISettings(showStageInScene)
 	$ctsimu_batchmanager set restart_aRTist_after_each_run $GUISettings(restartArtistAfterBatchRun)
-	
+
 	$ctsimu_scenario set create_cera_config_file   $GUISettings(cfgFileCERA)
 	$ctsimu_scenario set cera_output_datatype      $GUISettings(ceraOutputDatatype)
 
@@ -623,7 +623,7 @@ proc applyCurrentSettings {} {
 
 	dict set storeSettings cfgFileOpenCT [$ctsimu_scenario get create_openct_config_file]
 	dict set storeSettings openctOutputDatatype [$ctsimu_scenario get openct_output_datatype]
-	
+
 	# Save the settings dict in preferences file:
 	Preferences::Set CTSimU Settings $storeSettings
 }
@@ -642,7 +642,7 @@ proc applyCurrentParameters {} {
 	$ctsimu_scenario set include_final_angle $GUISettings(includeFinalAngle)
 	$ctsimu_scenario set start_proj_nr       $GUISettings(startProjNr)
 	$ctsimu_scenario set scattering_image_interval  $GUISettings(scatterImgInterval)
-	
+
 	applyCurrentSettings
 }
 
@@ -668,10 +668,10 @@ proc saveBatchJobs_user { } {
 
 proc saveBatchJobs { csvFilename } {
 	variable ctsimu_batchmanager
-	
+
 	# Send batchlist reference to batch manager:
 	applyCurrentParameters
-	
+
 	$ctsimu_batchmanager sync_batchlist_into_manager
 	$ctsimu_batchmanager save_batch_jobs $csvFilename
 }
@@ -687,10 +687,10 @@ proc loadBatchJobs { } {
 
 proc importBatchJobs { csvFilename } {
 	variable ctsimu_batchmanager
-	
+
 	# Send batchlist reference to batch manager:
 	applyCurrentParameters
-	
+
 	$ctsimu_batchmanager import_batch_jobs $csvFilename
 }
 
@@ -743,7 +743,7 @@ proc clearBatchList { } {
 proc deleteBatchJob { } {
 	variable batchList
 	variable ctsimu_batchmanager
-	
+
 	set items [$batchList curselection]
 	if { $items != {} } { $batchList delete $items }
 
@@ -753,14 +753,14 @@ proc deleteBatchJob { } {
 		$batchList cellconfigure $index,Job -text "$id"
 		incr id
 	}
-	
+
 	$ctsimu_batchmanager sync_batchlist_into_manager
 }
 
 proc stopBatch { } {
 	variable ctsimu_scenario
 	variable ctsimu_batchmanager
-	
+
 	$ctsimu_scenario stop_scan
 	$ctsimu_batchmanager stop_batch
 }
@@ -768,7 +768,7 @@ proc stopBatch { } {
 proc runBatch { } {
 	variable ctsimu_scenario
 	variable ctsimu_batchmanager
-	
+
 	applyCurrentSettings
 	::Preferences::Write
 	$ctsimu_batchmanager sync_batchlist_into_manager
@@ -782,7 +782,7 @@ proc runBatch { } {
 proc loadScene {} {
 	variable GUISettings
 	variable ctsimu_scenario
-	
+
 	stopScan
 
 	applyCurrentParameters
@@ -824,7 +824,7 @@ proc startScan {} {
 	variable ctsimu_scenario
 
 	applyCurrentParameters
-	
+
 	$ctsimu_scenario set output_folder $GUISettings(outputFolder)
 	$ctsimu_scenario set output_basename $GUISettings(outputBaseName)
 	$ctsimu_scenario start_scan
@@ -833,7 +833,7 @@ proc startScan {} {
 proc stopScan {} {
 	variable ctsimu_scenario
 	variable ctsimu_batchmanager
-	
+
 	$ctsimu_scenario stop_scan
 	$ctsimu_batchmanager stop_batch
 }

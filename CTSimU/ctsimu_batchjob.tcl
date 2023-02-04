@@ -14,7 +14,7 @@ namespace eval ::ctsimu {
 			my set status             "Pending"
 			my set runs               1
 			my set start_run          1
-			my set start_proj_nr      0
+			my set start_projection_number 0
 			my set json_file          ""
 			my set output_fileformat  "tiff"
 			my set output_datatype    "uint16"

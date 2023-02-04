@@ -1,4 +1,4 @@
-# ctsimu_part
+# ::ctsimu::part
 Parts are objects in the scene: detector, source, stage and samples.
 
 They have a coordinate system and can define deviations from their standard geometries (translations and rotations around given axes). The center, vectors and deviations can all have drifts, allowing for an evolution through time.

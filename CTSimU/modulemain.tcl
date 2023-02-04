@@ -374,7 +374,7 @@ proc InitGUI { parent } {
 	set general   [FoldFrame $model.frmGeneral -text "General"     -padding $pad]
 	dataform $general {
 		{JSON File}   jsonfile    file   { { {CTSimU Scenario} .json } }
-		{ }                      loadbtn     buttons { "Load" loadScene 10 }
+		{ }                      loadbtn     buttons { "Load" loadScene_GUI 10 }
 	}
 
 	set CTProjection  [FoldFrame $model.frmCTProjection -text "CT Projection"     -padding $pad]
@@ -384,7 +384,7 @@ proc InitGUI { parent } {
 		{Projections}          nProjections   integer   {}
 		{Display Projection #} projNr      integer   {}
 		{Final projection is taken at stop angle}  includeFinalAngle  bool   { }
-		{ } projBtns       buttons { "Show" showProjection 7 "<" prevProjection 3 ">" nextProjection 3 }
+		{ } projBtns       buttons { "Show" showProjection_GUI 7 "<" prevProjection 3 ">" nextProjection 3 }
 	}
 
 	set CTScan  [FoldFrame $model.frmCTScan -text "Simulation"     -padding $pad]
@@ -525,8 +525,8 @@ proc GUIok {} {
 	variable toplevel
 	variable GUISettings
 
-	loadScene
-	showProjection
+	loadScene_GUI
+	showProjection_GUI
 }
 
 # ----------------------------------------------
@@ -567,7 +567,7 @@ proc fillCurrentParameters {} {
 	set GUISettings(fileFormat)           [$ctsimu_scenario get output_fileformat]
 	set GUISettings(dataType)             [$ctsimu_scenario get output_datatype]
 	set GUISettings(includeFinalAngle)    [$ctsimu_scenario get include_final_angle]
-	set GUISettings(startProjNr)          [$ctsimu_scenario get start_proj_nr]
+	set GUISettings(startProjNr)          [$ctsimu_scenario get start_projection_number]
 
 	set GUISettings(scatterImgInterval)   [$ctsimu_scenario get scattering_image_interval]
 
@@ -634,14 +634,14 @@ proc applyCurrentParameters {} {
 	variable ctsimu_scenario
 	variable ctsimu_batchmanager
 
-	$ctsimu_scenario set json_file           $GUISettings(jsonfile)
-	$ctsimu_scenario set start_angle         $GUISettings(startAngle)
-	$ctsimu_scenario set stop_angle          $GUISettings(stopAngle)
-	$ctsimu_scenario set n_projections       $GUISettings(nProjections)
-	$ctsimu_scenario set current_frame       $GUISettings(projNr)
-	$ctsimu_scenario set include_final_angle $GUISettings(includeFinalAngle)
-	$ctsimu_scenario set start_proj_nr       $GUISettings(startProjNr)
-	$ctsimu_scenario set scattering_image_interval  $GUISettings(scatterImgInterval)
+	$ctsimu_scenario set json_file                 $GUISettings(jsonfile)
+	$ctsimu_scenario set start_angle               $GUISettings(startAngle)
+	$ctsimu_scenario set stop_angle                $GUISettings(stopAngle)
+	$ctsimu_scenario set n_projections             $GUISettings(nProjections)
+	$ctsimu_scenario set current_frame             $GUISettings(projNr)
+	$ctsimu_scenario set include_final_angle       $GUISettings(includeFinalAngle)
+	$ctsimu_scenario set start_projection_number   $GUISettings(startProjNr)
+	$ctsimu_scenario set scattering_image_interval $GUISettings(scatterImgInterval)
 
 	applyCurrentSettings
 }
@@ -666,14 +666,14 @@ proc saveBatchJobs_user { } {
 	}
 }
 
-proc saveBatchJobs { csvFilename } {
+proc saveBatchJobs { csv_filename } {
 	variable ctsimu_batchmanager
 
 	# Send batchlist reference to batch manager:
 	applyCurrentParameters
 
 	$ctsimu_batchmanager sync_batchlist_into_manager
-	$ctsimu_batchmanager save_batch_jobs $csvFilename
+	$ctsimu_batchmanager save_batch_jobs $csv_filename
 }
 
 proc loadBatchJobs { } {
@@ -685,16 +685,19 @@ proc loadBatchJobs { } {
 	}
 }
 
-proc importBatchJobs { csvFilename } {
+proc importBatchJobs { csv_filename } {
+	# Import the batch jobs specified in the given CSV file.
+	# Note that these jobs will be added after any jobs that are already in the queue.
 	variable ctsimu_batchmanager
 
 	# Send batchlist reference to batch manager:
 	applyCurrentParameters
 
-	$ctsimu_batchmanager import_batch_jobs $csvFilename
+	$ctsimu_batchmanager import_batch_jobs $csv_filename
 }
 
 proc addBatchJob { } {
+	# Opens GUI dialog for the user to select a JSON file to add to the batch list.
 	variable ctsimu_batchmanager
 
 	# Choose a JSON file:
@@ -710,6 +713,8 @@ proc addBatchJob { } {
 }
 
 proc insertBatchJob { jsonFileName {runs 1} {startRun 1} {startProjectionNumber 0} {format "RAW uint16"} {outputFolder ""} {outputBasename ""} {status "Pending"} } {
+	# Insert a batch job at the end of the batch list.
+	# The parameters are the same as the ones from the GUI.
 	variable ctsimu_batchmanager
 
 	# Sets the currently selected file type
@@ -721,7 +726,7 @@ proc insertBatchJob { jsonFileName {runs 1} {startRun 1} {startProjectionNumber 
 	$bj set status $status
 	$bj set runs $runs
 	$bj set start_run $startRun
-	$bj set start_proj_nr $startProjectionNumber
+	$bj set start_projection_number $startProjectionNumber
 	$bj set_format $format
 
 	if {$outputFolder != ""} {
@@ -736,11 +741,13 @@ proc insertBatchJob { jsonFileName {runs 1} {startRun 1} {startProjectionNumber 
 }
 
 proc clearBatchList { } {
+	# Remove all batch jobs from the list.
 	variable ctsimu_batchmanager
 	$ctsimu_batchmanager clear
 }
 
 proc deleteBatchJob { } {
+	# Removes the selected job(s) from the queue.
 	variable batchList
 	variable ctsimu_batchmanager
 
@@ -779,7 +786,13 @@ proc runBatch { } {
 #  Single scenario loading and handling
 # ----------------------------------------------
 
-proc loadScene {} {
+proc loadScene_GUI { } {
+	# Loads the JSON file that has been chosen from the GUI.
+	variable GUISettings
+	loadScene $GUISettings(jsonfile)
+}
+
+proc loadScene { json_filename } {
 	variable GUISettings
 	variable ctsimu_scenario
 
@@ -788,21 +801,31 @@ proc loadScene {} {
 	applyCurrentParameters
 	::aRTist::LoadEmptyProject
 
-	set sceneState [$ctsimu_scenario load_json_scene $GUISettings(jsonfile) 1]
+	set sceneState [$ctsimu_scenario load_json_scene $json_filename 1]
 
 	# Continue only if JSON was loaded successfully:
 	if { $sceneState == 1 } {
+		::ctsimu::status_info "Setting scene for first frame..."
 		fillCurrentParameters
 		::SceneView::ViewAllCmd
-		showProjection
+		showProjection_GUI
+		::ctsimu::status_info "Ready."
 	}
 }
 
-proc showProjection {} {
+proc showProjection_GUI {} {
 	variable ctsimu_scenario
 
 	applyCurrentParameters
 	$ctsimu_scenario set_frame [$ctsimu_scenario get current_frame] 1
+}
+
+proc showProjection { projection_nr } {
+	variable ctsimu_scenario
+
+	applyCurrentParameters
+	$ctsimu_scenario set current_frame $projection_nr
+	$ctsimu_scenario set_frame $projection_nr 1
 }
 
 proc nextProjection {} {
@@ -838,8 +861,23 @@ proc stopScan {} {
 	$ctsimu_batchmanager stop_batch
 }
 
+proc setProperty { property value } {
+	if { $property == {restart_aRTist_after_each_run} } {
+		# This is a property of the batch manager.
+		variable ctsimu_batchmanager
+		$ctsimu_batchmanager set $property $value
+	} else {
+		# Other properties are stored in the scenario object.
+		variable ctsimu_scenario
+		$ctsimu_scenario set $property $value
+	}
+
+	fillCurrentParameters
+}
+
 proc kickOff { } {
 	# A kick-off function to execute after an aRTist restart.
+	# Used by the batch manager to resume batch execution.
 	variable ctsimu_batchmanager
 
 	if { [$ctsimu_batchmanager get waiting_for_restart] == 1 } {

@@ -1,4 +1,4 @@
-# ctsimu_parameter
+# ::ctsimu::parameter
 Class for a parameter value, includes handling of parameter drifts.
 
 CTSimU defines a [JSON-based file format](https://bamresearch.github.io/ctsimu-scenarios) for scenario descriptions. Its *parameters* typically have a structure like in the following example, where `"x"` would be a *parameter* of the `"center"` object. Each parameter comes with a `value` and a `unit`, optionally with an uncertainty definition (currently not used in an aRTist simulation) and a definition of the parameter drift throughout the scan. Drifts are handled in this aRTist module.

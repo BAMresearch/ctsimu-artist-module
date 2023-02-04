@@ -1,4 +1,4 @@
-# ctsimu_matrix
+# ::ctsimu::matrix
 This submodule provides a basic matrix class and a function to generate a 3D rotation matrix.
 
 ## Functions

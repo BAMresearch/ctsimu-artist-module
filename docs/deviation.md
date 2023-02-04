@@ -1,4 +1,4 @@
-# ctsimu_deviation
+# ::ctsimu::deviation
 A class for a geometrical deviation of a coordinate system, i.e. a translation or a rotation with respect to one of the axes x, y, z (world), u, v, w (local), or r, s, t (sample) or any other arbitrary vector.
 
 Like any parameter, they can have drifts, which means they can change over time.

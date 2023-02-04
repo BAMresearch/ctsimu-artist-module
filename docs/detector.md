@@ -1,4 +1,4 @@
-# ctsimu_detector
+# ::ctsimu::detector
 A class to set up and generate a detector. Inherits from [`::ctsimu::part`](part.md).
 
 ## Methods of the `::ctsimu::detector` class

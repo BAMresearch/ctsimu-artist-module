@@ -1,0 +1,2 @@
+# JSON File,Output Format,Output Folder,Projection Base Name,Runs,StartRun,StartProjNr,Status
+X:/examples/scenario/example.json,TIFF float32,X:/examples/scenario/example,my_scan,1,1,0,Pending

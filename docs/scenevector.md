@@ -1,4 +1,4 @@
-# ctsimu_scenevector
+# ::ctsimu::scenevector
 A scene vector is a 3D vector that knows the type of its reference coordinate sytem, given as world, local or sample. It provides functions to convert between coordinate systems and it can handle drifts. Therefore, all three components of a scene vector are of type `::ctsimu::parameter.`
 
 Useful for vectors that can change due to drifts, such as rotation axis and pivot point of a deviation, or, in general, the coordinate system vectors.

@@ -1,4 +1,4 @@
-# ctsimu_vector
+# ::ctsimu::vector
 This submodule provides a basic vector class.
 
 ## Methods of the `::ctsimu::vector` class

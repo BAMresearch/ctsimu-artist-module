@@ -4,7 +4,7 @@ package require csv
 variable BasePath [file dirname [info script]]
 source -encoding utf-8 [file join $BasePath ctsimu_batchjob.tcl]
 
-# Class for a batch job.
+# Class for the batch manager.
 
 namespace eval ::ctsimu {
 	::oo::class create batchmanager {
@@ -34,6 +34,7 @@ namespace eval ::ctsimu {
 		}
 
 		method reset { } {
+			# Delete all batch jobs
 			foreach bj $_batchjobs {
 				$bj destroy
 			}
@@ -42,10 +43,9 @@ namespace eval ::ctsimu {
 
 		method kick_off { global_scenario } {
 			# This function is meant to execute only once, when the
-			# batch manager has started. It checks if a CSV list
-			# has to be imported from the settings and if
-			# the batch manager was waiting for an aRTist restart,
-			# to resume running the batch.
+			# batch manager has started. It checks in the (aRTist) settings
+			# if a CSV list has to be imported and if the batch manager
+			# was waiting for an aRTist restart to resume running the batch.
 			if { [my get kick_off_done] == 0} {
 				my set kick_off_done 1
 				my kick_off_import
@@ -65,6 +65,7 @@ namespace eval ::ctsimu {
 			}
 		}
 
+
 		# Getters
 		# -------------------------
 		method get { property } {
@@ -73,26 +74,33 @@ namespace eval ::ctsimu {
 		}
 
 		method is_running { } {
+			# Is the batch manager currently running a queue?
 			return [my get running]
+		}
+
+		method n_jobs { } {
+			# Number of jobs in the batch list.
+			return [llength $_batchjobs]
 		}
 
 
 		# Setters
 		# -------------------------
 		method set { property value } {
-			# Set a settings value in the settings dict
+			# Set a settings value in the properties dict
 			dict set _properties $property $value
 		}
 
 		method set_batch_list { bl } {
+			# Sets the handle to aRTist's GUI batch list.
+			# The batch manager synchronizes with the GUI list
+			# whenever necessary.
 			set _batchlist $bl
 		}
 
-		method n_jobs { } {
-			return [llength $_batchjobs]
-		}
-
 		method sync_batchlist_into_manager { } {
+			# Updates the batch manager to be in sync with
+			# aRTist's GUI batch list.
 			variable _batchlist
 
 			if { ![::ctsimu::aRTist_available] } {
@@ -115,30 +123,33 @@ namespace eval ::ctsimu {
 					set bj [lindex $_batchjobs $i]
 				}
 
-				$bj set id              [$_batchlist cellcget $index,Job  -text]
-				$bj set json_file       [$_batchlist cellcget $index,JSONFile  -text]
-				$bj set_format          [$_batchlist cellcget $index,OutputFormat  -text]
-				$bj set output_folder   [$_batchlist cellcget $index,OutputFolder  -text]
-				$bj set output_basename [$_batchlist cellcget $index,ProjectionBaseName  -text]
-				$bj set runs            [$_batchlist cellcget $index,Runs  -text]
-				$bj set start_run       [$_batchlist cellcget $index,StartRun  -text]
-				$bj set start_proj_nr   [$_batchlist cellcget $index,StartProjNr  -text]
-				$bj set status          [$_batchlist cellcget $index,Status  -text]
+				$bj set id                      [$_batchlist cellcget $index,Job  -text]
+				$bj set json_file               [$_batchlist cellcget $index,JSONFile  -text]
+				$bj set_format                  [$_batchlist cellcget $index,OutputFormat  -text]
+				$bj set output_folder           [$_batchlist cellcget $index,OutputFolder  -text]
+				$bj set output_basename         [$_batchlist cellcget $index,ProjectionBaseName  -text]
+				$bj set runs                    [$_batchlist cellcget $index,Runs  -text]
+				$bj set start_run               [$_batchlist cellcget $index,StartRun  -text]
+				$bj set start_projection_number [$_batchlist cellcget $index,StartProjNr  -text]
+				$bj set status                  [$_batchlist cellcget $index,Status  -text]
 
 				incr i
 			}
 
 			# Remove any remaining jobs that are not in the GUI list:
 			if { $i < [my n_jobs] } {
+				# Destroy the remaining batch job objects:
 				for {set j $i} {$j < [my n_jobs]} {incr j} {
 					[lindex $_batchjobs $j] destroy
 				}
 
+				# Remove remaining jobs from the list:
 				set _batchjobs [lrange $_batchjobs 0 [expr $i-1]]
 			}
 		}
 
 		method add_batch_job { bj } {
+			# Add a batch job to the batch manager.
 			$bj set id [expr [my n_jobs]+1]
 			lappend _batchjobs $bj
 
@@ -146,11 +157,12 @@ namespace eval ::ctsimu {
 		}
 
 		method add_batch_job_to_GUIlist { bj } {
+			# Add the given batch job to the module's aRTist GUI list.
 			if { [::ctsimu::aRTist_available] } {
 				set colEntries [list [$bj get id] [$bj get status]]
 				lappend colEntries [$bj get runs]
 				lappend colEntries [$bj get start_run]
-				lappend colEntries [$bj get start_proj_nr]
+				lappend colEntries [$bj get start_projection_number]
 				lappend colEntries [$bj get json_file]
 				lappend colEntries [$bj format_string]
 				lappend colEntries [$bj get output_folder]
@@ -161,6 +173,7 @@ namespace eval ::ctsimu {
 		}
 
 		method add_batch_job_from_json { jsonfile } {
+			# Create a new batch job for a given JSON scenario file.
 			if { $jsonfile != "" } {
 				set bj [::ctsimu::batchjob new]
 				$bj set_from_json $jsonfile
@@ -179,11 +192,17 @@ namespace eval ::ctsimu {
 				}
 			}
 
-			# Clear manager's own list:
+			# Clear batch manager's own list:
 			my reset
 		}
 
 		method csv_joblist { { newline_escaped 0 } } {
+			# Create the contents for a CSV file to store the
+			# batch jobs (for a later import) or for aRTist's settings.ini.
+			#
+			# For the settings.ini, newlines need to be escaped:
+			# set the `newline_escaped` parameter to 1.
+
 			# Header as comment:
 			set csv_string "# JSON File,Output Format,Output Folder,Projection Base Name,Runs,StartRun,StartProjNr,Status"
 
@@ -203,7 +222,7 @@ namespace eval ::ctsimu {
 					[$bj get output_basename] \
 					[$bj get runs] \
 					[$bj get start_run] \
-					[$bj get start_proj_nr] \
+					[$bj get start_projection_number] \
 					[$bj get status] ] ]
 			}
 
@@ -211,6 +230,7 @@ namespace eval ::ctsimu {
 		}
 
 		method save_batch_jobs { csvFilename } {
+			# Store batch jobs in a CSV file (for later import).
 			if { $csvFilename != "" } {
 				if {[string tolower [file extension $csvFilename]] != ".csv"} {
 					append csvFilename ".csv"
@@ -222,11 +242,14 @@ namespace eval ::ctsimu {
 			}
 		}
 
-		method import_csv_joblist { csvjoblist } {
-			# Unescape aliased newlines:
-			set csvjoblist [string map {"#%NEWLINE%#" "\n"} $csvjoblist]
+		method import_csv_joblist { csv_joblist_contents } {
+			# Import the batch list from the contents of a CSV job list.
+			# Also used to restore the list from aRTist's settings.ini.
 
-			set lines [split $csvjoblist "\n"]
+			# Unescape aliased newlines:
+			set csv_joblist_contents [string map {"#%NEWLINE%#" "\n"} $csv_joblist_contents]
+
+			set lines [split $csv_joblist_contents "\n"]
 			foreach line $lines {
 				# Check if line starts with a comment character:
 				if {[string index $line 0] == "#"} {
@@ -250,7 +273,7 @@ namespace eval ::ctsimu {
 						if {$i == 3} { $bj set output_basename $entry}
 						if {$i == 4} { $bj set runs $entry}
 						if {$i == 5} { $bj set start_run $entry}
-						if {$i == 6} { $bj set start_proj_nr $entry}
+						if {$i == 6} { $bj set start_projection_number $entry}
 						if {$i == 7} { $bj set status $entry}
 
 						incr i
@@ -262,6 +285,8 @@ namespace eval ::ctsimu {
 		}
 
 		method import_batch_jobs { csvFilename } {
+			# Import catch jobs from a given CSV file.
+			# They are appended to the manager's batch list and to the GUI list.
 			set csvfile [open $csvFilename r]
 			fconfigure $csvfile -encoding utf-8
 			set csvstring [read $csvfile]
@@ -271,10 +296,12 @@ namespace eval ::ctsimu {
 		}
 
 		method stop_batch { } {
+			# Stop the current batch execution.
 			my set running 0
 		}
 
 		method set_status { bj index message } {
+			# Set current status and display it in aRTist's GUI.
 			$bj set status $message
 			if {[::ctsimu::aRTist_available] && $index >= 0} {
 				$_batchlist cellconfigure $index,Status -text $message
@@ -282,7 +309,7 @@ namespace eval ::ctsimu {
 		}
 
 		method jobs_are_pending { } {
-			# Check if there are still pending jobs.
+			# Check if there are still any pending jobs.
 			foreach bj $_batchjobs {
 				if { [$bj get status] == "Pending" } {
 					return 1
@@ -293,6 +320,9 @@ namespace eval ::ctsimu {
 		}
 
 		method run_batch { global_scenario } {
+			# Starts the batch execution.
+			# Parameter: `global_scenario` is the ::ctsimu::scenario object
+			# of the aRTist scene that the batch manager should control.
 			my set running 1
 			my set waiting_for_restart 0
 
@@ -319,16 +349,16 @@ namespace eval ::ctsimu {
 					$global_scenario set output_datatype [$bj get output_datatype]
 					$global_scenario set output_basename [$bj get output_basename]
 					$global_scenario set output_folder [$bj get output_folder]
-					$global_scenario set start_proj_nr [$bj get start_proj_nr]
+					$global_scenario set start_projection_number [$bj get start_projection_number]
 
 					if { [::ctsimu::aRTist_available] } {
 						${::ctsimu::ctsimu_module_namespace}::fillCurrentParameters
 						::SceneView::ViewAllCmd
-						${::ctsimu::ctsimu_module_namespace}::showProjection
+						${::ctsimu::ctsimu_module_namespace}::showProjection 0
 					}
 
 					if { [my get next_run] > 0 } {
-						$global_scenario set start_proj_nr 0
+						$global_scenario set start_projection_number 0
 						set startRun [my get next_run]
 						my set next_run 0
 					} else {
@@ -349,6 +379,8 @@ namespace eval ::ctsimu {
 							my set_status $bj $index "Stopped"
 						} err] } {
 							my set_status $bj $index "ERROR"
+							my sync_batchlist_into_manager
+							continue
 						}
 
 						if {[my is_running] == 0} {
@@ -358,7 +390,7 @@ namespace eval ::ctsimu {
 						my set_status $bj $index "Done"
 
 						my sync_batchlist_into_manager
-						$global_scenario set start_proj_nr 0
+						$global_scenario set start_projection_number 0
 
 						# Apply current settings, in case the aRTist restart
 						# option has been changed during the run.

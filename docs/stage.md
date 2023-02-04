@@ -1,4 +1,4 @@
-# ctsimu_stage
+# ::ctsimu::stage
 A class to set up and generate the stage. Inherits from [`::ctsimu::part`](part.md).
 
 ## Methods of the `::ctsimu::stage` class

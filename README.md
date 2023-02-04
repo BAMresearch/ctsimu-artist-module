@@ -1,6 +1,6 @@
 # CTSimU aRTist Module 1.0
 
-This is a module for the radiographic simulator [aRTist](http://artist.bam.de/) which reads and sets up the scenario from a [CTSimU JSON description](https://bamresearch.github.io/ctsimu-scenarios/). With the module, it is also possible to simulate the complete CT scan as described in the JSON scenario.
+This is a module for the radiographic simulator [aRTist](http://artist.bam.de/) which reads and sets up the scenario from a [CTSimU Scenario Description](https://bamresearch.github.io/ctsimu-scenarios/) file. With the module, it is also possible to simulate the complete CT scan as described in the JSON scenario.
 
 ## Requirements
 
@@ -11,11 +11,21 @@ This is a module for the radiographic simulator [aRTist](http://artist.bam.de/) 
 1. Download the aRTist package file (`CTSimU-<version>.artp`) for the latest [Release](https://github.com/BAMresearch/ctsimu-artist-module/releases).
 2. Drag and drop the `.artp` file into your aRTist window to install the module.
 
+## Example Scenarios
+
+You can find [example scenario files](https://github.com/BAMresearch/ctsimu-scenarios/tree/main/examples) that you can load with this module in aRTist on the [Github repository] for the CTSimU Scenario Descriptions.
+
 ## Known Limitations
 
 + Continuous-motion scans are not supported, only stop&go mode.
 + Drifts between frames of an averaged projection are not handled. Therefore, motion blurring within one projection cannot be simulated.
 + Parallel beam geometries are not supported. As a workaround, a very high source-detector distance could be set in the JSON file.
+
+## Tcl API
+
+The module is written in Tcl, in a way that it can also be used without aRTist (in a limited way). The [documentation](docs/index.md) of the code, API and classes can be found in the `docs` folder. You can find demo Tcl scripts in the [examples](examples/) folder of this repository.
+
+It also provides functions to control the module within aRTist by passing a prepared Tcl script as an argument to an aRTist instance.
 
 ## Deploying a new version
 
@@ -31,7 +41,7 @@ Note: the aRTist package file (`.artp`) should not be part of the git repository
 
 ## Feature Support of JSON Scenarios
 
-The following table lists the JSON parameters defined by the [CTSimU file format](https://bamresearch.github.io/ctsimu-scenarios/) and their support by the aRTist module.
+The following table lists the module's current support status for the JSON parameters defined by the [CTSimU file format](https://bamresearch.github.io/ctsimu-scenarios/).
 
 | Parameter                                             | Support     | Drift Support                                      |
 | :---------------------------------------------------- | :---------- | :------------------------------------------------- |
@@ -41,7 +51,7 @@ The following table lists the JSON parameters defined by the [CTSimU file format
 | `geometry detector vector_u x/y/z`                    | yes         | yes (not recommended, better to use `deviations`)  |
 | `geometry detector vector_w x/y/z`                    | yes         | yes (not recommended, better to use `deviations`)  |
 | `geometry detector deviations`                        | yes         | yes                                                |
-| `geometry source type`                                | no          | no                                                 |
+| `geometry source type`                                | `cone`      | no                                                 |
 | `geometry source beam_divergence`                     | no          | no                                                 |
 | `geometry source center x/y/z`                        | yes         | yes                                                |
 | `geometry source vector_u x/y/z`                      | yes         | yes (not recommended, better to use `deviations`)  |
@@ -116,9 +126,13 @@ The following table lists the JSON parameters defined by the [CTSimU file format
 | `acquisition number_of_projections`                   | yes         | no                                                 |
 | `acquisition include_final_angle`                     | yes         | no                                                 |
 | `acquisition frame_average`                           | yes         | no                                                 |
-| `acquisition dark_field`                              | only ideal  | no                                                 |
+| `acquisition dark_field number`                       | yes         | no                                                 |
+| `acquisition dark_field frame_average`                | -           | no                                                 |
+| `acquisition dark_field ideal`                        | only ideal  | no                                                 |
 | `acquisition dark_field correction`                   | no          | no                                                 |
-| `acquisition flat_field`                              | yes         | no                                                 |
+| `acquisition flat_field number`                       | yes         | no                                                 |
+| `acquisition flat_field frame_average`                | yes         | no                                                 |
+| `acquisition flat_field ideal`                        | yes         | no                                                 |
 | `acquisition flat_field correction`                   | yes         | no                                                 |
 | `acquisition pixel_binning u/v`                       | no          | no                                                 |
 | `acquisition pixel_binning u/v`                       | no          | no                                                 |
@@ -126,7 +140,8 @@ The following table lists the JSON parameters defined by the [CTSimU file format
 | `materials id`                                        | yes         | no                                                 |
 | `materials name`                                      | yes         | no                                                 |
 | `materials density`                                   | yes         | yes                                                |
-| `materials composition`                               | yes         | yes                                                |
+| `materials composition formula`                       | yes         | yes                                                |
+| `materials composition mass_fraction`                 | yes         | yes                                                |
 | `simulation aRTist multisampling_detector`            | yes         | yes                                                |
 | `simulation aRTist multisampling_spot`                | yes         | yes                                                |
 | `simulation aRTist spectral_resolution`               | yes         | no                                                 |

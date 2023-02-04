@@ -1,4 +1,4 @@
-# ctsimu_coordinate_system
+# ::ctsimu::coordinate_system
 This submodule provides a class for coordinate systems and coordinate transformations, and two helper functions.
 
 ## Functions

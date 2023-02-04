@@ -9,9 +9,9 @@ source -encoding utf-8 [file join $BasePath ctsimu_coordinate_system.tcl]
 # They have a coordinate system and can define deviations from their
 # standard geometries (translations and rotations around given axes).
 # The center, vectors and deviations can all have drifts,
-# allowing for an evolution through time.
+# allowing for an evolution in time.
 #
-# Each part has its own coordinate system, and a parallel "ghost"
+# Each part has its own coordinate system and a parallel "ghost"
 # coordinate system for calculating projection matrices for the
 # reconstruction. This is necessary because the user is free
 # not to pass any deviations to the reconstruction.

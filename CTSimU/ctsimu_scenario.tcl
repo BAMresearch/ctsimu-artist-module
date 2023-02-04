@@ -9,6 +9,9 @@ source -encoding utf-8 [file join $BasePath ctsimu_samplemanager.tcl]
 
 namespace eval ::ctsimu {
 	::oo::class create scenario {
+		variable _supported_fileformat_major
+		variable _supported_fileformat_minor
+
 		variable _running
 		variable _json_loaded_successfully
 		variable _settings;  # dictionary with simulation settings
@@ -28,6 +31,10 @@ namespace eval ::ctsimu {
 		variable _ODD
 
 		constructor { } {
+			# Maximum supported file format version:
+			set _supported_fileformat_major 1
+			set _supported_fileformat_minor 1
+
 			# State
 			my _set_run_status 0
 
@@ -76,20 +83,20 @@ namespace eval ::ctsimu {
 
 		method reset { } {
 			# Reset scenario to standard settings.
-			my _set_json_load_status      0
+			my _set_json_load_status       0
 
-			my set json_file             ""; # full path + name of JSON file
-			my set json_file_name        ""; # JSON filename without path
-			my set json_file_directory   ""; # Path to JSON file
-			my set start_angle            0
-			my set stop_angle           360
-			my set n_projections       2000
-			my set frame_average          1
+			my set json_file              ""; # full path + name of JSON file
+			my set json_file_name         ""; # JSON filename without path
+			my set json_file_directory    ""; # Path to JSON file
+			my set start_angle             0
+			my set stop_angle            360
+			my set n_projections        2000
+			my set frame_average           1
 			my set projection_counter_format "%04d"
-			my set proj_nr                0
-			my set include_final_angle    0
-			my set start_proj_nr          0
-			my set scan_direction     "CCW"
+			my set proj_nr                 0
+			my set include_final_angle     0
+			my set start_projection_number 0
+			my set scan_direction      "CCW"
 
 			# Scattering using McRay
 			# interval: re-calculate scatter image every n images:
@@ -289,6 +296,52 @@ namespace eval ::ctsimu {
 
 			set jsonstring [::ctsimu::read_json_file $json_filename]
 
+			# Check file type and file format version.
+			# -------------------------------------------
+			if { [::ctsimu::json_exists $jsonstring {file file_type}] } {
+				if { [::ctsimu::get_value $jsonstring {file file_type}] == "CTSimU Scenario" } {
+					# Check file format version:
+					set major 0
+					set minor 0
+					if { [::ctsimu::json_exists $jsonstring {file file_format_version major}] } {
+						set major [::ctsimu::get_value $jsonstring {file file_format_version major}]
+					} else {
+						::ctsimu::fail "No major file format version number found."
+					}
+
+					if { [::ctsimu::json_exists $jsonstring {file file_format_version minor}] } {
+						set minor [::ctsimu::get_value $jsonstring {file file_format_version minor}]
+					} else {
+						::ctsimu::fail "No minor file format version number found."
+					}
+
+					if { $major == 0 } {
+						if { $minor <= 9} {
+							# pass
+						} else {
+							::ctsimu::fail "File format version $major.$minor is not supported."
+						}
+					} elseif { $major < $_supported_fileformat_major } {
+						# All file format versions prior to
+						# the supported major version should be supported.
+						# Otherwise, add additional guards here, like for
+						# major version 0.
+					} elseif { $major == $_supported_fileformat_major} {
+						if { $minor <= $_supported_fileformat_minor } {
+							# pass
+						} else {
+							::ctsimu::fail "File format version $major.$minor is not supported."
+						}
+					} else {
+						::ctsimu::fail "File format version $major.$minor is not supported."
+					}
+				} else {
+					::ctsimu::fail "Not a valid CTSimU scenario file. The file type must be set to \"CTSimU Scenario\"."
+				}
+			} else {
+				::ctsimu::fail "Not a valid CTSimU scenario file. No file type value found. Maybe you tried to load a CTSimU metadata file?"
+			}
+
 			# Default output basename and folder
 			# ------------------------------------
 			my set output_basename [file rootname [file tail $json_filename]]
@@ -428,13 +481,18 @@ namespace eval ::ctsimu {
 			my set scattering_image_interval [::ctsimu::get_value $jsonstring {simulation aRTist scattering_image_interval value} [my get scattering_image_interval]]
 			my set scattering_mcray_photons [::ctsimu::get_value $jsonstring {simulation aRTist scattering_mcray_photons value} [my get scattering_mcray_photons]]
 
-			::ctsimu::status_info "Scenario loaded."
 			my _set_json_load_status 1
+
 			return 1
 		}
 
 		method set_frame { frame { apply_to_scene 0 } } {
-			#puts "Scenario --- Apply to scene: $apply_to_scene"
+			if { $apply_to_scene} {
+				if { [my is_running] == 0 } {
+					::ctsimu::status_info "Setting frame $frame..."
+				}
+			}
+
 			my set current_frame $frame
 
 			set stage_rotation_angle_in_rad [::ctsimu::in_rad [my get_current_stage_rotation_angle]]
@@ -496,9 +554,11 @@ namespace eval ::ctsimu {
 					${::ctsimu::ctsimu_module_namespace}::setFrameNumber $frame
 					Engine::RenderPreview
 				}
-			}
 
-			#::ctsimu::status_info "Done setting frame $frame."
+				if { [my is_running] == 0 } {
+					::ctsimu::status_info "Ready."
+				}
+			}
 		}
 
 		method update { } {
@@ -562,7 +622,7 @@ namespace eval ::ctsimu {
 					#aRTist::InitProgress
 					#aRTist::ProgressQuantum $nProjections
 
-					for {set projNr [my get start_proj_nr]} {$projNr < $nProjections} {incr projNr} {
+					for {set projNr [my get start_projection_number]} {$projNr < $nProjections} {incr projNr} {
 						my set_frame $projNr 1
 
 						set pnr [expr $projNr+1]
@@ -693,7 +753,7 @@ namespace eval ::ctsimu {
 
 				if { [my get n_darks] > 0 } {
 					if {[my is_running] == 0} {return}
-					::ctsimu::status_info "Taking ideal dark field."
+					::ctsimu::status_info "Taking ideal dark field..."
 
 					# Take dark field image(s):
 					set savedXrayCurrent   $::Xsource(Exposure)
@@ -720,7 +780,7 @@ namespace eval ::ctsimu {
 
 				if { [my get n_flats] } {
 					if {[my is_running] == 0} {return}
-					::ctsimu::status_info "Taking flat field."
+					::ctsimu::status_info "Taking flat field..."
 
 					::PartList::SelectAll
 					::PartList::SetVisibility 0

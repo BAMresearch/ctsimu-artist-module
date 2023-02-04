@@ -1,24 +1,27 @@
 {
-	"file":	{
-		"name": "Example Scenario",
-		"description": "Step cylinder in a rigid frame.",
+	"file": {
+		"name": "Full example scenario",
+		"description": "Tetrahedron in a rigid frame.",
 
 		"contact": "David Plotzki",
 		"date_created": "2020-04-23",
-		"date_changed": "2023-01-15",
-		"version": {"major": 1, "minor": 6},
+		"date_changed": "2023-02-04",
+		"version": {"major": 1, "minor": 7},
 
 		"file_type": "CTSimU Scenario",
-		"file_format_version": {"major": 1, "minor": 0}
+		"file_format_version": {"major": 1, "minor": 1}
 	},
 
 	"environment": {
 		"material_id": "Air",
-		"temperature": {"value": 20, "unit": "C", "uncertainty": {"value": 0.5, "unit": "C"}}
+		"temperature": {
+			"value": 20, "unit": "C",
+			"uncertainty": {"value": 0.5, "unit": "C"}
+		}
 	},
 
-	"geometry":	{
-		"detector":	{
+	"geometry": {
+		"detector": {
 			"center": {
 				"x": {"value": 400, "unit": "mm"},
 				"y": {"value":   0, "unit": "mm"},
@@ -52,14 +55,14 @@
 				{
 					"type": "rotation",
 					"axis": {
-						"x": {"value":  2.0, "drift": null},
-						"y": {"value": -3.0, "drift": null},
-						"z": {"value":  5.3, "drift": null}
+						"x": {"value":  2.0},
+						"y": {"value": -3.0},
+						"z": {"value":  5.3}
 					},
 					"pivot": {
-						"x": {"value":  2.0, "unit": "mm", "drift": null},
-						"y": {"value": -3.0, "unit": "mm", "drift": null},
-						"z": {"value":  5.3, "unit": "mm", "drift": null}
+						"u": {"value":  1.0, "unit": "mm"},
+						"v": {"value": -2.0, "unit": "mm"},
+						"w": {"value":  2.5, "unit": "mm"}
 					},
 					"amount": {"value": 1.3, "unit": "deg"},
 					"known_to_reconstruction": true
@@ -112,13 +115,25 @@
 				"z": {"value":  1}
 			},
 
-			"deviations": []
+			"deviations": [
+				{
+					"comment": "axis wobble",
+					"type": "rotation",
+					"axis": {
+					  "u": {"value": 1},
+					  "v": {"value": 1},
+					  "w": {"value": 0}
+					},
+					"amount": {"value": 4, "unit": "deg"},
+					"known_to_reconstruction": false
+				}
+			]
 		}
 	},
 
 	"detector": {
-		"model":        "",
-		"manufacturer": "",
+		"model":        "DT-1",
+		"manufacturer": "Detector Company",
 		"type":         "real",
 		"columns":      {"value": 200, "unit": "px"},
 		"rows":         {"value": 150, "unit": "px"},
@@ -142,19 +157,18 @@
 		},
 		"noise": {
 			"snr_at_imax": {"value": 205.3},
-			"noise_characteristics_file": {"value": "noise.tsv"}
+			"noise_characteristics_file": {"value": "detector_noise.tsv"}
 		},
-		"gain":	{
-			"value": 3
-		},
+		"gain": {"value": 3},
 		"unsharpness": {
 			"basic_spatial_resolution": {"value": 0.1, "unit": "mm"},
 			"mtf": {"value": "detector_mtf.tsv"}
 		},
 		"bad_pixel_map": {
-			"value": "badpixels.raw",
-			"type": "uint8",
-			"drift": null
+			"file": {"value": "badpixels.raw", "drifts": null},
+			"type": "int16",
+			"endian": "little",
+			"headersize": 0
 		},
 		"scintillator": {
 			"material_id": "CsI",
@@ -181,8 +195,8 @@
 	},
 
 	"source": {
-		"model":        "",
-		"manufacturer": "",
+		"model":        "XS-1",
+		"manufacturer": "X-ray Tube Company",
 		"voltage": {"value": 130, "unit": "kV"},
 		"current": {"value": 120, "unit": "uA"},
 		"target": {
@@ -205,19 +219,11 @@
 				"v": {"value":  50.0, "unit": "um"},
 				"w": {"value":   0.0, "unit": "um"}
 			},
-			"intensity_map": {
-				"file": {"value": "spot_profile.raw", "drift": null},
-				"type": "float32",
-				"dim_x": 301,
-				"dim_y": 301,
-				"dim_z": null,
-				"endian": "little",
-				"headersize": 0
-			}
+			"intensity_map": null
 		},
 		"spectrum": {
 			"monochromatic": false,
-			"file": {"value": "tube_spectrum_130kV.tsv", "drift": null}
+			"file": {"value": "tube_spectrum_130kV.tsv", "drifts": null}
 		},
 		"window": [
 			{
@@ -239,13 +245,13 @@
 
 	"samples": [
 		{
-			"name": "Step Cylinder",
-			"file": {"value": "step_cylinder.stl", "drift": null},
+			"name": "Tetrahedron",
+			"file": {"value": "tetra.stl", "drifts": null},
 			"unit": "mm",
 			"scaling_factor": {
-				"r": {"value": 1.0, "drift": null},
-				"s": {"value": 1.0, "drift": null},
-				"t": {"value": 1.0, "drift": null}
+				"r": {"value": 0.75, "drifts": null},
+				"s": {"value": 0.75, "drifts": null},
+				"t": {"value": 0.75, "drifts": null}
 			},
 			"material_id": "Glass Ceramic",
 			"position": {
@@ -271,12 +277,12 @@
 		},
 		{
 			"name": "Attachment Frame",
-			"file": {"value": "frame.stl", "drift": null},
+			"file": {"value": "frame.stl", "drifts": null},
 			"unit": "mm",
 			"scaling_factor": {
-				"r": {"value": 1.0, "drift": null},
-				"s": {"value": 1.0, "drift": null},
-				"t": {"value": 1.0, "drift": null}
+				"r": {"value": 1.0, "drifts": null},
+				"s": {"value": 1.0, "drifts": null},
+				"t": {"value": 1.0, "drifts": null}
 			},
 			"material_id": "Al",
 			"position": {
@@ -303,8 +309,8 @@
 	],
 
 	"acquisition": {
-		"start_angle": {"value":    0, "unit": "deg"},
-		"stop_angle":  {"value":  320, "unit": "deg"},
+		"start_angle": {"value":   0, "unit": "deg"},
+		"stop_angle":  {"value": 320, "unit": "deg"},
 		"direction": "CCW",
 		"scan_mode": "stop+go",
 		"scan_speed": null,
@@ -332,49 +338,105 @@
 			"id":   "Air",
 			"name": "Air",
 			"density": {"value": 1.293, "unit": "kg/m^3"},
-			"composition": {"value": "N 0.785 O 0.21 Ar 0.005"}
+			"composition": [
+				{
+					"formula": {"value": "N2"},
+					"mass_fraction": {"value": 0.7552}
+				},
+				{
+					"formula": {"value": "O2"},
+					"mass_fraction": {"value": 0.2314}
+				},
+				{
+					"formula": {"value": "Ar"},
+					"mass_fraction": {"value": 0.0128}
+				},
+				{
+					"formula": {"value": "CO2"},
+					"mass_fraction": {"value": 0.0006}
+				}
+			]
 		},
 		{
 			"id":   "Al",
 			"name": "Aluminium",
 			"density": {"value": 2.6989, "unit": "g/cm^3"},
-			"composition": {"value": "Al"}
+			"composition": [
+				{
+					"formula": {"value": "Al"},
+					"mass_fraction": {"value": 1}
+				}
+			]
 		},
 		{
 			"id":   "W",
 			"name": "Tungsten",
 			"density": {"value": 19.25, "unit": "g/cm^3"},
-			"composition": {"value": "W"}
+			"composition": [
+				{
+					"formula": {"value": "W"},
+					"mass_fraction": {"value": 1}
+				}
+			]
 		},
 		{
 			"id":   "CsI",
 			"name": "Caesium Iodide",
 			"density": {"value": 4.51, "unit": "g/cm^3"},
-			"composition": {"value": "CsI"}
+			"composition": [
+				{
+					"formula": {"value": "CsI"},
+					"mass_fraction": {"value": 1}
+				}
+			]
 		},
 		{
 			"id":   "Brass",
 			"name": "Brass",
 			"density": {"value": 8860, "unit": "kg/m^3"},
-			"composition": {"value": "CuZn5"}
+			"composition": [
+				{
+					"formula": {"value": "CuZn5"},
+					"mass_fraction": {"value": 1}
+				}
+			]
 		},
 		{
 			"id":   "Cu",
 			"name": "Copper",
 			"density": {"value": 8.92, "unit": "g/cm^3"},
-			"composition": {"value": "Cu"}
+			"composition": [
+				{
+					"formula": {"value": "Cu"},
+					"mass_fraction": {"value": 1}
+				}
+			]
 		},
 		{
 			"id":   "Kapton",
 			"name": "Kapton 50HN (Polyimide film)",
 			"density": {"value": 1.42, "unit": "g/cm^3"},
-			"composition": {"value": "C16H14N4O4"}
+			"composition": [
+				{
+					"formula": {"value": "C16H14N4O4"},
+					"mass_fraction": {"value": 1}
+				}
+			]
 		},
 		{
 			"id":   "Glass Ceramic",
 			"name": "Glass Ceramic",
-			"density": {"value": 2.53, "unit": "g/cm^3"},
-			"composition": {"value": "Al 0.21172 Si 0.28044 O 0.50784"}
+			"density": {"value": 2.53, "unit": "g/cm^3", "drifts": null},
+			"composition": [
+				{
+					"formula": {"value": "Al2O3", "drifts": null},
+					"mass_fraction": {"value": 0.4, "drifts": null}
+				},
+				{
+					"formula": {"value": "SiO2", "drifts": null},
+					"mass_fraction": {"value": 0.6, "drifts": null}
+				}
+			]
 		}
 	],
 

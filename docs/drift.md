@@ -1,4 +1,4 @@
-# ctsimu_drift
+# ::ctsimu::drift
 This submodule provides a general class to handle the drift of an arbitrary parameter for a given number of frames, including interpolation.
 
 ## Methods of the `::ctsimu::drift` class

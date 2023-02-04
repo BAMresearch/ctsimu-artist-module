@@ -1,4 +1,4 @@
-# ctsimu_source
+# ::ctsimu::source
 A class to set up and generate an X-ray source. Inherits from [`::ctsimu::part`](part.md).
 
 ## Methods of the `::ctsimu::source` class

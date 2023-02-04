@@ -1,0 +1,1 @@
+"C:\Program Files\BAM\aRTist 2.12\bin64\aRTist.exe" "X:\examples\artist_api_single.tcl"

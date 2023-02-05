@@ -18,9 +18,11 @@ namespace eval ::ctsimu {
 		variable _initial_SDD; # initial SDD at frame 0
 		variable _initial_current; # initial X-ray source current at frame 0
 
-		# pitch for frame zero:
+		# Pitch and integration time for frame zero.
+		# Some gray value characteristics always refer to frame zero.
 		variable _initial_pitch_u
 		variable _initial_pitch_v
+		variable _initial_integration_time
 
 		constructor { { name "CTSimU_Detector" } { id "D" } } {
 			next $name $id; # call constructor of parent class ::ctsimu::part
@@ -52,6 +54,7 @@ namespace eval ::ctsimu {
 
 			set _initial_pitch_u 0
 			set _initial_pitch_v 0
+			set _initial_integration_time 0
 
 			# Reset the '::ctsimu::part' that handles the coordinate system:
 			next; # call reset of parent class ::ctsimu::part
@@ -158,7 +161,7 @@ namespace eval ::ctsimu {
 			append us "_[expr int([my get rows])]"
 			append us "_[my get pitch_u]"
 			append us "_[my get pitch_v]"
-			append us "_[my get integration_time]"
+			#append us "_[my get integration_time]"
 			append us "_[my get imin]"
 			append us "_[my get imax]"
 			append us "_[my get factor]"
@@ -284,6 +287,10 @@ namespace eval ::ctsimu {
 			if { ![my set_parameter_from_key integration_time $detprops {integration_time}] } {
 				::ctsimu::warning "Detector integration time not found or invalid. Using standard value."
 			}
+
+			# Remember the initial integration time:
+			[my parameter integration_time] set_frame 0 1
+			set _initial_integration_time [my get integration_time]
 
 			my set_parameter_from_key dead_time $detprops {dead_time}
 			my set_parameter_from_key image_lag $detprops {image_lag}
@@ -522,7 +529,7 @@ namespace eval ::ctsimu {
 			set pixelCountX [expr int([my get columns])]
 			set pixelCountY [expr int([my get rows])]
 			set SRb [my get basic_spatial_resolution]
-			set integrationTime [my get integration_time]
+			set integrationTime $_initial_integration_time
 			set nFrames 1; # CTSimU parameters always refer to 1 frame without averaging.
 
 			# Create a detector dictionary:

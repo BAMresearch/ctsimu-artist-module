@@ -121,12 +121,12 @@ namespace eval ::ctsimu {
 
 		method physical_width { } {
 			# Physical width in mm
-			return [ expr [my get pitch_u] * [my get columns] ]
+			return [ expr [my get pitch_u] * int([my get columns]) ]
 		}
 
 		method physical_height { } {
 			# Physical height in mm
-			return [ expr [my get pitch_v] * [my get rows] ]
+			return [ expr [my get pitch_v] * int([my get rows]) ]
 		}
 
 		method pixel_area_m2 { } {
@@ -147,8 +147,8 @@ namespace eval ::ctsimu {
 			# Create a unique string:
 			set us "detector_[my get timestamp]"
 			append us "_[my get type]"
-			append us "_[my get columns]"
-			append us "_[my get rows]"
+			append us "_[expr int([my get columns])]"
+			append us "_[expr int([my get rows])]"
 			append us "_[my get pitch_u]"
 			append us "_[my get pitch_v]"
 			append us "_[my get integration_time]"
@@ -399,24 +399,6 @@ namespace eval ::ctsimu {
 				set ::Xsetup_private(DGauto) Size
 				::XDetector::SelectAutoQuantity
 
-				# Generate the detector if it has changed:
-				set current_hash [my hash]
-				if { $current_hash != $_previous_hash } {
-					set _previous_hash $current_hash
-
-					# Check if a temp file already exists:
-					set detector_temp_file [my current_temp_file]
-
-					if { ![file exists $detector_temp_file] } {
-						# Detector file does not exist.
-						# We generate one...
-						set aRTist_detector [my generate $_initial_SDD $_initial_current]
-						XDetector::write_aRTdet $detector_temp_file $aRTist_detector
-					}
-
-					FileIO::OpenAnyGUI $detector_temp_file
-				}
-
 				# Number of pixels:
 				set ::Xsetup(DetectorPixelX) [expr int([my get columns])]
 				set ::Xsetup(DetectorPixelY) [expr int([my get rows])]
@@ -455,6 +437,24 @@ namespace eval ::ctsimu {
 				}
 
 				::XDetector::UpdateGeometry %W
+
+				# Generate the detector if it has changed:
+				set current_hash [my hash]
+				if { $current_hash != $_previous_hash } {
+					set _previous_hash $current_hash
+
+					# Check if a temp file already exists:
+					set detector_temp_file [my current_temp_file]
+
+					if { ![file exists $detector_temp_file] } {
+						# Detector file does not exist.
+						# We generate one...
+						set aRTist_detector [my generate $_initial_SDD $_initial_current]
+						XDetector::write_aRTdet $detector_temp_file $aRTist_detector
+					}
+
+					FileIO::OpenAnyGUI $detector_temp_file
+				}
 			}
 		}
 
@@ -506,8 +506,8 @@ namespace eval ::ctsimu {
 
 			set pixelSizeX [my get pitch_u]
 			set pixelSizeY [my get pitch_v]
-			set pixelCountX [my get columns]
-			set pixelCountY [my get rows]
+			set pixelCountX [expr int([my get columns])]
+			set pixelCountY [expr int([my get rows])]
 			set SRb [my get basic_spatial_resolution]
 			set integrationTime [my get integration_time]
 			set nFrames 1; # CTSimU parameters always refer to 1 frame without averaging.

@@ -265,14 +265,14 @@ namespace eval ::ctsimu {
 
 		method set_in_aRTist { } {
 			if { [::ctsimu::aRTist_available] } {
+				# Current:
+				set ::Xsource(Exposure) [my get current]
+
 				set current_hash [my hash]
 				if { $current_hash != $_previous_hash } {
 					set _previous_hash $current_hash
 
 					set ::Xsource(Name) [my name]
-
-					# Current:
-					set ::Xsource(Exposure) [my get current]
 
 					# Voltage:
 					set ::Xsource(Voltage) [my get voltage]

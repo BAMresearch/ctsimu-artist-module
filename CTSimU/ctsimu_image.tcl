@@ -42,6 +42,13 @@ namespace eval ::ctsimu {
 			return $_datatype
 		}
 
+		method aRTist_datatype { } {
+			if { $_datatype == "float32" } { return "float" }
+			if { $_datatype == "float64" } { return "double" }
+
+			return $_datatype
+		}
+
 		method width { } {
 			return $_width
 		}
@@ -133,7 +140,7 @@ namespace eval ::ctsimu {
 				set endianness "big-endian"
 			}
 
-			set type   [my datatype]
+			set type   [my aRTist_datatype]
 			set width  [my width]
 			set height [my height]
 			set depth  [my depth]

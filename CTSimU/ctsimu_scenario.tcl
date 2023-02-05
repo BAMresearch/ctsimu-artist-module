@@ -277,15 +277,15 @@ namespace eval ::ctsimu {
 			}
 		}
 
-		method set_next_frame { { apply_to_scene 0 } } {
-			my set_frame [expr [my get current_frame]+1] $apply_to_scene
+		method set_next_frame { } {
+			my set_frame_for_real [expr [my get current_frame]+1]
 		}
 
-		method set_previous_frame { { apply_to_scene 0 } } {
-			my set_frame [expr [my get current_frame]-1] $apply_to_scene
+		method set_previous_frame { } {
+			my set_frame_for_real [expr [my get current_frame]-1]
 		}
 
-		method load_json_scene { json_filename { apply_to_scene 0 } } {
+		method load_json_scene { json_filename } {
 			::ctsimu::status_info "Reading JSON file..."
 
 			my reset
@@ -413,10 +413,10 @@ namespace eval ::ctsimu {
 			# ------------------------
 			set stageCS [$_stage current_coordinate_system]
 
-			$_source set_frame $stageCS [my get current_frame] [my get n_frames] 1
+			$_source set_frame_for_real 0 [my get current_frame] [my get n_frames] 0
 			set _initial_source_Xray_current [$_source get current]
 
-			$_detector set_frame $stageCS [my get current_frame] [my get n_frames] 1
+			$_detector set_frame_for_real 0 [my get current_frame] [my get n_frames] 0
 
 			my update
 			set _initial_SDD $_SDD
@@ -426,10 +426,8 @@ namespace eval ::ctsimu {
 			$_source initialize $_material_manager
 			$_detector initialize $_material_manager $_initial_SDD $_initial_source_Xray_current
 
-			if { $apply_to_scene == 1} {
-				$_detector place_in_scene $stageCS
-				$_source place_in_scene $stageCS
-			}
+			$_detector place_in_scene $stageCS
+			$_source place_in_scene $stageCS
 
 			# Add the stage as a sample to the sample manager
 			# so that it can be shown in the scene:
@@ -452,9 +450,7 @@ namespace eval ::ctsimu {
 			$_sample_manager set_from_json $jsonstring $stageCS
 			$_sample_manager set_frame $stageCS [my get current_frame] [my get n_frames]
 
-			if { $apply_to_scene == 1} {
-				$_sample_manager load_meshes $stageCS $_material_manager
-			}
+			$_sample_manager load_meshes $stageCS $_material_manager
 
 			# Multisampling
 			# -----------------
@@ -486,79 +482,91 @@ namespace eval ::ctsimu {
 			return 1
 		}
 
-		method set_frame { frame { apply_to_scene 0 } } {
-			if { $apply_to_scene} {
-				if { [my is_running] == 0 } {
-					::ctsimu::status_info "Setting frame $frame..."
-				}
+		method set_frame_for_real { frame } {
+			# Set the frame for the real scene.
+			if { $_json_loaded_successfully == 0 } {
+				# No JSON scene loaded yet?
+				::ctsimu::warning "No scenario loaded."
+				return
+			}
+
+			if { [my is_running] == 0 } {
+				::ctsimu::status_info "Setting frame $frame..."
 			}
 
 			my set current_frame $frame
 
+			# Stage rotation:
 			set stage_rotation_angle_in_rad [::ctsimu::in_rad [my get_current_stage_rotation_angle]]
+			$_stage set_frame_for_real $::ctsimu::world $frame [my get n_frames] $stage_rotation_angle_in_rad
 
-			$_stage set_frame $::ctsimu::world $frame [my get n_frames] $stage_rotation_angle_in_rad $apply_to_scene
+			# Material changes may already affect source and detector:
+			$_material_manager set_frame $frame [my get n_frames]
+
+			$_source set_frame_for_real 0 $frame [my get n_frames] 0
+			$_detector set_frame_for_real 0 $frame [my get n_frames] 0
 
 			set stageCS [$_stage current_coordinate_system]
+			$_sample_manager set_frame $stageCS $frame [my get n_frames]
+			$_sample_manager update_scene $stageCS
+			$_detector place_in_scene $stageCS
+			$_source place_in_scene $stageCS
 
-			if { $apply_to_scene } {
-				$_material_manager set_frame $frame [my get n_frames]
-			}
+			if { [::ctsimu::aRTist_available] } {
+				# We have to ask the material manager for the
+				# aRTist id of the environment material in each frame,
+				# just in case it has changed from vacuum (void) to
+				# a higher-density material:
+				set ::Xsetup(SpaceMaterial) [ [$_material_manager get [my get environment_material]] aRTist_id ]
 
-			$_source set_frame $stageCS $frame [my get n_frames] 0 $apply_to_scene
-			$_detector set_frame $stageCS $frame [my get n_frames] 0 $apply_to_scene
+				$_source set_in_aRTist
+				$_detector set_in_aRTist
 
-			if { $apply_to_scene } {
-				$_sample_manager set_frame $stageCS $frame [my get n_frames]
-				$_sample_manager update_scene $stageCS
-				$_detector place_in_scene $stageCS
-				$_source place_in_scene $stageCS
+				# Scattering:
+				if { ([my get scattering_on] == 1) && ([my get scattering_image_interval] > 0) } {
+					set ::Xscattering(AutoBase) min
+					set ::Xscattering(nPhotons) [my get scattering_mcray_photons]
 
-				if { [::ctsimu::aRTist_available] } {
-					# We have to ask the material manager for the
-					# aRTist id of the environment material in each frame,
-					# just in case it has changed from vacuum (void) to
-					# a higher-density material:
-					set ::Xsetup(SpaceMaterial) [ [$_material_manager get [my get environment_material]] aRTist_id ]
+					if { [my get scattering_image_interval] > 1 } {
+						set ::Xscattering(McRayInitFile) 1
 
-					$_source set_in_aRTist
-					$_detector set_in_aRTist
-
-					# Scattering:
-					if { ([my get scattering_on] == 1) && ([my get scattering_image_interval] > 0) } {
-						set ::Xscattering(AutoBase) min
-						set ::Xscattering(nPhotons) [my get scattering_mcray_photons]
-
-						if { [my get scattering_image_interval] > 1 } {
-							set ::Xscattering(McRayInitFile) 1
-
-							# Do we have to calculate a new scatter image?
-							# This is the case if the scattering image step has changed.
-							set this_scattering_image_step [expr floor($frame/[my get scattering_image_interval])]
-							if { $this_scattering_image_step != [my get scattering_current_image_step] } {
-								my set scattering_current_image_step $this_scattering_image_step
-								set ::Xscattering(Mode) McRay
-							} else {
-								# External file loading is set by aRTist automatically.
-							}
-						} else {
-							# A scatter image is calculated for each frame.
-							set ::Xscattering(McRayInitFile) 0
+						# Do we have to calculate a new scatter image?
+						# This is the case if the scattering image step has changed.
+						set this_scattering_image_step [expr floor($frame/[my get scattering_image_interval])]
+						if { $this_scattering_image_step != [my get scattering_current_image_step] } {
+							my set scattering_current_image_step $this_scattering_image_step
 							set ::Xscattering(Mode) McRay
+						} else {
+							# External file loading is set by aRTist automatically.
 						}
 					} else {
-						set ::Xscattering(Mode) off
+						# A scatter image is calculated for each frame.
 						set ::Xscattering(McRayInitFile) 0
+						set ::Xscattering(Mode) McRay
 					}
-
-					${::ctsimu::ctsimu_module_namespace}::setFrameNumber $frame
-					Engine::RenderPreview
+				} else {
+					set ::Xscattering(Mode) off
+					set ::Xscattering(McRayInitFile) 0
 				}
 
-				if { [my is_running] == 0 } {
-					::ctsimu::status_info "Ready."
-				}
+				${::ctsimu::ctsimu_module_namespace}::setFrameNumber $frame
+				Engine::RenderPreview
 			}
+
+			if { [my is_running] == 0 } {
+				::ctsimu::status_info "Ready."
+			}
+		}
+
+		method set_frame_for_recon { frame } {
+			# Set the frame for a reconstruction simulation.
+			my set current_frame $frame
+
+			set stage_rotation_angle_in_rad [::ctsimu::in_rad [my get_current_stage_rotation_angle]]
+			$_stage set_frame_for_recon $::ctsimu::world $frame [my get n_frames] $stage_rotation_angle_in_rad
+
+			$_source set_frame_for_recon 0 $frame [my get n_frames] 0
+			$_detector set_frame_for_recon 0 $frame [my get n_frames] 0
 		}
 
 		method update { } {
@@ -623,7 +631,7 @@ namespace eval ::ctsimu {
 					#aRTist::ProgressQuantum $nProjections
 
 					for {set projNr [my get start_projection_number]} {$projNr < $nProjections} {incr projNr} {
-						my set_frame $projNr 1
+						my set_frame_for_real $projNr
 
 						set pnr [expr $projNr+1]
 						set prcnt [expr round((100.0*($projNr+1.0))/$nProjections)]
@@ -1064,7 +1072,7 @@ namespace eval ::ctsimu {
 				set pnr [expr $p+1]
 				::ctsimu::status_info "Calculating projection matrix $pnr/[my get n_projections]..."
 
-				my set_frame $p 0
+				my set_frame_for_recon $p
 
 				# Calculate and store projection matrices:
 				if { [my get create_openct_config_file] == 1} {
@@ -1194,10 +1202,10 @@ namespace eval ::ctsimu {
 
 					# The given volume CS would be given in terms of the stage CS.
 					# Transform to world CS:
-					$volume change_reference_frame [$_stage recon_coordinate_system] $::ctsimu::world
+					$volume change_reference_frame [$_stage current_coordinate_system] $::ctsimu::world
 				} else {
 					# The volume CS is the current stage CS:
-					set volume [ [$_stage recon_coordinate_system] get_copy]
+					set volume [ [$_stage current_coordinate_system] get_copy]
 				}
 
 				if { $mode == "openCT" } {
@@ -1239,7 +1247,7 @@ namespace eval ::ctsimu {
 				$image reset
 			}
 
-			set source [ [$_source recon_coordinate_system] get_copy]
+			set source [ [$_source current_coordinate_system] get_copy]
 
 			# The scale factors are derived from the lengths of the basis
 			# vectors of the volume CS.
@@ -1249,7 +1257,7 @@ namespace eval ::ctsimu {
 
 			# Detach the image CS from the detector CS and
 			# express it in terms of the world CS:
-			$image change_reference_frame [$_detector recon_coordinate_system] $::ctsimu::world
+			$image change_reference_frame [$_detector current_coordinate_system] $::ctsimu::world
 
 			# The scale factors are derived from the lengths of the basis
 			# vectors of the image CS.
@@ -1259,7 +1267,7 @@ namespace eval ::ctsimu {
 
 			# Save a source CS as seen from the detector CS. This is convenient to
 			# later get the SDD, ufoc and vfoc:
-			set source_from_image [ [$_source recon_coordinate_system] get_copy]
+			set source_from_image [ [$_source current_coordinate_system] get_copy]
 			$source_from_image change_reference_frame $::ctsimu::world $image
 
 			# Make the volume CS the new world CS:
@@ -1357,11 +1365,11 @@ namespace eval ::ctsimu {
 			# in CERA without projection matrices. These are added to the reconstruction
 			# config file for CERA, just in case the user does not wish to use
 			# projection matrices.
-			my set_frame 0 0
+			my set_frame_for_recon 0
 
-			set csSource   [ [$_source   recon_coordinate_system] get_copy]
-			set csStage    [ [$_stage    recon_coordinate_system] get_copy]
-			set csDetector [ [$_detector recon_coordinate_system] get_copy]
+			set csSource   [ [$_source   current_coordinate_system] get_copy]
+			set csStage    [ [$_stage    current_coordinate_system] get_copy]
+			set csDetector [ [$_detector current_coordinate_system] get_copy]
 
 			set nu  [$_detector get columns]
 			set nv  [$_detector get rows]
@@ -1724,7 +1732,7 @@ namespace eval ::ctsimu {
 			$S set_row 2 [list 0 0 $bbSizeZ  0]
 			$S set_row 3 [list 0 0 0 1]
 			# Rotate the bounding box to the stage CS:
-			set R [::ctsimu::basis_transform_matrix $::ctsimu::world [$_stage recon_coordinate_system] 1]
+			set R [::ctsimu::basis_transform_matrix $::ctsimu::world [$_stage current_coordinate_system] 1]
 
 			set RS [$R multiply $S]
 			::rl_json::json set geomjson geometry objectBoundingBox [$RS format_json]

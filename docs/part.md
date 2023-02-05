@@ -30,7 +30,6 @@ Each part has its own coordinate system, and a parallel "ghost" coordinate syste
 * `get { property }` — Returns the current value for a given `property`.
 * `parameter { property }` — Returns the parameter object behind a given `property`.
 * `current_coordinate_system` — Returns the current `::ctsimu::coordinate_system` of the part.
-* `recon_coordinate_system` — Returns the current recon `::ctsimu::coordinate_system` of the part.
 * `center` — Returns the part's center as a `::ctsimu::scenevector`.
 * `u` — Returns the part's `u` vector as a `::ctsimu::scenevector`.
 * `w` — Returns the part's `w` vector as a `::ctsimu::scenevector`.

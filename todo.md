@@ -1,4 +1,5 @@
 - Documentation of the GUI
+- Test all CTSimU scenarios for compatibility.
 
 # Future
 + Materials manager / JSON: chemical composition: number fractions vs. mass fractions

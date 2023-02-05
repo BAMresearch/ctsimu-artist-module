@@ -340,7 +340,7 @@ namespace eval ::ctsimu {
 						if { [::ctsimu::aRTist_available] } {
 							::aRTist::LoadEmptyProject
 						}
-						$global_scenario load_json_scene [$bj get json_file] 1
+						$global_scenario load_json_scene [$bj get json_file]
 					} err] } {
 						my set_status $bj $index "ERROR"
 						continue

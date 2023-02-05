@@ -801,7 +801,7 @@ proc loadScene { json_filename } {
 	applyCurrentParameters
 	::aRTist::LoadEmptyProject
 
-	set sceneState [$ctsimu_scenario load_json_scene $json_filename 1]
+	set sceneState [$ctsimu_scenario load_json_scene $json_filename]
 
 	# Continue only if JSON was loaded successfully:
 	if { $sceneState == 1 } {
@@ -817,7 +817,7 @@ proc showProjection_GUI {} {
 	variable ctsimu_scenario
 
 	applyCurrentParameters
-	$ctsimu_scenario set_frame [$ctsimu_scenario get current_frame] 1
+	$ctsimu_scenario set_frame_for_real [$ctsimu_scenario get current_frame]
 }
 
 proc showProjection { projection_nr } {
@@ -825,21 +825,21 @@ proc showProjection { projection_nr } {
 
 	applyCurrentParameters
 	$ctsimu_scenario set current_frame $projection_nr
-	$ctsimu_scenario set_frame $projection_nr 1
+	$ctsimu_scenario set_frame_for_real $projection_nr
 }
 
 proc nextProjection {} {
 	variable ctsimu_scenario
 
 	applyCurrentParameters
-	$ctsimu_scenario set_next_frame 1
+	$ctsimu_scenario set_next_frame
 }
 
 proc prevProjection {} {
 	variable ctsimu_scenario
 
 	applyCurrentParameters
-	$ctsimu_scenario set_previous_frame 1
+	$ctsimu_scenario set_previous_frame
 }
 
 proc startScan {} {

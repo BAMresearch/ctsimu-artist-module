@@ -163,21 +163,23 @@ namespace eval ::ctsimu {
 			return [file join ${::TempFile::tempdir} "CTSimU_Spectrum_[my hash].xrs"]
 		}
 
-		method set_frame { stageCS frame nFrames { w_rotation_in_rad 0 } { apply_to_scene 1 } } {
-			#puts "Source --- Apply to scene: $apply_to_scene"
-			if { $apply_to_scene } {
-				# Update filter list:
-				foreach filter $_filters {
-					$filter set_frame $frame $nFrames
-				}
-
-				foreach filter $_window_filters {
-					$filter set_frame $frame $nFrames
-				}
+		method set_frame_for_real { stageCS frame nFrames { w_rotation_in_rad 0 } } {
+			# Update filter list:
+			foreach filter $_filters {
+				$filter set_frame $frame $nFrames
 			}
 
-			# Call set_frame of parent class '::ctsimu::part':
-			next $stageCS $frame $nFrames $w_rotation_in_rad $apply_to_scene
+			foreach window $_window_filters {
+				$window set_frame $frame $nFrames
+			}
+
+			# Call set_frame_for_real of parent class '::ctsimu::part':
+			next $::ctsimu::world $frame $nFrames 0
+		}
+
+		method set_frame_for_recon { stageCS frame nFrames { w_rotation_in_rad 0 } } {
+			# Call set_frame_for_recon of parent class '::ctsimu::part':
+			next $::ctsimu::world $frame $nFrames 0
 		}
 
 		method set_from_json { jobj stage } {

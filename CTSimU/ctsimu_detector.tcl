@@ -190,26 +190,26 @@ namespace eval ::ctsimu {
 			return [file join ${::TempFile::tempdir} "CTSimU_Detector_[my hash].aRTdet"]
 		}
 
-		method set_frame { stageCS frame nFrames { w_rotation_in_rad 0 } { apply_to_scene 1 } } {
-			#puts "Detector --- Apply to scene: $apply_to_scene"
+		method set_frame_for_real { stageCS frame nFrames { w_rotation_in_rad 0 } } {
 			# Update filter list:
-			if { $apply_to_scene } {
-				foreach filter $_filters_front {
-					$filter set_frame $frame $nFrames
-				}
-			} else {
-				# The detector's pixel pitch and size have not been
-				# updated if we only want to update geometry parameters
-				# without applying all parameter changes to the aRTist scene.
-				# In this case, this has to be done manually here:
-				[my parameter columns] set_frame $frame $nFrames
-				[my parameter rows] set_frame $frame $nFrames
-				[my parameter pitch_u] set_frame $frame $nFrames
-				[my parameter pitch_v] set_frame $frame $nFrames
+			foreach filter $_filters_front {
+				$filter set_frame $frame $nFrames
 			}
 
-			# Call set_frame of parent class '::ctsimu::part':
-			next $stageCS $frame $nFrames $w_rotation_in_rad $apply_to_scene
+			# Call set_frame_for_real of parent class '::ctsimu::part':
+			next $::ctsimu::world $frame $nFrames 0
+		}
+
+		method set_frame_for_recon { stageCS frame nFrames { w_rotation_in_rad 0 } } {
+			# The detector's pixel pitch and size are also relevant
+			# for the computation of projection matrices.
+			[my parameter columns] set_frame $frame $nFrames
+			[my parameter rows] set_frame $frame $nFrames
+			[my parameter pitch_u] set_frame $frame $nFrames
+			[my parameter pitch_v] set_frame $frame $nFrames
+
+			# Call set_frame_for_recon of parent class '::ctsimu::part':
+			next $::ctsimu::world $frame $nFrames 0
 		}
 
 		method set_from_json { jobj stage } {

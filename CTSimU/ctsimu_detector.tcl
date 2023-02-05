@@ -18,6 +18,10 @@ namespace eval ::ctsimu {
 		variable _initial_SDD; # initial SDD at frame 0
 		variable _initial_current; # initial X-ray source current at frame 0
 
+		# pitch for frame zero:
+		variable _initial_pitch_u
+		variable _initial_pitch_v
+
 		constructor { { name "CTSimU_Detector" } { id "D" } } {
 			next $name $id; # call constructor of parent class ::ctsimu::part
 			set _filters_front [list ]
@@ -45,6 +49,9 @@ namespace eval ::ctsimu {
 		method reset { } {
 			# Reset to standard settings.
 			set _previous_hash "0"
+
+			set _initial_pitch_u 0
+			set _initial_pitch_v 0
 
 			# Reset the '::ctsimu::part' that handles the coordinate system:
 			next; # call reset of parent class ::ctsimu::part
@@ -263,6 +270,12 @@ namespace eval ::ctsimu {
 			if { ![my set_parameter_from_key pitch_v   $detprops {pixel_pitch v}] } {
 				::ctsimu::warning "Pixel pitch in the v direction not found or invalid. Using standard value."
 			}
+
+			# Remember the initial pitch values:
+			[my parameter pitch_u] set_frame 0 1
+			[my parameter pitch_v] set_frame 0 1
+			set _initial_pitch_u [my get pitch_u]
+			set _initial_pitch_v [my get pitch_v]
 
 			if { ![my set_parameter_from_key bit_depth $detprops {bit_depth}] } {
 				::ctsimu::warning "Detector bit depth not found or invalid. Using standard value."
@@ -516,7 +529,7 @@ namespace eval ::ctsimu {
 			dict set detector Global Name [my name]
 			dict set detector Global UnitIn {J/m^2}
 			dict set detector Global UnitOut {grey values}
-			dict set detector Global Pixelsize $pixelSizeX
+			dict set detector Global Pixelsize $pixelSizeX $pixelSizeY
 			set pcount [string trim "$pixelCountX $pixelCountY"]
 			if { $pcount != "" } { dict set detector Global PixelCount $pcount }
 
@@ -776,7 +789,6 @@ namespace eval ::ctsimu {
 					# Flat field correction rescale factor
 					my set ff_rescale_factor 60000
 
-					# If linear interpolation is used instead of GVmin and GVmax:
 					set GVatMaxInput 0.0
 					set GVatNoInput 0.0
 					set physical_pixel_area [my pixel_area_m2]
@@ -810,12 +822,20 @@ namespace eval ::ctsimu {
 						set GVatMax [my get imax]
 
 						set amplification  [expr {double($GVatMax) / double($energyPerPixel) }]
-
 						set GVatMaxInput $GVatMax
+
+						# How did the pixel area change since frame zero?
+						# We need to account for this change in the gray value characteristics:
+						# imin/imax refer to frame zero, so we need to re-scale the energy density (J/m²)
+						# which refers to the max. gray value by this factor.
+						set area_scale [expr ($_initial_pitch_u * $_initial_pitch_v) / ([my get pitch_u] * [my get pitch_v]) ]
+						if { $area_scale <= 0 } {
+							set area_scale 1
+						}
 
 						# generate linear amplification curve
 						dict set detector Characteristic 0.0 $GVatMin
-						dict set detector Characteristic $maxinput $GVatMax
+						dict set detector Characteristic [expr $maxinput*$area_scale] $GVatMax
 
 						::ctsimu::info "GV at Min: $GVatMin, GV at Max: $GVatMax, maxInput: $maxinput"
 

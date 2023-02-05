@@ -495,7 +495,7 @@ namespace eval ::ctsimu {
 				}
 			}
 
-			my set_frame_for_real $stageCS 0 1 0
+			my set_frame $stageCS 0 1 0
 		}
 
 		method set_frame_cs { stageCS frame nFrames only_known_to_reconstruction { w_rotation_in_rad 0 } } {
@@ -504,7 +504,7 @@ namespace eval ::ctsimu {
 			# and all necessary drifts and deviations.
 			# (assuming a total number of 'nFrames').
 			#
-			# This function is used by `set_frame_for_real`
+			# This function is used by `set_frame`
 			# and `set_frame_for_recon` and is usually
 			# not called from outside the object.
 
@@ -565,7 +565,7 @@ namespace eval ::ctsimu {
 			$vector_w_drift destroy
 		}
 
-		method set_frame_for_real { stageCS frame nFrames { w_rotation_in_rad 0 } } {
+		method set_frame { stageCS frame nFrames { w_rotation_in_rad 0 } } {
 			# Set up the part for the given frame number, obeying all
 			# deviations and drifts.
 			#

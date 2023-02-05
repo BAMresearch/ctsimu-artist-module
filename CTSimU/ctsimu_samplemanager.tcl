@@ -35,7 +35,7 @@ namespace eval ::ctsimu {
 		method set_frame { stageCS frame nFrames } {
 			# Set current frame number (propagates to samples).
 			foreach s $_samples {
-				$s set_frame_for_real $stageCS $frame $nFrames 0
+				$s set_frame $stageCS $frame $nFrames 0
 			}
 		}
 

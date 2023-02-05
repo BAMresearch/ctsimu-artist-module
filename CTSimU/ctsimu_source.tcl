@@ -163,7 +163,7 @@ namespace eval ::ctsimu {
 			return [file join ${::TempFile::tempdir} "CTSimU_Spectrum_[my hash].xrs"]
 		}
 
-		method set_frame_for_real { stageCS frame nFrames { w_rotation_in_rad 0 } } {
+		method set_frame { stageCS frame nFrames { w_rotation_in_rad 0 } } {
 			# Update filter list:
 			foreach filter $_filters {
 				$filter set_frame $frame $nFrames
@@ -173,7 +173,7 @@ namespace eval ::ctsimu {
 				$window set_frame $frame $nFrames
 			}
 
-			# Call set_frame_for_real of parent class '::ctsimu::part':
+			# Call set_frame of parent class '::ctsimu::part':
 			next $::ctsimu::world $frame $nFrames 0
 		}
 

@@ -278,11 +278,11 @@ namespace eval ::ctsimu {
 		}
 
 		method set_next_frame { } {
-			my set_frame_for_real [expr [my get current_frame]+1]
+			my set_frame [expr [my get current_frame]+1]
 		}
 
 		method set_previous_frame { } {
-			my set_frame_for_real [expr [my get current_frame]-1]
+			my set_frame [expr [my get current_frame]-1]
 		}
 
 		method load_json_scene { json_filename } {
@@ -413,10 +413,10 @@ namespace eval ::ctsimu {
 			# ------------------------
 			set stageCS [$_stage current_coordinate_system]
 
-			$_source set_frame_for_real 0 [my get current_frame] [my get n_frames] 0
+			$_source set_frame 0 [my get current_frame] [my get n_frames] 0
 			set _initial_source_Xray_current [$_source get current]
 
-			$_detector set_frame_for_real 0 [my get current_frame] [my get n_frames] 0
+			$_detector set_frame 0 [my get current_frame] [my get n_frames] 0
 
 			my update
 			set _initial_SDD $_SDD
@@ -482,7 +482,7 @@ namespace eval ::ctsimu {
 			return 1
 		}
 
-		method set_frame_for_real { frame } {
+		method set_frame { frame } {
 			# Set the frame for the real scene.
 			if { $_json_loaded_successfully == 0 } {
 				# No JSON scene loaded yet?
@@ -498,13 +498,13 @@ namespace eval ::ctsimu {
 
 			# Stage rotation:
 			set stage_rotation_angle_in_rad [::ctsimu::in_rad [my get_current_stage_rotation_angle]]
-			$_stage set_frame_for_real $::ctsimu::world $frame [my get n_frames] $stage_rotation_angle_in_rad
+			$_stage set_frame $::ctsimu::world $frame [my get n_frames] $stage_rotation_angle_in_rad
 
 			# Material changes may already affect source and detector:
 			$_material_manager set_frame $frame [my get n_frames]
 
-			$_source set_frame_for_real 0 $frame [my get n_frames] 0
-			$_detector set_frame_for_real 0 $frame [my get n_frames] 0
+			$_source set_frame 0 $frame [my get n_frames] 0
+			$_detector set_frame 0 $frame [my get n_frames] 0
 
 			set stageCS [$_stage current_coordinate_system]
 			$_sample_manager set_frame $stageCS $frame [my get n_frames]
@@ -631,7 +631,7 @@ namespace eval ::ctsimu {
 					#aRTist::ProgressQuantum $nProjections
 
 					for {set projNr [my get start_projection_number]} {$projNr < $nProjections} {incr projNr} {
-						my set_frame_for_real $projNr
+						my set_frame $projNr
 
 						set pnr [expr $projNr+1]
 						set prcnt [expr round((100.0*($projNr+1.0))/$nProjections)]

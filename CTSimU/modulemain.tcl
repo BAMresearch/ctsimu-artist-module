@@ -817,7 +817,7 @@ proc showProjection_GUI {} {
 	variable ctsimu_scenario
 
 	applyCurrentParameters
-	$ctsimu_scenario set_frame_for_real [$ctsimu_scenario get current_frame]
+	$ctsimu_scenario set_frame [$ctsimu_scenario get current_frame]
 }
 
 proc showProjection { projection_nr } {
@@ -825,7 +825,7 @@ proc showProjection { projection_nr } {
 
 	applyCurrentParameters
 	$ctsimu_scenario set current_frame $projection_nr
-	$ctsimu_scenario set_frame_for_real $projection_nr
+	$ctsimu_scenario set_frame $projection_nr
 }
 
 proc nextProjection {} {

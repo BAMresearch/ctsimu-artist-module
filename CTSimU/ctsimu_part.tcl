@@ -125,6 +125,11 @@ namespace eval ::ctsimu {
 			return [[dict get $_properties $property] current_value]
 		}
 
+		method standard_value { property } {
+			# Returns the standard value for a given `property` (i.e., the value unaffected by drifts).
+			return [[dict get $_properties $property] standard_value]
+		}
+
 		method parameter { property } {
 			# Returns the parameter object behind a given `property`
 			return [dict get $_properties $property]

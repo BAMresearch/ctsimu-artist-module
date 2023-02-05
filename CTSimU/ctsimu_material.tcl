@@ -191,21 +191,30 @@ namespace eval ::ctsimu {
 			# Check if all mass fractions are equal. In this case, we can
 			# omit mass fractions in the composition string.
 			set mass_fractions_in_composition_string 0
-			set mass_fraction_sum 1.0; # sum of all mass fractions
+			set mass_fraction_sum 0; # sum of all mass fractions
 			if { [llength $_composition] > 1 } {
 				# More than one component?
 
 				# Remember mass fraction of first component and
 				# compare it to other components.
 				set first_mass_fraction [[lindex $_composition 0] mass_fraction]
+
+				# Calculate sum of all mass fractions (for later normalization)
+				# and check if all mass fractions are equal (in this case, we do not need them).
 				foreach component $_composition {
+					set mass_fraction_sum [expr $mass_fraction_sum + [$component mass_fraction]]
 					if { [$component mass_fraction] != $first_mass_fraction } {
 						set mass_fractions_in_composition_string 1
-						break
 					}
 				}
 			}
 
+			if { $mass_fraction_sum == 0 } {
+				# Avoid division by zero
+				set mass_fraction_sum 1
+			}
+
+			# Create a composition string for aRTist:
 			set _aRTist_composition_string ""
 			set i 0
 			foreach component $_composition {
@@ -216,7 +225,7 @@ namespace eval ::ctsimu {
 				append _aRTist_composition_string [$component formula]
 
 				if { $mass_fractions_in_composition_string == 1 } {
-					append _aRTist_composition_string " [$component mass_fraction]"
+					append _aRTist_composition_string " [expr double([$component mass_fraction]) / double($mass_fraction_sum)]"
 				}
 
 				incr i

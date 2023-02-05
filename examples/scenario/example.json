@@ -5,7 +5,7 @@
 
 		"contact": "David Plotzki",
 		"date_created": "2020-04-23",
-		"date_changed": "2023-02-04",
+		"date_changed": "2023-02-05",
 		"version": {"major": 1, "minor": 7},
 
 		"file_type": "CTSimU Scenario",
@@ -321,13 +321,13 @@
 			"number": 1,
 			"frame_average": 1,
 			"ideal": true,
-			"correction": true
+			"correction": false
 		},
 		"flat_field": {
 			"number": 3,
 			"frame_average": 20,
 			"ideal": false,
-			"correction": true
+			"correction": false
 		},
 		"pixel_binning": {"u": 1, "v": 1},
 		"scattering": false

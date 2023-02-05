@@ -479,6 +479,17 @@ namespace eval ::ctsimu {
 
 			my _set_json_load_status 1
 
+			# Activate flat field correction within aRTist?
+			if { [my get ff_correction_on] } {
+				my set_frame 0
+				::ctsimu::status_info "Taking flat field image..."
+				::XDetector::FFCorrClearCmd
+				set ::Xdetector(FFCorrRun) 1
+				my render_projection_image 0
+			} else {
+				set ::Xdetector(FFCorrRun) 0
+			}
+
 			return 1
 		}
 
@@ -687,7 +698,37 @@ namespace eval ::ctsimu {
 			}
 		}
 
-		method save_projection_image { projNr fileNameSuffix } {
+		method render_projection_image { projNr } {
+			if { [::ctsimu::aRTist_available] } {
+				set Scale [vtkImageShiftScale New]
+				if {[my get output_datatype] == "float32"} {
+					$Scale SetOutputScalarTypeToFloat
+					$Scale ClampOverflowOff
+				} else {
+					$Scale SetOutputScalarTypeToUnsignedInt
+					$Scale ClampOverflowOn
+				}
+
+				update
+
+				set imglist [::Engine::Go]
+				::Image::Show $imglist
+				lassign $imglist img
+
+				$Scale SetInput [$img GetImage]
+
+				#aRTist::SignalProgress
+				update
+
+				foreach img $imglist { $img Delete }
+				if { [info exists Scale] } { $Scale Delete }
+
+				::xrEngine ClearOutput
+				::xrEngine ClearObjects
+			}
+		}
+
+		method save_projection_image { projNr fileNameSuffix} {
 			set projectionFolder [my get run_projection_folder]
 			set outputBaseName [my get run_output_basename]
 

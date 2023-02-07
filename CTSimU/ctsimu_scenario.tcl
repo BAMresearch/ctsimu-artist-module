@@ -336,10 +336,10 @@ namespace eval ::ctsimu {
 						::ctsimu::fail "File format version $major.$minor is not supported."
 					}
 				} else {
-					::ctsimu::fail "Not a valid CTSimU scenario file. The file type must be set to \"CTSimU Scenario\"."
+					::ctsimu::fail "Invalid scenario file. The file type must be set to \"CTSimU Scenario\"."
 				}
 			} else {
-				::ctsimu::fail "Not a valid CTSimU scenario file. No file type value found. Maybe you tried to load a CTSimU metadata file?"
+				::ctsimu::fail "Invalid scenario file. Check for JSON syntax errors. Or maybe you tried to load a CTSimU metadata file?"
 			}
 
 			# Default output basename and folder
@@ -476,6 +476,14 @@ namespace eval ::ctsimu {
 			my set scattering_on [::ctsimu::get_value_in_unit "bool" $jsonstring {acquisition scattering} 0]
 			my set scattering_image_interval [::ctsimu::get_value $jsonstring {simulation aRTist scattering_image_interval value} [my get scattering_image_interval]]
 			my set scattering_mcray_photons [::ctsimu::get_value $jsonstring {simulation aRTist scattering_mcray_photons value} [my get scattering_mcray_photons]]
+
+			# Set the source and detector as static
+			# if they are not subject to drifts. This
+			# prevents them from having their coordinate
+			# systems re-calculated in each frame.
+			# -> Faster calculation of projection matrices.
+			$_detector set_static_if_no_drifts
+			$_source set_static_if_no_drifts
 
 			my _set_json_load_status 1
 

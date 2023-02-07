@@ -72,6 +72,14 @@ namespace eval ::ctsimu {
 			return $_value_has_changed
 		}
 
+		method has_drifts { } {
+			if { [llength $_drifts] == 0 } {
+				return 0
+			}
+
+			return 1
+		}
+
 		# Setters
 		# -------------------------
 

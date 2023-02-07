@@ -19,7 +19,10 @@ source -encoding utf-8 [file join $BasePath ctsimu_coordinate_system.tcl]
 namespace eval ::ctsimu {
 	::oo::class create part {
 		variable _attachedToStage
-		variable _cs; # current coordinate system object
+		variable _static; # immovable object if 1
+		variable _cs; # current coordinate system object+
+		variable _cs_initialized_real; # CS initialized to real scene?
+		variable _cs_initialized_recon; # CS initialized to recon scene?
 		variable _center
 		variable _vector_u
 		variable _vector_w
@@ -32,9 +35,12 @@ namespace eval ::ctsimu {
 		constructor { { name "" } { id "" } } {
 			# Is this object attached to the stage coordinate sytem?
 			my attach_to_stage 0
+			set _static 0
 
 			# Coordinate system for current frame:
 			set _cs [::ctsimu::coordinate_system new]
+			set _cs_initialized_real  0
+			set _cs_initialized_recon 0
 
 			# The coordinates and orientation must be kept as
 			# ::ctsimu::scenevector objects to properly handle drifts.
@@ -91,6 +97,9 @@ namespace eval ::ctsimu {
 			# standard alignment with the world coordinate system.
 			# Any geometrical deviations are deleted.
 			my attach_to_stage 0
+			set _static 0
+			set _cs_initialized_real  0
+			set _cs_initialized_recon 0
 
 			$_cs reset
 
@@ -341,6 +350,35 @@ namespace eval ::ctsimu {
 			set _attachedToStage $attached
 		}
 
+		method set_static_if_no_drifts { } {
+			# Sets the object to 'static', i.e., not moving.
+			# In this case, its coordinate system does not need to
+			# be re-assembled for each frame.
+
+			set _static 0
+
+			if { $_attachedToStage == 0 } {
+				# Count drifts:
+				if { [$_center has_drifts] || [$_vector_u has_drifts] || [$_vector_w has_drifts] } {
+					return
+				}
+
+				foreach dev $_deviations {
+					if { [$dev has_drifts] } {
+						return
+					}
+				}
+
+				foreach ldev $_legacy_deviations {
+					if { [$ldev has_drifts] } {
+						return
+					}
+				}
+
+				set _static 1
+			}
+		}
+
 		# General
 		# -------------------------
 		method set_geometry { geometry stageCS } {
@@ -585,7 +623,11 @@ namespace eval ::ctsimu {
 			#   of the sample stage.
 
 			# Set up the current CS obeying all drifts:
-			my set_frame_cs $stageCS $frame $nFrames 0 $w_rotation_in_rad
+			if { ($_cs_initialized_real == 0) || ($_static == 0) } {
+				my set_frame_cs $stageCS $frame $nFrames 0 $w_rotation_in_rad
+				set _cs_initialized_real  1
+				set _cs_initialized_recon 0
+			}
 
 			# Set the frame for all elements of the properties dict:
 			dict for { key value } $_properties {
@@ -613,7 +655,11 @@ namespace eval ::ctsimu {
 			#   of the sample stage.
 
 			# Set up the current CS obeying all drifts:
-			my set_frame_cs $stageCS $frame $nFrames 1 $w_rotation_in_rad
+			if { ($_cs_initialized_recon == 0) || ($_static == 0) } {
+				my set_frame_cs $stageCS $frame $nFrames 1 $w_rotation_in_rad
+				set _cs_initialized_real  0
+				set _cs_initialized_recon 1
+			}
 		}
 
 		method place_in_scene { stageCS } {

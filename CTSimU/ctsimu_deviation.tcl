@@ -89,6 +89,10 @@ namespace eval ::ctsimu {
 			return $_known_to_reconstruction
 		}
 
+		method has_drifts { } {
+			return [expr [$_amount has_drifts] || [$_axis has_drifts] || [$_pivot has_drifts]]
+		}
+
 		# Setters
 		# -------------------------
 		method set_type { type } {

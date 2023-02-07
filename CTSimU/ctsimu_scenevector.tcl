@@ -51,6 +51,10 @@ namespace eval ::ctsimu {
 			return "([$_c0 current_value], [$_c1 current_value], [$_c2 current_value]) in [my reference]"
 		}
 
+		method has_drifts { } {
+			return [expr [$_c0 has_drifts] || [$_c1 has_drifts] || [$_c2 has_drifts]]
+		}
+
 		# Setters
 		# -------------------------
 		method set_reference { reference } {

@@ -17,6 +17,7 @@ You can find [example scenario files](https://github.com/BAMresearch/ctsimu-scen
 
 ## Known Limitations
 
++ **Pixel binning** is not supported. Such an operation can be applied as a post-processing step using the [CTSimU Toolbox](https://github.com/BAMresearch/ctsimu-toolbox).
 + **Continuous-motion** scans are not supported, only stop&go mode.
 + Drifts between the frames of an averaged projection are not handled. Therefore, **motion blurring** within one projection cannot be simulated.
 + **Parallel beam** geometries are not supported. As a workaround, a very high source-detector distance could be chosen in the JSON file.
@@ -107,10 +108,10 @@ The following table lists the module's current support status for the JSON param
 | `source spot intensity_map headersize`                | yes         | no                                                 |
 | `source spectrum monochromatic`                       | yes         | no                                                 |
 | `source spectrum file`                                | yes         | yes                                                |
-| `source spectrum window material_id`                  | yes         | only in material definition (density, composition) |
-| `source spectrum window thickness`                    | yes         | yes                                                |
-| `source spectrum filters material_id`                 | yes         | only in material definition (density, composition) |
-| `source spectrum filters thickness`                   | yes         | yes                                                |
+| `source window material_id`                           | yes         | only in material definition (density, composition) |
+| `source window thickness`                             | yes         | yes                                                |
+| `source filters material_id`                          | yes         | only in material definition (density, composition) |
+| `source filters thickness`                            | yes         | yes                                                |
 | `samples name`                                        | yes         | no                                                 |
 | `samples file`                                        | yes         | yes                                                |
 | `samples unit`                                        | yes         | no                                                 |
@@ -147,8 +148,8 @@ The following table lists the module's current support status for the JSON param
 | `simulation aRTist multisampling_detector`            | yes         | yes                                                |
 | `simulation aRTist multisampling_spot`                | yes         | yes                                                |
 | `simulation aRTist spectral_resolution`               | yes         | no                                                 |
-| `simulation aRTist scattering_mcray_photons`          | yes         | yes                                                |
-| `simulation aRTist scattering_image_interval`         | yes         | yes                                                |
+| `simulation aRTist scattering_mcray_photons`          | yes         | no                                                 |
+| `simulation aRTist scattering_image_interval`         | yes         | no                                                 |
 | `simulation aRTist long_range_unsharpness extension`  | yes         | yes                                                |
 | `simulation aRTist long_range_unsharpness ratio`      | yes         | yes                                                |
 | `simulation aRTist primary_energies`                  | yes         | no                                                 |
@@ -175,6 +176,8 @@ The following table lists the module's current support status for the JSON param
 ## The devil in the details
 
 + If **X-ray spectra** are loaded from an external file instead of being generated in aRTist, the JSON file should still specify the tube's correct acceleration `voltage`. If the maximum energy in the spectrum drifts significantly (by more than 20 keV), the source's `voltage` parameter should also drift, reflecting the maximum energy in the spectrum. Alternatively, instead of a drift, the `voltage` parameter could simply represent the maximum acceleration voltage during the scan. The reason is that the maximum photon energy is needed for the computation of the detector's sensitivity characteristics, in order to save computation time and only run the computations for the necessary energy range. This maximum photon energy is determined from the source's `voltage` parameter and not from an externally loaded spectrum.
++ **X-ray spectra** are *always* expected to be already filtered by any defined source `window`. If the window thickness or its material drifts, the externally loaded spectrum will **not** be re-filtered to account for these changes. Instead, the externally loaded spectrum should drift as well (to account for the changing window). If aRTist calculates the spectrum itself, any window drifts are taken into account.
++ When using **frame averaging,** make sure to understand how aRTist's frame averaging works. aRTist's approach is to shift the SNR curve to the intensity of the integration time of the accumulated number of averaged frames, and then take one projection image. It does not calculate several frames and mathematically average them. This can lead an undesired result if you have a non-standard SNR curve, especially when aRTist has to interpolate the curve to higher intensities if they are not explicitly given.
 
 ## Version History
 

@@ -515,20 +515,21 @@ namespace eval ::ctsimu {
 			}
 
 			my set current_frame $frame
+			set nFrames [my get n_frames]
 
 			# Stage rotation:
 			set stage_rotation_angle_in_rad [::ctsimu::in_rad [my get_current_stage_rotation_angle]]
-			$_stage set_frame $::ctsimu::world $frame [my get n_frames] $stage_rotation_angle_in_rad
+			$_stage set_frame $::ctsimu::world $frame $nFrames $stage_rotation_angle_in_rad
 
 			# Material changes may already affect source and detector:
-			$_material_manager set_frame $frame [my get n_frames]
+			$_material_manager set_frame $frame $nFrames
 
-			$_source set_frame 0 $frame [my get n_frames] 0
-			$_detector set_frame 0 $frame [my get n_frames] 0
+			$_source set_frame 0 $frame $nFrames 0
+			$_detector set_frame 0 $frame $nFrames 0
 
 			set stageCS [$_stage current_coordinate_system]
-			$_sample_manager set_frame $stageCS $frame [my get n_frames]
-			$_sample_manager update_scene $stageCS
+			$_sample_manager set_frame $stageCS $frame $nFrames
+			$_sample_manager update_scene $stageCS $_material_manager
 			$_detector place_in_scene $stageCS
 			$_source place_in_scene $stageCS
 
@@ -595,12 +596,13 @@ namespace eval ::ctsimu {
 		method set_frame_for_recon { frame } {
 			# Set the frame for a reconstruction simulation.
 			my set current_frame $frame
+			set nFrames [my get n_frames]
 
 			set stage_rotation_angle_in_rad [::ctsimu::in_rad [my get_current_stage_rotation_angle]]
-			$_stage set_frame_for_recon $::ctsimu::world $frame [my get n_frames] $stage_rotation_angle_in_rad
+			$_stage set_frame_for_recon $::ctsimu::world $frame $nFrames $stage_rotation_angle_in_rad
 
-			$_source set_frame_for_recon 0 $frame [my get n_frames] 0
-			$_detector set_frame_for_recon 0 $frame [my get n_frames] 0
+			$_source set_frame_for_recon 0 $frame $nFrames 0
+			$_detector set_frame_for_recon 0 $frame $nFrames 0
 		}
 
 		method update { } {

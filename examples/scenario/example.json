@@ -6,7 +6,7 @@
 		"contact": "David Plotzki",
 		"date_created": "2020-04-23",
 		"date_changed": "2023-02-11",
-		"version": {"major": 1, "minor": 8},
+		"version": {"major": 1, "minor": 9},
 
 		"file_type": "CTSimU Scenario",
 		"file_format_version": {"major": 1, "minor": 2}
@@ -243,11 +243,11 @@
 		"filters": [
 			{
 				"material_id": "Brass",
-				"thickness": {"value": 0.5, "unit": "mm"}
+				"thickness": {"value": 0.2, "unit": "mm"}
 			},
 			{
 				"material_id": "Cu",
-				"thickness": {"value": 0.25, "unit": "mm"}
+				"thickness": {"value": 0.17, "unit": "mm"}
 			}
 		]
 	},

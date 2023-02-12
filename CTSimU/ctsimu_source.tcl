@@ -223,7 +223,7 @@ namespace eval ::ctsimu {
 
 			# Target
 			my set_parameter_value    target_material_id     $sourceprops {target material_id} "null"
-			my set_parameter_from_key target_thickness       $sourceprops {target thickness} 0
+			my set_parameter_from_key target_thickness       $sourceprops {target thickness} 10
 			my set_parameter_value    target_type            $sourceprops {type} "reflection"
 			my set_parameter_from_key target_angle_incidence $sourceprops {target angle incidence} 45
 			my set_parameter_from_key target_angle_emission  $sourceprops {target angle emission} 45
@@ -425,39 +425,39 @@ namespace eval ::ctsimu {
 		method compute_spectrum { } {
 			# Adaption of `proc ComputeSpectrum` from stuff/xsource.tcl.
 			# Assumes that XSource properties are already set.
-			global Xsource Xsource_private
+			#global Xsource Xsource_private
 			variable ComputedSpectra
 
-			if { $Xsource(Tube) == "Mono" } {
+			if { $::Xsource(Tube) == "Mono" } {
 				# generate monochromatic spectrum
 				# 1 GBq at Voltage
-				set description "Monochromatic $Xsource(Voltage) keV, 1 / (GBq * sr)"
+				set description "Monochromatic $::Xsource(Voltage) keV, 1 / (GBq * sr)"
 				lappend spectrum "# $description"
-				lappend spectrum "# Name: $Xsource(Tube)"
-				lappend spectrum "$Xsource(Voltage) [expr {1e9 / (4 * $Math::Pi)}]"
+				lappend spectrum "# Name: $::Xsource(Tube)"
+				lappend spectrum "$::Xsource(Voltage) [expr {1e9 / (4 * $Math::Pi)}]"
 
 			} else {
 
 				# xray tube, use xraytools
-				set AngleOut $Xsource(TargetAngle)
-				if { [string is double -strict $Xsource(AngleIn)] } {
-					set AngleIn $Xsource(AngleIn)
+				set AngleOut $::Xsource(TargetAngle)
+				if { [string is double -strict $::Xsource(AngleIn)] } {
+					set AngleIn $::Xsource(AngleIn)
 				} else {
 					set AngleIn [expr {90 - $AngleOut}]
-					set Xsource(AngleIn) $AngleIn
+					set ::Xsource(AngleIn) $AngleIn
 				}
 
 				set compute true
 				set mode [Preferences::Get Source ComputationMode]
 				set keys [list \
-					[expr { $Xsource(Transmission) ? "Transmission" : "Direct" }] \
-					[Materials::get $Xsource(TargetMaterial) composition] \
-					[expr { double([Materials::get $Xsource(TargetMaterial) density]) }] \
-					[expr { double($Xsource(TargetThickness)) }] \
+					[expr { $::Xsource(Transmission) ? "Transmission" : "Direct" }] \
+					[Materials::get $::Xsource(TargetMaterial) composition] \
+					[expr { double([Materials::get $::Xsource(TargetMaterial) density]) }] \
+					[expr { double($::Xsource(TargetThickness)) }] \
 					[expr { double($AngleIn) }] \
 					[expr { double($AngleOut) }] \
-					[expr { double($Xsource(Voltage)) }] \
-					[expr { double($Xsource(Resolution)) }] \
+					[expr { double($::Xsource(Voltage)) }] \
+					[expr { double($::Xsource(Resolution)) }] \
 					$mode \
 				]
 
@@ -481,15 +481,15 @@ namespace eval ::ctsimu {
 					Precise { lappend options --Interpolation false }
 					Fast    { lappend options --BSModel XRTFast }
 				}
-				lappend options --Transmission [expr { $Xsource(Transmission) ? "true" : "false" }]
-				lappend options --Thickness [expr { $Xsource(TargetThickness) / 10.0 }]
+				lappend options --Transmission [expr { $::Xsource(Transmission) ? "true" : "false" }]
+				lappend options --Thickness [expr { $::Xsource(TargetThickness) / 10.0 }]
 				lappend options --Angle-Out $AngleOut --Angle-In $AngleIn
-				lappend options --kVp $Xsource(Voltage) --EBin $Xsource(Resolution)
+				lappend options --kVp $::Xsource(Voltage) --EBin $::Xsource(Resolution)
 				lappend options --Current 1 --Time 1
 
 				# compute the spectrum
-				Engine::UpdateMaterials $Xsource(TargetMaterial)
-				xrEngine GenerateSpectrum $Xsource(TargetMaterial) [Engine::quotelist {*}$options]
+				Engine::UpdateMaterials $::Xsource(TargetMaterial)
+				xrEngine GenerateSpectrum $::Xsource(TargetMaterial) [Engine::quotelist {*}$options]
 
 				if { [catch {
 
@@ -510,7 +510,7 @@ namespace eval ::ctsimu {
 				}
 
 				# build comments
-				set description "X-ray tube ($Xsource(Tube)): $Xsource(TargetMaterial), $Xsource(Voltage) kV, $Xsource(TargetAngle)\u00B0"
+				set description "X-ray tube ($::Xsource(Tube)): $::Xsource(TargetMaterial), $::Xsource(Voltage) kV, $::Xsource(TargetAngle)\u00B0"
 
 				# Filter by window layers (JSON supports more than one window)
 				foreach window $_window_filters {
@@ -543,18 +543,18 @@ namespace eval ::ctsimu {
 				}
 
 				lappend spectrum "# $description"
-				lappend spectrum "# Name: $Xsource(Tube)"
+				lappend spectrum "# Name: $::Xsource(Tube)"
 				foreach line [Engine::GetSpectrum] {
 					if { ![regexp {^\s*#\s*Directory:} $line] } { lappend spectrum $line }
 				}
 			}
 
 			::XSource::ClearOrigSpectrum
-			set Xsource_private(Spectrum) $spectrum
-			set Xsource_private(SpectrumName) $Xsource(Tube)
-			set Xsource_private(SpectrumDescription) $description
-			set Xsource(HalfLife) 0
-			set Xsource(computed) 1
+			set ::Xsource_private(Spectrum) $spectrum
+			set ::Xsource_private(SpectrumName) $::Xsource(Tube)
+			set ::Xsource_private(SpectrumDescription) $description
+			set ::Xsource(HalfLife) 0
+			set ::Xsource(computed) 1
 			::XSource::GeneratePreviewSpectrum
 
 			set fname [TempFile::mktmp .xrs]
@@ -582,16 +582,13 @@ namespace eval ::ctsimu {
 
 		method load_spectrum { file } {
 			# Filter the loaded spectrum by external filters, but not by windows.
-
 			::ctsimu::info "Loading spectrum file: $file"
-
-			global Xsource Xsource_private
 			variable ComputedSpectra
 
 			set spectrumString [::ctsimu::load_csv_into_tab_separated_string $file 1]
 
 			# build comments
-			set description "X-ray tube ($Xsource(Tube)): $Xsource(TargetMaterial), $Xsource(Voltage) kV, $Xsource(TargetAngle)\u00B0"
+			set description "X-ray tube ($::Xsource(Tube)): $::Xsource(TargetMaterial), $::Xsource(Voltage) kV, $::Xsource(TargetAngle)\u00B0"
 
 			# Add window materials to description (JSON supports more than one window)
 			foreach window $_window_filters {
@@ -605,8 +602,8 @@ namespace eval ::ctsimu {
 
 			# Filter by external filters (JSON supports more than one filter)
 			foreach filter $_filters {
-				set thickness [$window thickness]
-				set materialID [$_material_manager aRTist_id [$window material_id]]
+				set thickness [$filter thickness]
+				set materialID [$_material_manager aRTist_id [$filter material_id]]
 
 				if { $thickness > 0 } {
 					aRTist::Info { "Filtering with external filter: $thickness mm $materialID."}
@@ -621,11 +618,11 @@ namespace eval ::ctsimu {
 			set spectrum [ my engine_spectrum_string_to_XSource_list $spectrumString ]
 
 			::XSource::ClearOrigSpectrum
-			set Xsource_private(Spectrum) $spectrum
-			set Xsource_private(SpectrumName) $Xsource(Tube)
-			set Xsource_private(SpectrumDescription) $description
-			set Xsource(HalfLife) 0
-			set Xsource(computed) 1
+			set ::Xsource_private(Spectrum) $spectrum
+			set ::Xsource_private(SpectrumName) $::Xsource(Tube)
+			set ::Xsource_private(SpectrumDescription) $description
+			set ::Xsource(HalfLife) 0
+			set ::Xsource(computed) 1
 			::XSource::GeneratePreviewSpectrum
 
 			set fname [TempFile::mktmp .xrs]
@@ -634,14 +631,13 @@ namespace eval ::ctsimu {
 		}
 
 		method make_gaussian_spot_profile { sigmaX sigmaY } {
-			global Xsource_private
-			set Xsource_private(SpotRes) 301
-			set Xsource_private(SpotLorentz) 0.0
+			set ::Xsource_private(SpotRes) 301
+			set ::Xsource_private(SpotLorentz) 0.0
 
 			# Spot width and height are assumed to be FWHM of Gaussian profile.
 			# Convert sigma to FWHM:
-			set Xsource_private(SpotWidth) [expr 2.3548*$sigmaX]
-			set Xsource_private(SpotHeight) [expr 2.3548*$sigmaY]
+			set ::Xsource_private(SpotWidth) [expr 2.3548*$sigmaX]
+			set ::Xsource_private(SpotHeight) [expr 2.3548*$sigmaY]
 
 			::ctsimu::info "Setting Gaussian spot size. sigmaX=$sigmaX, sigmaY=$sigmaY."
 

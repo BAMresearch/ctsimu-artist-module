@@ -539,8 +539,18 @@ namespace eval ::ctsimu {
 				# a higher-density material:
 				set ::Xsetup(SpaceMaterial) [ [$_material_manager get [my get environment_material]] aRTist_id ]
 
+				if { [my is_running] == 0 } {
+					::ctsimu::status_info "Generating X-ray source and spectrum..."
+				}
 				$_source set_in_aRTist
+
+				if { [my is_running] == 0 } {
+					::ctsimu::status_info "Generating detector..."
+				}
 				$_detector set_in_aRTist [$_source get voltage_max]
+				if { [my is_running] == 0 } {
+					::ctsimu::status_info "Setting frame $frame..."
+				}
 
 				# Scattering:
 				if { ([my get scattering_on] == 1) && ([my get scattering_image_interval] > 0) } {
@@ -567,6 +577,10 @@ namespace eval ::ctsimu {
 				} else {
 					set ::Xscattering(Mode) off
 					set ::Xscattering(McRayInitFile) 0
+				}
+
+				if { [my is_running] == 0 } {
+					::ctsimu::status_info "Rendering preview for frame $frame..."
 				}
 
 				${::ctsimu::ctsimu_module_namespace}::setFrameNumber $frame

@@ -130,11 +130,11 @@ namespace eval ::ctsimu {
 				}
 			}
 
-			foreach filter $_window_filters {
-				append us "_[ $filter thickness]"
-				if { [$filter material_id] != "null" } {
-					append us "_[$_material_manager density [$filter material_id]]"
-					append us "_[$_material_manager composition [$filter material_id]]"
+			foreach window $_window_filters {
+				append us "_[ $window thickness]"
+				if { [$window material_id] != "null" } {
+					append us "_[$_material_manager density [$window material_id]]"
+					append us "_[$_material_manager composition [$window material_id]]"
 				}
 			}
 
@@ -237,12 +237,22 @@ namespace eval ::ctsimu {
 			my set_parameter_from_key spot_sigma_w $sourceprops {spot sigma w}
 
 			# If a finite spot size is provided but no Gaussian sigmas,
-			# the Gaussian width is assumed to be the spot size.
+			# the spot size is assumed to be 1 FWHM.
 			if { [my get spot_sigma_u] <= 0 } {
-				my set spot_sigma_u [my get spot_size_u]
+				my set spot_sigma_u [expr [my get spot_size_u]/2.355]
 			}
 			if { [my get spot_sigma_v] <= 0 } {
-				my set spot_sigma_v [my get spot_size_v]
+				my set spot_sigma_v [expr [my get spot_size_v]/2.355]
+			}
+
+			# The other way around: if no spot size is given, but
+			# a Gaussian sigma, we assume the spot size to be still finite
+			# and set its size as 1 FWHM.
+			if { [my get spot_size_u] <= 0 } {
+				my set spot_size_u [expr 2.355*[my get spot_sigma_u]]
+			}
+			if { [my get spot_size_v] <= 0 } {
+				my set spot_size_v [expr 2.355*[my get spot_sigma_v]]
 			}
 
 			# Intensity map

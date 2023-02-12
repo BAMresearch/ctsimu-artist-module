@@ -5,11 +5,11 @@
 
 		"contact": "David Plotzki",
 		"date_created": "2020-04-23",
-		"date_changed": "2023-02-05",
-		"version": {"major": 1, "minor": 7},
+		"date_changed": "2023-02-11",
+		"version": {"major": 1, "minor": 8},
 
 		"file_type": "CTSimU Scenario",
-		"file_format_version": {"major": 1, "minor": 1}
+		"file_format_version": {"major": 1, "minor": 2}
 	},
 
 	"environment": {
@@ -174,6 +174,15 @@
 			"material_id": "CsI",
 			"thickness": {"value": 0.15, "unit": "mm"}
 		},
+		"window": {
+			"front": [
+				{
+					"material_id": "Kapton",
+					"thickness": {"value": 0.13, "unit": "mm"}
+				}
+			],
+			"rear": []
+		},
 		"filters": {
 			"front": [
 				{
@@ -181,8 +190,8 @@
 					"thickness": {"value": 0.2, "unit": "mm"}
 				},
 				{
-					"material_id": "Kapton",
-					"thickness": {"value": 0.13, "unit": "mm"}
+					"material_id": "Cu",
+					"thickness": {"value": 0.1, "unit": "mm"}
 				}
 			],
 			"rear": [
@@ -198,7 +207,7 @@
 		"model":        "XS-1",
 		"manufacturer": "X-ray Tube Company",
 		"voltage": {"value": 130, "unit": "kV"},
-		"current": {"value": 120, "unit": "uA"},
+		"current": {"value": 143, "unit": "uA"},
 		"target": {
 			"material_id": "W",
 			"type": "reflection",

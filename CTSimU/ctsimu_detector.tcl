@@ -188,6 +188,8 @@ namespace eval ::ctsimu {
 			append us "_[my get noise_characteristics_file]"
 			append us "_[my get basic_spatial_resolution]"
 			append us "_[my get mtf_file]"
+			append us "_[my get long_range_unsharpness]"
+			append us "_[my get long_range_ratio]"
 			append us "_[my get scintillator_thickness]"
 			if { [my get scintillator_material_id] != "null" } {
 				append us "_[$_material_manager density [my get scintillator_material_id]]"

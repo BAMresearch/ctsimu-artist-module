@@ -441,57 +441,57 @@ namespace eval ::ctsimu {
 
 		method set_in_aRTist { xray_kV } {
 			if { [::ctsimu::aRTist_available] } {
-				# Set the detector to auto-size mode.
-				# We set the number of pixels and the pixel size,
-				# and aRTist should automatically calculate the
-				# detector size:
-				Preferences::Set Detector AutoVar Size
-				set ::Xsetup_private(DGauto) Size
-				::XDetector::SelectAutoQuantity
-
-				# Number of pixels:
-				set ::Xsetup(DetectorPixelX) [expr int([my get columns])]
-				set ::Xsetup(DetectorPixelY) [expr int([my get rows])]
-
-				# Pixel size:
-				# Check if pixel size square lock needs to be lifted:
-				if { [my get pitch_u] == [my get pitch_v] } {
-					set ::Xsetup(SquarePixel) 1
-				} else {
-					set ::Xsetup(SquarePixel) 0
-				}
-
-				set ::Xsetup_private(DGdx) [my get pitch_u]
-				set ::Xsetup_private(DGdy) [my get pitch_v]
-
 				# Integration Time:
 				set ::Xdetector(AutoD) off
 				set ::Xdetector(Scale) [my get integration_time]
-
-				# Frame Averaging
-				# Set frame averaging to 1 for now:
-				set ::Xdetector(NrOfFrames) [expr int([my get frame_average])]
-
-				# Pixel multisampling:
-				set ::Xsetup(DetectorSampling) [my get multisampling]
-
-				# Long range unsharpness
-				if { ([my get long_range_unsharpness] > 0) && ([my get long_range_ratio] > 0) } {
-					set ::Xdetector(LRRatio) [my get long_range_ratio]
-					set ::Xdetector(LRUnsharpness) [my get long_range_unsharpness]
-					set ::Xdetector(UnsharpnessOn) 1
-					::XDetector::UnsharpnessOverrideSet
-				} else {
-					set ::Xdetector(UnsharpnessOn) 0
-					::XDetector::UnsharpnessOverrideSet
-				}
-
-				::XDetector::UpdateGeometry %W
 
 				# Generate the detector if it has changed:
 				set current_hash [my hash]
 				if { $current_hash != $_previous_hash } {
 					set _previous_hash $current_hash
+
+					# Set the detector to auto-size mode.
+					# We set the number of pixels and the pixel size,
+					# and aRTist should automatically calculate the
+					# detector size:
+					Preferences::Set Detector AutoVar Size
+					set ::Xsetup_private(DGauto) Size
+					::XDetector::SelectAutoQuantity
+
+					# Number of pixels:
+					set ::Xsetup(DetectorPixelX) [expr int([my get columns])]
+					set ::Xsetup(DetectorPixelY) [expr int([my get rows])]
+
+					# Pixel size:
+					# Check if pixel size square lock needs to be lifted:
+					if { [my get pitch_u] == [my get pitch_v] } {
+						set ::Xsetup(SquarePixel) 1
+					} else {
+						set ::Xsetup(SquarePixel) 0
+					}
+
+					set ::Xsetup_private(DGdx) [my get pitch_u]
+					set ::Xsetup_private(DGdy) [my get pitch_v]
+
+					# Frame Averaging
+					# Set frame averaging to 1 for now:
+					set ::Xdetector(NrOfFrames) [expr int([my get frame_average])]
+
+					# Pixel multisampling:
+					set ::Xsetup(DetectorSampling) [my get multisampling]
+
+					# Long range unsharpness
+					if { ([my get long_range_unsharpness] > 0) && ([my get long_range_ratio] > 0) } {
+						set ::Xdetector(LRRatio) [my get long_range_ratio]
+						set ::Xdetector(LRUnsharpness) [my get long_range_unsharpness]
+						set ::Xdetector(UnsharpnessOn) 1
+						::XDetector::UnsharpnessOverrideSet
+					} else {
+						set ::Xdetector(UnsharpnessOn) 0
+						::XDetector::UnsharpnessOverrideSet
+					}
+
+					::XDetector::UpdateGeometry %W
 
 					# Check if a temp file already exists:
 					set detector_temp_file [my current_temp_file]

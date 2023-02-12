@@ -73,6 +73,7 @@ namespace eval ::ctsimu {
 			my set model                  ""  "string"
 			my set manufacturer           ""  "string"
 			my set voltage                130 "kV"
+			my set voltage_max            200 "kV"; # needed for detector computation
 			my set current                0.1 "mA"
 
 			# Target
@@ -261,6 +262,7 @@ namespace eval ::ctsimu {
 			# Filters can be defined in "window" or "filters":
 			set _window_filters [::ctsimu::add_filters_to_list $_window_filters $sourceprops {window}]
 			set _filters        [::ctsimu::add_filters_to_list $_filters $sourceprops {filters}]
+
 
 			::ctsimu::info "Done reading source parameters."
 		}

@@ -33,7 +33,7 @@ namespace eval ::ctsimu {
 		constructor { } {
 			# Maximum supported file format version:
 			set _supported_fileformat_major 1
-			set _supported_fileformat_minor 1
+			set _supported_fileformat_minor 2
 
 			# State
 			my _set_run_status 0
@@ -402,6 +402,7 @@ namespace eval ::ctsimu {
 			# -------------
 			::ctsimu::status_info "Reading X-ray source parameters..."
 			$_source set_from_json $jsonstring [$_stage current_coordinate_system]
+			$_source set voltage_max [[$_source parameter voltage] maximum_value [my get n_frames] 0]
 
 			# Detector
 			# -------------
@@ -539,7 +540,7 @@ namespace eval ::ctsimu {
 				set ::Xsetup(SpaceMaterial) [ [$_material_manager get [my get environment_material]] aRTist_id ]
 
 				$_source set_in_aRTist
-				$_detector set_in_aRTist
+				$_detector set_in_aRTist [$_source get voltage_max]
 
 				# Scattering:
 				if { ([my get scattering_on] == 1) && ([my get scattering_image_interval] > 0) } {

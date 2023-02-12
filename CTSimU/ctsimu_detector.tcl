@@ -12,11 +12,13 @@ source -encoding utf-8 [file join $BasePath ctsimu_sample.tcl]
 namespace eval ::ctsimu {
 	::oo::class create detector {
 		superclass ::ctsimu::part
+		variable _windows_front
 		variable _filters_front
 		variable _material_manager
 		variable _previous_hash
 		variable _initial_SDD; # initial SDD at frame 0
 		variable _initial_current; # initial X-ray source current at frame 0
+		variable _initial_maxinput; # maximum intensity at frame 0.
 
 		# Pitch and integration time for frame zero.
 		# Some gray value characteristics always refer to frame zero.
@@ -26,6 +28,7 @@ namespace eval ::ctsimu {
 
 		constructor { { name "CTSimU_Detector" } { id "D" } } {
 			next $name $id; # call constructor of parent class ::ctsimu::part
+			set _windows_front [list ]
 			set _filters_front [list ]
 			set _previous_hash "0"
 
@@ -37,6 +40,12 @@ namespace eval ::ctsimu {
 				$filter destroy
 			}
 			set _filters_front [list ]
+
+			foreach window $_windows_front {
+				$window destroy
+			}
+			set _windows_front [list ]
+
 			next
 		}
 
@@ -55,6 +64,7 @@ namespace eval ::ctsimu {
 			set _initial_pitch_u 0
 			set _initial_pitch_v 0
 			set _initial_integration_time 0
+			set _initial_maxinput 0
 
 			# Reset the '::ctsimu::part' that handles the coordinate system:
 			next; # call reset of parent class ::ctsimu::part
@@ -64,6 +74,12 @@ namespace eval ::ctsimu {
 				$filter destroy
 			}
 			set _filters_front [list ]
+
+			# Empty window list:
+			foreach window $_windows_front {
+				$window destroy
+			}
+			set _windows_front [list ]
 
 			# The current timestamp, necessary for hashing.
 			my set timestamp [clock seconds]
@@ -178,6 +194,14 @@ namespace eval ::ctsimu {
 				append us "_[$_material_manager composition [my get scintillator_material_id]]"
 			}
 
+			foreach window $_windows_front {
+				append us "_[ $window thickness]"
+				if { [$window material_id] != "null" } {
+					append us "_[$_material_manager density [$window material_id]]"
+					append us "_[$_material_manager composition [$window material_id]]"
+				}
+			}
+
 			foreach filter $_filters_front {
 				append us "_[ $filter thickness]"
 				if { [$filter material_id] != "null" } {
@@ -194,6 +218,11 @@ namespace eval ::ctsimu {
 		}
 
 		method set_frame { stageCS frame nFrames { w_rotation_in_rad 0 } } {
+			# Update window list:
+			foreach window $_windows_front {
+				$window set_frame $frame $nFrames
+			}
+
 			# Update filter list:
 			foreach filter $_filters_front {
 				$filter set_frame $frame $nFrames
@@ -364,7 +393,8 @@ namespace eval ::ctsimu {
 			my set_parameter_value scintillator_material_id $detprops {scintillator material_id} "null"
 			my set_parameter_from_key scintillator_thickness $detprops {scintillator thickness} 0
 
-			# Filters
+			# Windows and filters
+			set _windows_front [::ctsimu::add_filters_to_list $_windows_front $detprops {window front}]
 			set _filters_front [::ctsimu::add_filters_to_list $_filters_front $detprops {filters front}]
 
 			# Frame averaging:
@@ -409,7 +439,7 @@ namespace eval ::ctsimu {
 			}
 		}
 
-		method set_in_aRTist { } {
+		method set_in_aRTist { xray_kV } {
 			if { [::ctsimu::aRTist_available] } {
 				# Set the detector to auto-size mode.
 				# We set the number of pixels and the pixel size,
@@ -469,7 +499,7 @@ namespace eval ::ctsimu {
 					if { ![file exists $detector_temp_file] } {
 						# Detector file does not exist.
 						# We generate one...
-						set aRTist_detector [my generate $_initial_SDD $_initial_current]
+						set aRTist_detector [my generate $_initial_SDD $_initial_current $xray_kV]
 						XDetector::write_aRTdet $detector_temp_file $aRTist_detector
 					}
 
@@ -518,7 +548,7 @@ namespace eval ::ctsimu {
 		}
 
 		# Adaption of DetectorCalc's Compute function:
-		method generate { SDD xray_source_current } {
+		method generate { SDD xray_source_current xray_kV } {
 			# Generate a detector dictionary for aRTist.
 			# Input parameters:
 			# - SDD: source-detector distance
@@ -626,20 +656,55 @@ namespace eval ::ctsimu {
 
 				Engine::UpdateMaterials $scintillatorMaterialID
 
-				set i 0
-				set steps 9
+				#  0.1    50 0.01
+				#  0.5   100 0.05
+				#  1     200 0.1
+				#  5     500 0.2
+				# 20     600 0.5
+				# 50    1000 1
+				#100   10000 2
+				#200   12000 5
+				#500   20000 10
 
-				foreach { dE Emax EBin } {
-					  0.1    50 0.01
-					  0.5   100 0.05
-					  1     200 0.1
-					  5     500 0.2
-					 20     600 0.5
-					 50    1000 1
-					100   10000 2
-					200   12000 5
-					500   20000 10
-				} {
+				set i 0
+				set steps 1
+
+				set EnergyBins [list 0.1 50 0.01]
+
+				if { $xray_kV > 30 } {
+					lappend EnergyBins 0.5 100 0.05
+					incr steps
+				}
+				if { $xray_kV > 80 } {
+					lappend EnergyBins 1 200 0.1
+					incr steps
+				}
+				if { $xray_kV > 180 } {
+					lappend EnergyBins 5 500 0.2
+					incr steps
+				}
+				if { $xray_kV > 480 } {
+					lappend EnergyBins 20 600 0.5
+					incr steps
+				}
+				if { $xray_kV > 580 } {
+					lappend EnergyBins 50 1000 1
+					incr steps
+				}
+				if { $xray_kV > 980 } {
+					lappend EnergyBins 100 10000 2
+					incr steps
+				}
+				if { $xray_kV > 9800 } {
+					lappend EnergyBins 200 12000 5
+					incr steps
+				}
+				if { $xray_kV > 11800 } {
+					lappend EnergyBins 500 20000 10
+					incr steps
+				}
+
+				foreach { dE Emax EBin } $EnergyBins {
 					set percentage [expr round(100*$i/$steps)]
 					::ctsimu::status_info "Calculating detector sensitivity: $percentage% ($Emin .. $Emax keV)"
 					incr i
@@ -706,6 +771,18 @@ namespace eval ::ctsimu {
 
 				for { set kV 0 } { $kV <= 1000 } { incr kV} {
 					append sensitivitytext "$kV 1 $kV\n"
+				}
+			}
+
+			# Apply detector window
+			if { [my get efficiency_characteristics_file] == "null" } {
+				# Only filter with front window if no efficiency characteristics file
+				# is given. Otherwise, the front window is already part of the efficiency characteristics.
+				foreach window $_windows_front {
+					aRTist::Verbose { "Filtering by $materialID, Thickness: $thickness" }
+					set aRTist_material_id [$_material_manager aRTist_id [$window material_id]]
+					Engine::UpdateMaterials $aRTist_material_id
+					set sensitivitytext [xrEngine FilterSpectrum $sensitivitytext $aRTist_material_id [Engine::quotelist --Thickness [expr {[$window thickness] / 10.0}]]]
 				}
 			}
 
@@ -792,6 +869,9 @@ namespace eval ::ctsimu {
 					# should we handle photon counting differently?
 					set amplification  [expr {[my max_gray_value] / $energyPerPixel }]
 					set maxinput $energyPerPixel
+					if { $_initial_maxinput == 0 } {
+						set _initial_maxinput $maxinput
+					}
 
 					# Flat field correction rescale factor
 					my set ff_rescale_factor 60000
@@ -840,11 +920,12 @@ namespace eval ::ctsimu {
 							set area_scale 1
 						}
 
-						# generate linear amplification curve
+						# Generate linear amplification curve.
+						# The maximum gray value still referes to frame zero, therefore: _initial_maxinput
 						dict set detector Characteristic 0.0 $GVatMin
-						dict set detector Characteristic [expr $maxinput*$area_scale] $GVatMax
+						dict set detector Characteristic [expr $_initial_maxinput*$area_scale] $GVatMax
 
-						::ctsimu::info "GV at Min: $GVatMin, GV at Max: $GVatMax, maxInput: $maxinput"
+						::ctsimu::info "GV at Min: $GVatMin, GV at Max: $GVatMax, initial maxInput: $_initial_maxinput (initial)"
 
 						dict set detector Exposure TargetValue $GVatMax
 						my set gv_max $GVatMax

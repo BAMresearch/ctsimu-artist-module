@@ -68,6 +68,46 @@ namespace eval ::ctsimu {
 			return $_current_value
 		}
 
+		method maximum_value { nFrames { only_drifts_known_to_reconstruction 0 } } {
+			# Get the maximum value during the evolution of `nFrames`,
+			# given drifts.
+			if { [my has_drifts] == 1 } {
+				if { ($_native_unit != "string") && ($_standard_value != "null") } {
+					set total_drift_max [my get_total_drift_value_for_frame 0 $nFrames $only_drifts_known_to_reconstruction]
+					for {set f 1} {$f < $nFrames} {incr f} {
+						set total_drift_for_frame [my get_total_drift_value_for_frame $f $nFrames $only_drifts_known_to_reconstruction]
+						if { $total_drift_for_frame > $total_drift_max } {
+							set total_drift_max $total_drift_for_frame
+						}
+					}
+
+					return [expr $_standard_value + $total_drift_max]
+				}
+			}
+
+			return $_standard_value
+		}
+
+		method minimum_value { nFrames { only_drifts_known_to_reconstruction 0 } } {
+			# Get the minimum value during the evolution of `nFrames`,
+			# given drifts.
+			if { [my has_drifts] == 1 } {
+				if { ($_native_unit != "string") && ($_standard_value != "null") } {
+					set total_drift_min [my get_total_drift_value_for_frame 0 $nFrames $only_drifts_known_to_reconstruction]
+					for {set f 1} {$f < $nFrames} {incr f} {
+						set total_drift_for_frame [my get_total_drift_value_for_frame $f $nFrames $only_drifts_known_to_reconstruction]
+						if { $total_drift_for_frame < $total_drift_min } {
+							set total_drift_min $total_drift_for_frame
+						}
+					}
+
+					return [expr $_standard_value + $total_drift_min]
+				}
+			}
+
+			return $_standard_value
+		}
+
 		method has_changed { } {
 			return $_value_has_changed
 		}

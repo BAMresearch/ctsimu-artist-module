@@ -39,7 +39,7 @@ namespace eval ::ctsimu {
 			}
 		}
 
-		method update_scene { stageCS } {
+		method update_scene { stageCS material_manager } {
 			# Move objects in scene to match current frame number.
 
 			# Create a list of IDs that are available in aRTist's part list:
@@ -52,6 +52,7 @@ namespace eval ::ctsimu {
 				# Check if the sample ID is still in aRTist's part list
 				# or if it has been deleted.
 				if { [::ctsimu::is_valid [$s id] $available_ids] || ![::ctsimu::aRTist_available] } {
+					$s update_mesh_file $material_manager
 					$s place_in_scene $stageCS
 					$s update_scaling_factor
 				}
@@ -92,27 +93,7 @@ namespace eval ::ctsimu {
 			}
 
 			foreach s $_samples {
-				set meshfile [$s get surface_mesh_file]
-				::ctsimu::info "[$s name]: [$s get surface_mesh_file_path_is_absolute]"
-				if { ![$s get surface_mesh_file_path_is_absolute] } {
-					# If the surface mesh location is a relative path,
-					# the location of the JSON file need to be appended
-					# in front:
-					set meshfile [::ctsimu::get_absolute_path [$s get surface_mesh_file]]
-					puts "Meshfile: $meshfile"
-				}
-
-				set material_id [ [ $material_manager get [$s get material_id] ] aRTist_id ]
-				if { [::ctsimu::aRTist_available] } {
-					$s set_id [::PartList::LoadPart $meshfile "$material_id" "[$s name]" yes]
-
-					# Set the original object size:
-					set objectSize [::PartList::Invoke [$s id] GetSize]
-					$s set original_physical_size_r [lindex $objectSize 0]
-					$s set original_physical_size_s [lindex $objectSize 1]
-					$s set original_physical_size_t [lindex $objectSize 2]
-				}
-
+				$s load_mesh_file $material_manager
 				$s place_in_scene $stageCS
 				$s update_scaling_factor
 			}

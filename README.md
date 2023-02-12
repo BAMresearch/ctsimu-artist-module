@@ -1,31 +1,31 @@
-# CTSimU aRTist Module 1.0
+# CTSimU aRTist Module 1.2.0
 
 This is a module for the radiographic simulator [aRTist](http://artist.bam.de/) which reads and sets up the scenario from a [CTSimU Scenario Description](https://bamresearch.github.io/ctsimu-scenarios/) file. With the module, it is also possible to simulate the complete CT scan as described in the JSON scenario.
 
 ## Requirements
 
-+ aRTist Version 2.12 or higher
++ aRTist, version 2.12. Support for higher versions currently unknown.
 
 ## Installation
 
-1. Download the aRTist package file (`CTSimU-<version>.artp`) for the latest [Release](https://github.com/BAMresearch/ctsimu-artist-module/releases).
+1. Download the aRTist package file (`CTSimU-<version>.artp`) for the latest [release](https://github.com/BAMresearch/ctsimu-artist-module/releases).
 2. Drag and drop the `.artp` file into your aRTist window to install the module.
 
 ## Example Scenarios
 
-You can find [example scenario files](https://github.com/BAMresearch/ctsimu-scenarios/tree/main/examples) that you can load with this module in aRTist on the [Github repository] for the CTSimU Scenario Descriptions.
+You can find [example scenario files](https://github.com/BAMresearch/ctsimu-scenarios/tree/main/examples) that you can load with this module in aRTist on the Github repository for the CTSimU Scenario Descriptions.
 
 ## Known Limitations
 
-+ Continuous-motion scans are not supported, only stop&go mode.
-+ Drifts between frames of an averaged projection are not handled. Therefore, motion blurring within one projection cannot be simulated.
-+ Parallel beam geometries are not supported. As a workaround, a very high source-detector distance could be set in the JSON file.
++ **Continuous-motion** scans are not supported, only stop&go mode.
++ Drifts between the frames of an averaged projection are not handled. Therefore, **motion blurring** within one projection cannot be simulated.
++ **Parallel beam** geometries are not supported. As a workaround, a very high source-detector distance could be chosen in the JSON file.
++ Detector: **rear window and filters** are not supported, only the *front* versions. If they are needed for a scatter simulation, they should be included in the scene as samples (fixed to the world coordinate system).
++ If **flat-field correction** is turned on in the JSON file, aRTist's internal flat-field correction will be used. This means that the flat-field corrected image will be re-scaled to the mean intensity of the flat field image, instead of the free-beam maximum.
 
 ## Tcl API
 
-The module is written in Tcl, in a way that it can also be used without aRTist (in a limited way). The [documentation](docs/index.md) of the code, API and classes can be found in the `docs` folder. You can find demo Tcl scripts in the [examples](examples/) folder of this repository.
-
-It also provides functions to control the module within aRTist by passing a prepared Tcl script as an argument to an aRTist instance.
+The module is written in Tcl, in a way that it can also be used without aRTist (in a limited way). There are also functions to control the module within aRTist by passing a prepared Tcl script as an argument to an aRTist instance. The [documentation](docs/index.md) of the code, API and classes can be found in the `docs` folder. You can find demo Tcl scripts in the [examples](examples/) folder of this repository.
 
 ## Deploying a new version
 
@@ -48,18 +48,18 @@ The following table lists the module's current support status for the JSON param
 | `environment material_id`                             | yes         | only in material definition (density, composition) |
 | `environment temperature`                             | no          | no                                                 |
 | `geometry detector center x/y/z`                      | yes         | yes                                                |
-| `geometry detector vector_u x/y/z`                    | yes         | yes (not recommended, better to use `deviations`)  |
-| `geometry detector vector_w x/y/z`                    | yes         | yes (not recommended, better to use `deviations`)  |
+| `geometry detector vector_u x/y/z`                    | yes         | yes                                                |
+| `geometry detector vector_w x/y/z`                    | yes         | yes                                                |
 | `geometry detector deviations`                        | yes         | yes                                                |
 | `geometry source type`                                | `cone`      | no                                                 |
 | `geometry source beam_divergence`                     | no          | no                                                 |
 | `geometry source center x/y/z`                        | yes         | yes                                                |
-| `geometry source vector_u x/y/z`                      | yes         | yes (not recommended, better to use `deviations`)  |
-| `geometry source vector_w x/y/z`                      | yes         | yes (not recommended, better to use `deviations`)  |
+| `geometry source vector_u x/y/z`                      | yes         | yes                                                |
+| `geometry source vector_w x/y/z`                      | yes         | yes                                                |
 | `geometry source deviations`                          | yes         | yes                                                |
 | `geometry stage center x/y/z`                         | yes         | yes                                                |
-| `geometry stage vector_u x/y/z`                       | yes         | yes (not recommended, better to use `deviations`)  |
-| `geometry stage vector_w x/y/z`                       | yes         | yes (not recommended, better to use `deviations`)  |
+| `geometry stage vector_u x/y/z`                       | yes         | yes                                                |
+| `geometry stage vector_w x/y/z`                       | yes         | yes                                                |
 | `geometry stage deviations`                           | yes         | yes                                                |
 | `detector model`                                      | yes         | no                                                 |
 | `detector manufacturer`                               | yes         | no                                                 |
@@ -85,6 +85,8 @@ The following table lists the module's current support status for the JSON param
 | `detector bad_pixel_map`                              | no          | no                                                 |
 | `detector scintillator material_id`                   | yes         | only in material definition (density, composition) |
 | `detector scintillator thickness`                     | yes         | yes                                                |
+| `detector window front`                               | yes         | yes                                                |
+| `detector window rear`                                | no          | no                                                 |
 | `detector filters front`                              | yes         | yes                                                |
 | `detector filters rear`                               | no          | no                                                 |
 | `source model`                                        | yes         | no                                                 |
@@ -115,8 +117,8 @@ The following table lists the module's current support status for the JSON param
 | `samples scaling_factor r/s/t`                        | yes         | yes                                                |
 | `samples material_id`                                 | yes         | only in material definition (density, composition) |
 | `samples position center u/v/w/x/y/z`                 | yes         | yes                                                |
-| `samples position vector_r u/v/w/x/y/z`               | yes         | yes (not recommended, better to use `deviations`)  |
-| `samples position vector_t u/v/w/x/y/z`               | yes         | yes (not recommended, better to use `deviations`)  |
+| `samples position vector_r u/v/w/x/y/z`               | yes         | yes                                                |
+| `samples position vector_t u/v/w/x/y/z`               | yes         | yes                                                |
 | `samples position deviations`                         | yes         | yes                                                |
 | `acquisition start_angle`                             | yes         | no                                                 |
 | `acquisition stop_angle`                              | yes         | no                                                 |
@@ -152,11 +154,14 @@ The following table lists the module's current support status for the JSON param
 | `simulation aRTist primary_energies`                  | yes         | no                                                 |
 | `simulation aRTist primary_intensities`               | yes         | no                                                 |
 
+## The devil in the details
+
++ If **X-ray spectra** are loaded from an external file instead of being generated in aRTist, the JSON file should still specify the tube's correct acceleration `voltage`. If the maximum energy in the spectrum drifts significantly (by more than 20 keV), the source's `voltage` parameter should also drift, reflecting the maximum energy in the spectrum. Alternatively, instead of a drift, the `voltage` parameter could simply represent the maximum acceleration voltage during the scan. The reason is that the maximum photon energy is needed for the computation of the detector's sensitivity characteristics, in order to save computation time and only run the computations for the necessary energy range. This maximum photon energy is determined from the source's `voltage` parameter and not from an externally loaded spectrum.
 
 ## Version History
 
-### 1.0.0
-+ General support for file format version 1.0
+### 1.2.0
++ General support for file format version 1.0, 1.1 and 1.2
 + Parameter drifts are supported
 + Scatter images can be calculated for several frames, instead of calculating a new scatter image for each frame.
 + Option to restart aRTist after each batch run. (To free memory.)

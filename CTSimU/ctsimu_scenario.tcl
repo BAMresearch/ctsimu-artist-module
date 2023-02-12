@@ -836,12 +836,22 @@ namespace eval ::ctsimu {
 					set savedNFrames       $::Xdetector(NrOfFrames)
 					set savedScatter       $::Xscattering(Mode)
 
+					set savedUnsharpness   $::Xdetector(Unsharpness)
+					set savedLRRatio       $::Xdetector(LRRatio)
+					set savedLRUnsharpness $::Xdetector(LRUnsharpness)
+
 					# Take ideal dark image at 0 current and 0 noise:
 					set ::Xsource(Exposure) 0
 					set ::Xdetector(NoiseFactorOn) 1
 					set ::Xdetector(NoiseFactor) 0
 					set ::Xdetector(NrOfFrames) 1
 					set ::Xscattering(Mode) off
+
+					set ::Xdetector(Unsharpness) 0
+					set ::Xdetector(LRRatio) 0
+					set ::Xdetector(LRUnsharpness) 0
+					set ::Xdetector(UnsharpnessOn) 1
+					::XDetector::UnsharpnessOverrideSet
 
 					my save_projection_image 0 "dark"
 
@@ -850,6 +860,12 @@ namespace eval ::ctsimu {
 					set ::Xdetector(NoiseFactor) $savedNoiseFactor
 					set ::Xdetector(NrOfFrames) $savedNFrames
 					set ::Xscattering(Mode) $savedScatter
+
+					set ::Xdetector(Unsharpness) $savedUnsharpness
+					set ::Xdetector(LRRatio) $savedLRRatio
+					set ::Xdetector(LRUnsharpness) $savedLRUnsharpness
+					set ::Xdetector(UnsharpnessOn) 0
+					::XDetector::UnsharpnessOverrideSet
 				}
 
 				if { [my get n_flats] } {

@@ -21,7 +21,7 @@ You can find [example scenario files](https://github.com/BAMresearch/ctsimu-scen
 + Drifts between the frames of an averaged projection are not handled. Therefore, **motion blurring** within one projection cannot be simulated.
 + **Parallel beam** geometries are not supported. As a workaround, a very high source-detector distance could be chosen in the JSON file.
 + Detector: **rear window and filters** are not supported, only the *front* versions. If they are needed for a scatter simulation, they should be included in the scene as samples (fixed to the world coordinate system).
-+ If **flat-field correction** is turned on in the JSON file, aRTist's internal flat-field correction will be used. This means that the flat-field corrected image will be re-scaled to the mean intensity of the flat field image, instead of the free-beam maximum.
++ If **flat-field correction** is turned on in the JSON file, aRTist's internal flat-field correction will be used. This means that the flat-field corrected image will be re-scaled to the mean intensity of the flat field image, instead of the free-beam maximum, and an ideal (noise-free) image will be taken for aRTist's internal flat-field image. It is recommended to turn off flat-field `correction` in the JSON file, and instead use the [CTSimU Toolbox](https://github.com/BAMresearch/ctsimu-toolbox) to run the correction after the simulation (using the simulated flat field and dark field images).
 
 ## Tcl API
 
@@ -35,7 +35,7 @@ The `deploy.sh` script can be used to create an `.artp` file for aRTist for a ce
 
 For example:
 
-	./deploy.sh "0.8.14"
+	./deploy.sh "1.2.0"
 
 Note: the aRTist package file (`.artp`) should not be part of the git repository. Instead, it can be uploaded to Github as a file attachment to a new release.
 
@@ -153,6 +153,24 @@ The following table lists the module's current support status for the JSON param
 | `simulation aRTist long_range_unsharpness ratio`      | yes         | yes                                                |
 | `simulation aRTist primary_energies`                  | yes         | no                                                 |
 | `simulation aRTist primary_intensities`               | yes         | no                                                 |
+
+### Deviations
+
+[Geometry deviations](https://bamresearch.github.io/ctsimu-scenarios/geometry.html#deviations) as specified in the file format are fully supported.
+
+| Parameter                  | Support     | Drift Support  |
+| :------------------------- | :---------- | :------------- |
+| `type`                     | yes         | no             |
+| `axis` as name string      | yes         | no             |
+| `axis x/y/z`               | yes         | yes            |
+| `axis u/v/w`               | yes         | yes            |
+| `axis r/s/t`               | yes         | yes            |
+| `pivot x/y/z`              | yes         | yes            |
+| `pivot u/v/w`              | yes         | yes            |
+| `pivot r/s/t`              | yes         | yes            |
+| `amount`                   | yes         | yes            |
+| `known_to_reconstruction`  | yes         | no             |
+
 
 ## The devil in the details
 

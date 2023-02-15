@@ -82,7 +82,7 @@ proc Init {} {
 	if {[dict exists $prefs cfgFileCERA]} {
 		CTSimU::setCfgFileCERA [dict get $prefs cfgFileCERA]
 	}
-	
+
 	if {[dict exists $prefs ceradataTypeOutput]} {
 		CTSimU::setceradataTypeOutput [dict get $prefs ceradataTypeOutput]
 	}
@@ -90,7 +90,7 @@ proc Init {} {
 	if {[dict exists $prefs cfgFileCLFDK]} {
 		CTSimU::setCfgFileCLFDK [dict get $prefs cfgFileCLFDK]
 	}
-	
+
 	if {[dict exists $prefs	clfdkdataTypeOutput]} {
 		CTSimU::setclfdkdataTypeOutput [dict get $prefs clfdkdataTypeOutput]
 	}
@@ -322,7 +322,7 @@ proc ChooseFile { mask } {
 
 	set fname [tk_getOpenFile -parent $toplevel -filetypes $mask]
 
-	if { $fname != "" } { 
+	if { $fname != "" } {
 		return [Utils::GetRelativePath $fname $BasePath]
 	}
 
@@ -336,11 +336,11 @@ proc ChooseFiles { mask } {
 
 	set fnames [tk_getOpenFile -parent $toplevel -filetypes $mask -multiple 1]
 
-	if { $fnames != "" } { 
+	if { $fnames != "" } {
 		set namesList { }
 
 		foreach fname $fnames {
-			if { $fname != "" } { 
+			if { $fname != "" } {
 				lappend namesList [Utils::GetRelativePath $fname $BasePath]
 			}
 		}
@@ -405,7 +405,7 @@ proc InitGUI { parent } {
 		{Flat field mode}        ffIdeal         choice   { "Regular" 0 "Ideal" 1 }
 		{ }                      scanBtn         buttons  { "Run scenario" CTSimU_startScan 12 "Stop" CTSimU_stopScan 7 }
 	}
-	
+
 #	set infoFrame   [FoldFrame $model.frmInfo -text "Status"     -padding $pad]
 #	dataform $infoFrame {
 #		{Hallo}                  statusLine  infostring { }
@@ -658,11 +658,11 @@ proc insertBatchJob { jsonFileName {runs 1} {startRun 1} {startProjectionNumber 
 	foreach index [$batchList childkeys root] {
 		incr id
 	}
-	
+
 	if {$outputFolder == ""} {
 		set outputFolder [getOutputFolder $jsonFileName]
 	}
-	
+
 	if {$outputBasename == ""} {
 		set outputBasename [getOutputBasename $jsonFileName]
 	}
@@ -798,7 +798,7 @@ proc runBatch { } {
 					}
 
 					return
-					
+
 				} else {
 					$batchList cellconfigure $index,Status -text "Done"
 				}
@@ -929,7 +929,7 @@ proc fillCurrentParameters {} {
 	if { [dict exists $CTSimU::ctsimuSettings cfgFileCERA] } {
 		set GUISettings(cfgFileCERA)    [dict get $CTSimU::ctsimuSettings cfgFileCERA]
 	}
-	
+
 	if { [dict exists $CTSimU::ctsimuSettings  ceradataTypeOutput] } {
 		set GUISettings(ceradataTypeOutput) [dict get $CTSimU::ctsimuSettings ceradataTypeOutput]
 	}
@@ -937,7 +937,7 @@ proc fillCurrentParameters {} {
 	if { [dict exists $CTSimU::ctsimuSettings cfgFileCLFDK] } {
 		set GUISettings(cfgFileCLFDK)    [dict get $CTSimU::ctsimuSettings cfgFileCLFDK]
 	}
-	
+
 	if { [dict exists $CTSimU::ctsimuSettings 	clfdkdataTypeOutput] } {
 		set GUISettings(clfdkdataTypeOutput) [dict get $CTSimU::ctsimuSettings clfdkdataTypeOutput]
 	}
@@ -1022,7 +1022,7 @@ proc CTSimU_nextProjection {} {
 	variable GUISettings
 
 	applyCurrentParameters
-	
+
 	set projNr $GUISettings(projNr)
 	incr projNr
 	set GUISettings(projNr) $projNr
@@ -1034,7 +1034,7 @@ proc CTSimU_prevProjection {} {
 	variable GUISettings
 
 	applyCurrentParameters
-	
+
 	set projNr $GUISettings(projNr)
 	incr projNr -1
 	set GUISettings(projNr) $projNr
@@ -1049,7 +1049,7 @@ proc CTSimU_startScan {} {
 	variable container
 
 	applyCurrentParameters
-	
+
 	CTSimU::setOutputFolder $GUISettings(outputFolder) ""
 	CTSimU::setOutputBaseName $GUISettings(outputBaseName)
 	CTSimU::startScan
@@ -1447,7 +1447,7 @@ namespace eval ::CTSimU {
 		variable ctsimuSettings
 		dict set ctsimuSettings cfgFileCERA $cfgFileCERA
 	}
-	
+
 	proc setceradataTypeOutput { ceradataTypeOutput } {
 		variable ctsimuSettings
 		dict set ctsimuSettings ceradataTypeOutput $ceradataTypeOutput
@@ -1457,7 +1457,7 @@ namespace eval ::CTSimU {
 		variable ctsimuSettings
 		dict set ctsimuSettings cfgFileCLFDK $cfgFileCLFDK
 	}
-	
+
 	proc setclfdkdataTypeOutput { clfdkdataTypeOutput } {
 		variable ctsimuSettings
 		dict set ctsimuSettings clfdkdataTypeOutput $clfdkdataTypeOutput
@@ -1467,7 +1467,7 @@ namespace eval ::CTSimU {
 		variable ctsimuSettings
 		return [dict get $ctsimuSettings cfgFileCERA]
 	}
-	
+
 	proc getceradataTypeOutput { } {
 		variable ctsimuSettings
 		return [dict get $ctsimuSettings ceradataTypeOutput]
@@ -1477,7 +1477,7 @@ namespace eval ::CTSimU {
 		variable ctsimuSettings
 		return [dict get $ctsimuSettings cfgFileCLFDK]
 	}
-	
+
 	proc getclfdkdataTypeOutput { } {
 		variable ctsimuSettings
 		return [dict get $ctsimuSettings clfdkdataTypeOutput]
@@ -1875,7 +1875,7 @@ namespace eval ::CTSimU {
 		set wFrom [dict get $fromCs w]
 		set wTo [dict get $toCs w]
 
-		set rotAxis [vec3Cross $wFrom $wTo] 
+		set rotAxis [vec3Cross $wFrom $wTo]
 		if { [vec3Norm $rotAxis]==0 } {
 			if { [vec3Dot $wTo $wFrom] < 0} {
 				# 180° flip; vectors point in opposite direction. Rotation axis is another CS basis vector.
@@ -2157,7 +2157,7 @@ namespace eval ::CTSimU {
 		set u2 [rotateVector $u1 $v1 $devRotV ]
 		set v2 $v1
 		set w2 [rotateVector $w1 $v1 $devRotV ]
-		
+
 		# Rotations around u (or sample r) axis:
 		set u3 $u2
 		set v3 [rotateVector $v2 $u2 $devRotU ]
@@ -2226,7 +2226,7 @@ namespace eval ::CTSimU {
 					set rotAxis $u
 				} else {
 					aRTist::Debug { "   w axis of object $object already points in direction z." }
-				}	
+				}
 			}
 
 			if { [vec3Norm $rotAxis]!=0 } {
@@ -2261,7 +2261,7 @@ namespace eval ::CTSimU {
 				set rotAxisToU $w
 			} else {
 				aRTist::Debug { "   u axis of object $object already points in direction u." }
-			}	
+			}
 		}
 
 		if { [vec3Norm $rotAxisToU]!=0 } {
@@ -2399,8 +2399,8 @@ namespace eval ::CTSimU {
 			#dict set ctsimuSettings nFlatFrames 0
 			#dict set ctsimuSettings nFlatAvg 1
 			#dict set ctsimuSettings ffIdeal 0
-		} 
-		
+		}
+
 		if { [ dict get $ctsimuSettings primary_intensities ] == 1 } {
 			aRTist::Info { "Primary intensity mode." }
 			dict set detector Global UnitOut {primary intensity (J/m²/s)}
@@ -2844,7 +2844,7 @@ namespace eval ::CTSimU {
 
 					if { $thickness > 0 } { append description ", $thickness mm $materialID" }
 				}
-				incr i						
+				incr i
 			}
 
 
@@ -2854,7 +2854,7 @@ namespace eval ::CTSimU {
 				# Thickness is in mm, XRayTools expect cm
 				xrEngine FilterSpectrum $Xsource(FilterMaterial) [Engine::quotelist --Thickness [expr {$Xsource(FilterThickness) / 10.0}]]
 			}
-			
+
 			if { $Xsource(FilterThickness) > 0 } { append description ", $Xsource(FilterThickness) mm $Xsource(FilterMaterial)" }
 
 			# Filter by any additional filters (JSON supports more than one filter)
@@ -2868,7 +2868,7 @@ namespace eval ::CTSimU {
 
 					if { $thickness > 0 } { append description ", $thickness mm $materialID" }
 				}
-				incr i						
+				incr i
 			}
 
 			lappend spectrum "# $description"
@@ -2897,7 +2897,7 @@ namespace eval ::CTSimU {
 	proc XSourceListToEngineSpectrumString { xsourceList } {
 		set spectrum ""
 		set i 0
-		foreach entry $xsourceList {				
+		foreach entry $xsourceList {
 			if { ![regexp {^\s*#} $entry] } {
 				set entries [split $entry]
 				if {[llength $entries] > 1} {
@@ -2918,7 +2918,7 @@ namespace eval ::CTSimU {
 
 	proc engineSpectrumStringToXSourceList { engineString } {
 		set spectrum {}
-		foreach entry [split $engineString \n] {				
+		foreach entry [split $engineString \n] {
 			if { ![regexp {^\s*#} $entry] } {
 				set entries [split $entry]
 				#puts "Entries: $entries"
@@ -3002,7 +3002,7 @@ namespace eval ::CTSimU {
 			    if { ![regexp {^\s*#} $line] } {
 			    	# split on comma or white space
 			    	set entries [split $line " \t,"]
-			    	lappend csvList $entries 
+			    	lappend csvList $entries
 			    }
 			}
 		}
@@ -3034,9 +3034,9 @@ namespace eval ::CTSimU {
 			if {$i > 0} {
 				if { $thickness > 0 } { append description ", $thickness mm $materialID" }
 			}
-			incr i						
+			incr i
 		}
-	
+
 		# Filter by any additional filters (JSON supports more than one filter)
 		foreach {materialID thickness} $filters {
 			aRTist::Info { "Filtering with additional filter: $thickness mm $materialID."}
@@ -3044,7 +3044,7 @@ namespace eval ::CTSimU {
 			# Thickness is in mm, XRayTools expect cm
 			set spectrumString [xrEngine FilterSpectrum $spectrumString $materialID [Engine::quotelist --Thickness [expr {$thickness / 10.0}]]]
 
-			if { $thickness > 0 } { append description ", $thickness mm $materialID" }			
+			if { $thickness > 0 } { append description ", $thickness mm $materialID" }
 		}
 
 		set spectrum [ engineSpectrumStringToXSourceList $spectrumString ]
@@ -3135,7 +3135,7 @@ namespace eval ::CTSimU {
 
 				# Check if file format version exists
 				if {([json exists $scene file version major] && [json exists $scene file version minor]) || ([json exists $scene file file_format_version major] && [json exists $scene file file_format_version minor])} {
-					
+
 					# Check version to correctly interpret JSON
 					set version_major [getValue $scene {file file_format_version major}]
 					set version_minor [getValue $scene {file file_format_version minor}]
@@ -3239,7 +3239,7 @@ namespace eval ::CTSimU {
 						# i.e. intersection of Source->Stage vector with detector plane.
 						# clFDK assumes detector (u, v) coordinate system in mm units,
 						# origin at detector centre, u points "right", v points "down".
-						
+
 						# Focus unit vector, pointing from source to stage,
 						# will intersect with detector plane (hopefully ;-)
 						set efoc [vec3Unit [vec3Diff $O $S]]
@@ -3398,7 +3398,7 @@ namespace eval ::CTSimU {
 							return
 						}
 
-						
+
 						if [json exists $scene acquisition angular_steps] {
 							# Format version 0.3:
 							setnProjections [json get $scene acquisition angular_steps]
@@ -3478,7 +3478,7 @@ namespace eval ::CTSimU {
 								set ::Xsource(Transmission) 0
 							}
 						}
-						
+
 						if [json exists $scene source target material_id] {
 							set ::Xsource(TargetMaterial) [getMaterialID [json get $scene source target material_id]]
 						}
@@ -3543,7 +3543,7 @@ namespace eval ::CTSimU {
 													lappend windowFilters [in_mm [json extract $mat thickness]]
 												}
 											}
-											
+
 										} elseif { $i == 1 } {
 											# Second material in the source filters list is the filter material:
 											if [json exists $mat material_id] {
@@ -3602,7 +3602,7 @@ namespace eval ::CTSimU {
 											if [json exists $mat thickness value] {
 												set ::Xsource(FilterThickness) [in_mm [json extract $mat thickness]]
 											}
-										}								
+										}
 									}
 
 									if [json exists $mat material_id] {
@@ -3624,7 +3624,7 @@ namespace eval ::CTSimU {
 							if {$filename != "null" } {
 								set fullpath $jsonfiledir
 								append fullpath "/$filename"
-								
+
 								set usingSpectrumFile 1
 								showInfo "Loading spectrum file..."
 
@@ -3653,7 +3653,7 @@ namespace eval ::CTSimU {
 								}
 								set ::Xsource(Resolution) $spectral_resolution
 							}
-							
+
 							ComputeSpectrum $windowFilters $xraySourceFilters
 						}
 
@@ -3679,7 +3679,7 @@ namespace eval ::CTSimU {
 						if { [isNullOrZero_value $sigmaX] || [isNullOrZero_value $sigmaY] } {
 							# Point source
 							aRTist::Info { "sigmaX=0 or sigmaY=0. Setting point source." }
-							
+
 							set Xsource_private(SpotWidth) 0
 							set Xsource_private(SpotHeight) 0
 							set ::Xsetup_private(SGSx) 0
@@ -3737,8 +3737,8 @@ namespace eval ::CTSimU {
 						if {$scattering_photons != "null"} {
 							set ::Xscattering(nPhotons) $scattering_photons
 						}
-						
-						
+
+
 
 						# Detector setup:
 						showInfo "Setting up detector..."
@@ -3817,7 +3817,7 @@ namespace eval ::CTSimU {
 						if [json exists $scene simulation aRTist primary_energies] {
 							dict set ctsimuSettings primary_energies [from_bool [json get $scene simulation aRTist primary_energies]]
 						}
-						
+
 						if [json exists $scene simulation aRTist primary_intensities] {
 							dict set ctsimuSettings primary_intensities [from_bool [json get $scene simulation aRTist primary_intensities]]
 						}
@@ -3940,7 +3940,7 @@ namespace eval ::CTSimU {
 							set nFlatAvg [getValue $scene {acquisition flat_field frame_average} ]
 							if {![isNullOrZero_value $nFlatAvg]} {
 								if {$nFlatAvg > 0} {
-									dict set ctsimuSettings nFlatAvg $nFlatAvg 
+									dict set ctsimuSettings nFlatAvg $nFlatAvg
 								} else {
 									fail "Number of flat field frames to average must be greater than 0."
 								}
@@ -3995,7 +3995,7 @@ namespace eval ::CTSimU {
 								if {[json exists $scene drift detector]} {
 									if {![json isnull $scene drift detector]} {
 										set detectorDriftFile [json get $scene drift detector]
-										
+
 									}
 								}
 							}
@@ -4003,7 +4003,7 @@ namespace eval ::CTSimU {
 
 						createCERA_RDabcuv
 						dict set ctsimuSettings jsonLoadedSuccessfully 1
-						
+
 						return 1
 
 					} else {
@@ -4078,7 +4078,7 @@ namespace eval ::CTSimU {
 		# Centre points in a stage-centric projection coordinate system:
 		set S [dict get $csSource centre]
 		set O [dict get $csStage centre]
-	
+
 		# Translation vector from stage (O) to source (S):
 		set rfoc [vec3Diff $S $O]
 		set xfoc [expr [lindex $rfoc 0]]
@@ -4169,7 +4169,7 @@ namespace eval ::CTSimU {
 				return
 			}
 
-			set angularPosition $startAngle 
+			set angularPosition $startAngle
 			if {$nPositions != 0} {
 				set angularPosition [expr $startAngle + $projNr*$angularRange / $nPositions]
 			}
@@ -4392,7 +4392,7 @@ namespace eval ::CTSimU {
 		} else {
 			puts $fileId "			\"headersize\": null,"
 		}
-		
+
 
 		puts $fileId "			"
 		puts $fileId "			\"number\": $nProjections,"
@@ -4570,7 +4570,7 @@ namespace eval ::CTSimU {
 
 		set S [dict get $sourceInCERA centre]
 		set O [dict get $stageInCERA centre]
-		set D [dict get $detectorInCERA centre]		
+		set D [dict get $detectorInCERA centre]
 
 		# Source:
 		set xS [lindex $S 0]
@@ -4656,7 +4656,7 @@ namespace eval ::CTSimU {
 		if {$psu > 0} {
 			set ufoc_px [expr $ufoc/$psu]
 		}
-		
+
 		if {$psv > 0} {
 			set vfoc_px [expr $vfoc/$psv]
 		}
@@ -4693,7 +4693,7 @@ namespace eval ::CTSimU {
 		set cera_y [list 0 1 0]
 		set vInXYplane [vec3Add [vec3Mul $cera_x [vec3Dot $vO $cera_x]]  [vec3Mul $cera_y [vec3Dot $vO $cera_y]]]
 		set rot [vec3Angle $vInXYplane $cera_y]
-		
+
 		# Add this start angle to the user-defined start angle:
 		set startAngle [expr $startAngle + [expr 180 - $rot*180.0/3.1415926535897932384626433832795028841971]]
 
@@ -4763,7 +4763,7 @@ MidpointZ = 0 # $midpointZ
 VoxelSizeX = $voxelsizeU
 VoxelSizeY = $voxelsizeU
 VoxelSizeZ = $voxelsizeV
-Datatype = $ceradataTypeOutput
+# Datatype = $ceradataTypeOutput
 OutputDatatype = $ceradataTypeOutput
 
 [CustomKeys]
@@ -4806,7 +4806,7 @@ GlobalI0Value = $globalI0
 		set nv $::Xsetup(DetectorPixelY)
 		set psu $::Xsetup_private(DGdx)
 		set psv $::Xsetup_private(DGdy)
-	
+
 		set globalI0 [dict get $ctsimuSettings GVmax]
 
 		set scanDir [dict get $ctsimuSettings scanDirection]
@@ -4816,7 +4816,7 @@ GlobalI0Value = $globalI0
 		} else {
 			set scanDirection "CCW"
 		}
-		
+
 		set ceraDataTypOutput [dict get $ctsimuSettings ceradataTypeOutput]
 		if { $ceraDataTypOutput == "16bit" } {
 			set ceradataTypeOutput "uint16"
@@ -4831,7 +4831,7 @@ GlobalI0Value = $globalI0
 		set nSizeX $nu
 		set nSizeY $nu
 		set nSizeZ $nv
-		
+
 		set N [dict get $ctsimuSettings nProjections]
 
 		set projFilename "$outputBaseName"
@@ -4884,16 +4884,16 @@ GlobalI0Value = $globalI0
 		set configFilePath "$reconFolder/$configFilename"
 		fileutil::writeFile $configFilePath [subst -nocommands $configtemplate]
 
-		
+
 		set projTablePath "$reconFolder/$projTableFilename"
 		set projt [open $projTablePath w]
 		puts $projt "projtable.txt version 3"
 		#to be changed to date
-		puts $projt "[clock format [clock scan now] -format "%a %b %d %H:%M:%S %Y"]\n" 
-		# or: is this a fixed date? "Wed Dec 07 09:58:01 2005\n" 
+		puts $projt "[clock format [clock scan now] -format "%a %b %d %H:%M:%S %Y"]\n"
+		# or: is this a fixed date? "Wed Dec 07 09:58:01 2005\n"
 		puts $projt "# format: angle / entries of projection matrices"
 		puts $projt $nProjections
-		
+
 		set step 0
 		foreach matrix $projectionMatrices {
 			# concat all numbers into one
@@ -4901,12 +4901,12 @@ GlobalI0Value = $globalI0
 
 			# Cera expects @Stepnumber to start at 1
 			set ceraStep [expr $step+1]
-			
+
 			puts $projt "\@$ceraStep\n0.0 0.0"
 			puts $projt "$matrixCERA\n"
 			incr step
 		}
-		
+
 		close $projt
 
 	}
@@ -4989,7 +4989,7 @@ GlobalI0Value = $globalI0
 						"fileType": "",
 						"files": []},
 					"matrices": []
-					}, 
+					},
 				"geometry": {
 					"totalAngle": null,
 					"skipAngle": 0,
@@ -5102,28 +5102,28 @@ text = $name}
 		} else {
 			set ceradataTypeOutput "float"
 		}
-		
+
 		set bits [dict get $ctsimuSettings ceradataTypeOutput]
 		if { $bits == "16bit" } {
 			set bits "16"
 		} else {
 			set bits "32"
 		}
-		
+
 		set datarangelow [dict get $ctsimuSettings ceradataTypeOutput]
 		if { $datarangelow == "16bit" } {
 			set datarangelow "0"
 		} else {
 			set datarangelow "-1"
 		}
-		
+
 		set datarangeupper [dict get $ctsimuSettings ceradataTypeOutput]
 		if { $datarangeupper == "16bit" } {
 			set datarangeupper "-1"
 		} else {
 			set datarangeupper "1"
 		}
-		
+
 		set nu $::Xsetup(DetectorPixelX)
 		set nv $::Xsetup(DetectorPixelY)
 		set psu $::Xsetup_private(DGdx)
@@ -5178,7 +5178,7 @@ text = $name}
 					set reconFolder [dict get $ctsimuSettings reconFolder]
 					set outputBaseName [dict get $ctsimuSettings outputBaseName]
 
-					file mkdir $reconFolder			
+					file mkdir $reconFolder
 
 					set projectionMatricesCLFDK {}
 					set projectionMatricesCERA {}
@@ -5193,20 +5193,20 @@ text = $name}
 					set csStage_initial [dict get $ctsimuSettings csStage]
 					set csSource_initial [dict get $ctsimuSettings csSource]
 					set csDetector_initial [dict get $ctsimuSettings csDetector]
-				
+
 					if {$nProjections > 0} {
 						aRTist::Info { "Calculating projection matrices..."}
-				
+
 						for {set projNr 0} {$projNr < $nProjections} {incr projNr} {
 							set pnr [expr $projNr+1]
 							showInfo "Calculating projection matrix $pnr/$nProjections..."
 							setupProjectionInternally $projNr
-		
+
 							# Get current coordinate systems (positions + orientations)
 							set csStage_current [dict get $ctsimuSettings csStage_current]
 							set csSource_current [dict get $ctsimuSettings csSource_current]
 							set csDetector_current [dict get $ctsimuSettings csDetector_current]
-			
+
 							if { $doCLFDK==1} {
 								set P_clFDK [projectionMatrix $csSource_current $csStage_current $csDetector_current "clFDK"]
 								lappend projectionMatricesCLFDK $P_clFDK
@@ -5215,7 +5215,7 @@ text = $name}
 								set P_CERA [projectionMatrix $csSource_current $csStage_current $csDetector_current "CERA" $psu $psv $nu $nv]
 								lappend projectionMatricesCERA $P_CERA
 							}
-				
+
 							# Projection name:
 							set fileNameSuffix [format $projCtrFmt $projNr]
 							set currFile "$outputBaseName"
@@ -5226,12 +5226,12 @@ text = $name}
 								append currFile ".tif"
 							}
 							lappend projectionFilenames $currFile
-				
+
 							update
 							if {[dict get $ctsimuSettings running] == 0} {return 0}
 						}
 					}
-				
+
 					if { $doCLFDK==1 } {
 						saveCLFDKconfigFile $projectionFilenames $projectionMatricesCLFDK $csStage_initial
 					}
@@ -5279,7 +5279,7 @@ text = $name}
 					SceneView::SetInteractive 1
 					set imglist {}
 
-					
+
 					if {$takeDarkField == 1} {
 						aRTist::Info { "Taking ideal dark field."}
 						showInfo "Taking ideal dark field."
@@ -5289,14 +5289,14 @@ text = $name}
 						set savedNoiseFactor   $::Xdetector(NoiseFactor)
 						set savedNFrames       $::Xdetector(NrOfFrames)
 						set savedScatter       $::Xscattering(Mode)
-						
+
 						# Take ideal dark image at 0 current and 0 noise:
 						set ::Xsource(Exposure) 0
 						set ::Xdetector(NoiseFactorOn) 1
 						set ::Xdetector(NoiseFactor) 0
 						set ::Xdetector(NrOfFrames) 1
 						set ::Xscattering(Mode) off
-						
+
 						takeProjection 0 "dark"
 
 						set ::Xsource(Exposure) $savedXrayCurrent
@@ -5341,7 +5341,7 @@ text = $name}
 								stopScan
 								::PartList::SelectAll
 								::PartList::SetVisibility 1
-								::PartList::UnselectAll	
+								::PartList::UnselectAll
 								fail "Invalid number of flat field images."
 							}
 
@@ -5371,7 +5371,7 @@ text = $name}
 									stopScan
 									::PartList::SelectAll
 									::PartList::SetVisibility 1
-									::PartList::UnselectAll	
+									::PartList::UnselectAll
 									fail "Invalid number of flat field images."
 								}
 
@@ -5380,14 +5380,14 @@ text = $name}
 								stopScan
 								::PartList::SelectAll
 								::PartList::SetVisibility 1
-								::PartList::UnselectAll	
+								::PartList::UnselectAll
 								fail "Number of flat field averages must be greater than 0."
 							}
 						}
 
 						::PartList::SelectAll
 						::PartList::SetVisibility 1
-						::PartList::UnselectAll						
+						::PartList::UnselectAll
 					}
 
 					if {$nProjections > 0} {

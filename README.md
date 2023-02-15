@@ -34,6 +34,9 @@ Note: the aRTist package file (`.artp`) should not be part of the git repository
 
 ## Version History
 
+### 0.8.18
++ Fix in CERA reconstruction config files: the `Datatype` parameter is now inactive (made into a comment), only `OutputDatatype` left as valid parameter for the volume data type.
+
 ### 0.8.17
 + Small updates and fixes in reconstruction config file outputs.
 
@@ -122,7 +125,7 @@ Note: the aRTist package file (`.artp`) should not be part of the git repository
 
 ### 0.7.11
 
-+ Added support for CERA's RDabcu0v0 coordinate system to provide a reconstruction configuration alternative to the projection matrix approach. 
++ Added support for CERA's RDabcu0v0 coordinate system to provide a reconstruction configuration alternative to the projection matrix approach.
 
 ### 0.7.10
 

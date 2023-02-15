@@ -10,7 +10,7 @@ proc Info {} {
 	return [dict create \
 		Name        CTSimU \
 		Description "CTSimU Scenario Loader" \
-		Version     "0.8.17" \
+		Version     "0.8.18" \
 	]
 }
 

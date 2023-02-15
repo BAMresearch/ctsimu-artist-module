@@ -1922,7 +1922,7 @@ MidpointZ = 0 # $midpointZ
 VoxelSizeX = $voxelsizeU
 VoxelSizeY = $voxelsizeU
 VoxelSizeZ = $voxelsizeV
-Datatype = $ceraOutputDataType
+# Datatype = $ceraOutputDataType
 OutputDatatype = $ceraOutputDataType
 
 [CustomKeys]

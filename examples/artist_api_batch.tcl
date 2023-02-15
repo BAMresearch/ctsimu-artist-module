@@ -5,7 +5,7 @@ if { [::Modules::Available "CTSimU"] } {
 	set ctsimu [dict get [::Modules::Get "CTSimU"] Namespace]
 	if { ![winfo exists .ctsimu] } { ${ctsimu}::Run }
 
-	# Current script directory:
+	# Get current script directory:
 	set script_directory [ file dirname [ file normalize [ info script ] ] ]
 
 	# Clear the batch list to start with a fresh batch manager:

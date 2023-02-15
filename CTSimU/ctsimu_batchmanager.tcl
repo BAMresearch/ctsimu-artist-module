@@ -10,7 +10,7 @@ namespace eval ::ctsimu {
 	::oo::class create batchmanager {
 		variable _properties
 		variable _batchjobs
-		variable _batchlist; # GUI batch list
+		variable _batchlist; # reference to the GUI batch list
 
 		constructor { } {
 			my set running 0
@@ -83,6 +83,17 @@ namespace eval ::ctsimu {
 			return [llength $_batchjobs]
 		}
 
+		method jobs_are_pending { } {
+			# Check if there are still any pending jobs.
+			foreach bj $_batchjobs {
+				if { [$bj get status] == "Pending" } {
+					return 1
+				}
+			}
+
+			return 0
+		}
+
 
 		# Setters
 		# -------------------------
@@ -96,6 +107,16 @@ namespace eval ::ctsimu {
 			# The batch manager synchronizes with the GUI list
 			# whenever necessary.
 			set _batchlist $bl
+		}
+
+		method set_status { bj index message } {
+			# Set status of given batch job `bj`
+			# and display it in aRTist's GUI table.
+			# `index` is the job's row index in the GUI table.
+			$bj set status $message
+			if {[::ctsimu::aRTist_available] && $index >= 0} {
+				$_batchlist cellconfigure $index,Status -text $message
+			}
 		}
 
 		method sync_batchlist_into_manager { } {
@@ -149,7 +170,7 @@ namespace eval ::ctsimu {
 		}
 
 		method add_batch_job { bj } {
-			# Add a batch job to the batch manager.
+			# Add a ::ctsimu::batchjob to the batch manager.
 			$bj set id [expr [my n_jobs]+1]
 			lappend _batchjobs $bj
 
@@ -158,6 +179,7 @@ namespace eval ::ctsimu {
 
 		method add_batch_job_to_GUIlist { bj } {
 			# Add the given batch job to the module's aRTist GUI list.
+			# Automatically executed by `add_batch_job`.
 			if { [::ctsimu::aRTist_available] } {
 				set colEntries [list [$bj get id] [$bj get status]]
 				lappend colEntries [$bj get runs]
@@ -173,7 +195,7 @@ namespace eval ::ctsimu {
 		}
 
 		method add_batch_job_from_json { jsonfile } {
-			# Create a new batch job for a given JSON scenario file.
+			# Create a new batch job for the given JSON scenario file.
 			if { $jsonfile != "" } {
 				set bj [::ctsimu::batchjob new]
 				$bj set_from_json $jsonfile
@@ -242,6 +264,17 @@ namespace eval ::ctsimu {
 			}
 		}
 
+		method import_batch_jobs { csvFilename } {
+			# Import batch jobs from a given CSV file.
+			# They are appended to the manager's batch list and to the GUI list.
+			set csvfile [open $csvFilename r]
+			fconfigure $csvfile -encoding utf-8
+			set csvstring [read $csvfile]
+			close $csvfile
+
+			my import_csv_joblist $csvstring
+		}
+
 		method import_csv_joblist { csv_joblist_contents } {
 			# Import the batch list from the contents of a CSV job list.
 			# Also used to restore the list from aRTist's settings.ini.
@@ -284,39 +317,9 @@ namespace eval ::ctsimu {
 			}
 		}
 
-		method import_batch_jobs { csvFilename } {
-			# Import catch jobs from a given CSV file.
-			# They are appended to the manager's batch list and to the GUI list.
-			set csvfile [open $csvFilename r]
-			fconfigure $csvfile -encoding utf-8
-			set csvstring [read $csvfile]
-			close $csvfile
-
-			my import_csv_joblist $csvstring
-		}
-
 		method stop_batch { } {
 			# Stop the current batch execution.
 			my set running 0
-		}
-
-		method set_status { bj index message } {
-			# Set current status and display it in aRTist's GUI.
-			$bj set status $message
-			if {[::ctsimu::aRTist_available] && $index >= 0} {
-				$_batchlist cellconfigure $index,Status -text $message
-			}
-		}
-
-		method jobs_are_pending { } {
-			# Check if there are still any pending jobs.
-			foreach bj $_batchjobs {
-				if { [$bj get status] == "Pending" } {
-					return 1
-				}
-			}
-
-			return 0
 		}
 
 		method run_batch { global_scenario } {

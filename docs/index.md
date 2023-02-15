@@ -4,7 +4,7 @@ This module is written in object-oriented Tcl (TclOO). Its components are split 
 
 ## aRTist module interface functions
 
-The aRTist module provides a number of functions in `modulemain.tcl` that can be used to control the module through a Tcl script that is passed to aRTist on startup. The following example files from this repository demonstrate the usage of the interface functions that are documented below.
+The aRTist module provides a number of functions in `modulemain.tcl` that can be used to control the module through a Tcl script that is passed to aRTist on startup. The following example files from this repository demonstrate the usage of the interface functions, which are documented below.
 
 * `examples/artist_api_single.tcl`
 * `examples/artist_api_batch.tcl`

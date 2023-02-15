@@ -194,6 +194,9 @@ The following table lists the module's current support status for the JSON param
 	- detector: external noise characteristics files
 	- `known_to_reconstruction` parameter for geometrical deviations and drifts is obeyed when calculating projection matrices.
 
+### 0.8.18
++ Fix in CERA reconstruction config files: the `Datatype` parameter is now inactive (made into a comment), only `OutputDatatype` left as valid parameter for the volume data type.
+
 ### 0.8.17
 + Small updates and fixes in reconstruction config file outputs.
 

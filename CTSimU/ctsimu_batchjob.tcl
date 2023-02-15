@@ -3,7 +3,7 @@ package require TclOO
 variable BasePath [file dirname [info script]]
 source -encoding utf-8 [file join $BasePath ctsimu_scenario.tcl]
 
-# Class for a batch job.
+# A single batch job on the batch manager's queue.
 
 namespace eval ::ctsimu {
 	::oo::class create batchjob {
@@ -34,6 +34,9 @@ namespace eval ::ctsimu {
 		}
 
 		method format_string { } {
+			# Returns the job's file format and data type
+			# in a single string (such as `TIFF float32`
+			# or `RAW uint16`).
 			set formatString "RAW "
 			if { [my get output_fileformat] == "tiff" } {
 				set formatString "TIFF "

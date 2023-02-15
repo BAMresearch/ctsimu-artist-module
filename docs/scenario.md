@@ -27,7 +27,7 @@ The main class for a complete CT scan scenario. This class keeps everything toge
 
 ## Settings parameters
 
-The class keeps a `_settings` dictionary to store simulation-related settings. The methods `get` and `set` are used to retrieve and manipulate the settings.
+The class keeps a `_settings` dictionary to store simulation-related settings. The methods `get` and `set` are used to retrieve and manipulate these settings.
 
 The following table gives an overview of the currently used keys and their meanings.
 

@@ -1,5 +1,5 @@
 # ::ctsimu::coordinate_system
-This submodule provides a class for coordinate systems and coordinate transformations, and two helper functions.
+This submodule provides a class for coordinate systems and coordinate transformations, and helper functions for basis transformations and changing reference frames.
 
 ## Functions
 
@@ -39,7 +39,7 @@ This module adds the following functions to the `::ctsimu` namespace:
 * `v` — The `v` basis vector in terms of the reference coordinate system.
 * `w` — The `w` basis vector in terms of the reference coordinate system.
 * `is_attached_to_stage` — If the coordinate system is assumed to be attached to the stage (`1`) or not (`0`). If it is attached to the stage, its reference coordinate system is the stage coordinate system.
-* `in_world { stageCS }` — Return a copy of this coordinate system with the reference being the world coordinate system. The stage coordinate system must be passed as a `::ctsimu::coordinate_system`.
+* `in_world { stageCS }` — Return a copy of this coordinate system with the reference being the world coordinate system. The stage coordinate system must be passed as a `::ctsimu::coordinate_system`. Used to get world coordinates of samples.
 
 ### Setter Functions
 
@@ -48,6 +48,7 @@ This module adds the following functions to the `::ctsimu` namespace:
 * `set_u { u }` — Set the `u` basis vector. A `::ctsimu::vector` is expected.
 * `set_v { v }` — Set the `v` basis vector. A `::ctsimu::vector` is expected.
 * `set_w { w }` — Set the `w` basis vector. A `::ctsimu::vector` is expected.
+* `set_u_w { u w }` — Make a coordinate system from given u and w vector; v is calculated.
 * `attach_to_stage { attached }` — Pass `1` if the reference coordinate system is assumed to be the stage coordinate system. Otherwise, `0`.
 * `set_up_from_json_geometry { geometry world stage { onlyKnownToReconstruction 0 } }` — Set up the geometry from a JSON object. The function arguments are:
     - `geometry` — A JSON object that contains the geometry definition for this coordinate system, including rotations, drifts and translational deviations (the latter are deprecated).
@@ -62,22 +63,22 @@ This module adds the following functions to the `::ctsimu` namespace:
 * `translate_x { dx }` — Translate coordinate system in x direction by distance `dx`.
 * `translate_y { dy }` — Translate coordinate system in y direction by distance `dy`.
 * `translate_z { dz }` — Translate coordinate system in z direction by distance `dz`.
-* `translate_u { du }` — Translate coordinate system in u direction by distance `du`.
-* `translate_v { dv }` — Translate coordinate system in v direction by distance `dv`.
-* `translate_w { dw }` — Translate coordinate system in w direction by distance `dw`.
+* `translate_u { du }` — Translate coordinate system in u direction by distance `du`. For samples, this is the r direction.
+* `translate_v { dv }` — Translate coordinate system in v direction by distance `dv`. For samples, this is the s direction.
+* `translate_w { dw }` — Translate coordinate system in w direction by distance `dw`. For samples, this is the t direction.
 * `rotate { axis angle_in_rad }` — Rotate coordinate system around the given `axis` vector by `angle_in_rad`. This does not move the center point, as the axis vector is assumed to be attached to the center of the coordinate system.
 * `rotate_around_pivot_point { axis angle_in_rad pivot_point }` — Rotate coordinate system around a pivot point. Generally, this will result in a different center position, as the axis of rotation is assumed to be attached to the pivot point. `axis` and `pivot_point` must be given as `::ctsimu::vector` objects.
 * `rotate_around_x { angle_in_rad }` — Rotate coordinate system around the world's x axis by `angle_in_rad`.
 * `rotate_around_y { angle_in_rad }` — Rotate coordinate system around the world's y axis by `angle_in_rad`.
 * `rotate_around_z { angle_in_rad }` — Rotate coordinate system around the world's z axis by `angle_in_rad`.
-* `rotate_around_u { angle_in_rad }` — Rotate coordinate system around its u axis by `angle_in_rad`.
-* `rotate_around_v { angle_in_rad }` — Rotate coordinate system around its v axis by `angle_in_rad`.
-* `rotate_around_w { angle_in_rad }` — Rotate coordinate system around its w axis by `angle_in_rad`.
-* `transform { csFrom csTo }` — Relative transformation in world coordinates from `csFrom` to `csTo`, result will be in world coordinates. Assuming this CS, `csFrom` and `csTo` all three are independent coordinate systems in a common reference coordinate system (e.g. world). This function will calculate the necessary translation and rotation that would have to be done to superimpose `csFrom` onto `csTo`. This translation and rotation will, however, be applied to this CS, not to `csFrom`.
+* `rotate_around_u { angle_in_rad }` — Rotate coordinate system around its u axis by `angle_in_rad`. Samples will rotate around their r axis.
+* `rotate_around_v { angle_in_rad }` — Rotate coordinate system around its v axis by `angle_in_rad`. Samples will rotate around their s axis.
+* `rotate_around_w { angle_in_rad }` — Rotate coordinate system around its w axis by `angle_in_rad`. Samples will rotate around their t axis.
+* `transform { csFrom csTo }` — Relative transformation in world coordinates from `csFrom` to `csTo`, result will be in world coordinates. Assuming this coordinate system, `csFrom` and `csTo` all three are independent coordinate systems in a common reference coordinate system (e.g. world). This function will calculate the necessary translation and rotation that would have to be done to superimpose `csFrom` onto `csTo`. This translation and rotation will, however, be applied to this coordinate system, not to `csFrom`.
 * `change_reference_frame { csFrom csTo }` — Move this coordinate system from the `csFrom` reference frame to the `csTo` reference frame. Result will be in terms of `csTo`. Note: both `csFrom` and `csTo` must be in the same reference coordinate system (e.g., the world coordinate system).
 * `deviate { deviation stage { frame 0 } { nFrames 1 } { only_known_to_reconstruction 0 } }` — Apply a `::ctsimu::deviation` to this coordinate system. The function arguments are:
 	- `deviation` — A `::ctsimu::deviation` object.
 	- `stage` — A `::ctsimu::coordinate_system` that defines the stage CS. Can be `$::ctsimu::world` when this coordinate system is not attached to the stage.
-	- `frame` — Number of frame for which the deviation shall be applied, because deviations can be subject to drift. (Default: `0`)
+	- `frame` — Number of frame for which the deviation shall be applied, because deviations can be subject to drifts. (Default: `0`)
 	- `nFrames` — Total number of frames in scan. (Default: `1`)
 	- `only_known_to_reconstruction` — Pass `1` if the `known_to_reconstruction` JSON parameter must be obeyed, so only deviations that are known to the reconstruction software will be handled. Other deviations will be ignored. (Default: `0`)

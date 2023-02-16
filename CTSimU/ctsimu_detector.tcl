@@ -27,6 +27,11 @@ namespace eval ::ctsimu {
 		variable _initial_integration_time
 
 		constructor { { name "CTSimU_Detector" } { id "D" } } {
+			# A name for the detector can be passed as an argument to the constructor.
+			# Useful for debugging, because it appears in error messages as well.
+			# The `id` designates aRTist's identifier for the object
+			# (to find it in the part list).
+
 			next $name $id; # call constructor of parent class ::ctsimu::part
 			set _windows_front [list ]
 			set _filters_front [list ]
@@ -52,6 +57,11 @@ namespace eval ::ctsimu {
 		method initialize { material_manager { SDD 1000 } { current 1 } } {
 			# Necessary initialization after constructing, when the detector object
 			# shall be used fully (not just as a geometrical object).
+			# The `SDD` and X-ray tube `current` refer to the conditions at frame zero,
+			# and are stored by the detector if a re-calculation of gray value
+			# characteristics becomes necessary. The initial frame-zero parameters
+			# are kept because the imin/imax method gives the minimum and
+			# maximum gray values for free-beam conditions in frame zero.
 			set _material_manager $material_manager
 			set _initial_SDD $SDD
 			set _initial_current $current
@@ -59,6 +69,9 @@ namespace eval ::ctsimu {
 
 		method reset { } {
 			# Reset to standard settings.
+			# Deletes all previously defined drifts, etc.
+			# Called internally before a new detector definition
+			# is loaded from a JSON file.
 			set _previous_hash "0"
 
 			set _initial_pitch_u 0
@@ -156,7 +169,7 @@ namespace eval ::ctsimu {
 		}
 
 		method pixel_area_m2 { } {
-			# Return pixel area in m²
+			# Return area of a pixel in m²
 			return [ expr [my get pitch_u] * [my get pitch_v] * 1.0e-6 ]
 		}
 
@@ -169,6 +182,8 @@ namespace eval ::ctsimu {
 		method hash { } {
 			# Returns a hash of all properties that are
 			# relevant for the generation of the detector.
+			# If one of the parameters changes, the hash changes
+			# as well and the detector is re-generated for the new frame.
 
 			# Create a unique string:
 			set us "detector_[my get timestamp]"
@@ -216,10 +231,20 @@ namespace eval ::ctsimu {
 		}
 
 		method current_temp_file { } {
+			# Return the name of the current temporary detector file.
+			# Temporary files are used to avoid re-generation of a
+			# previously known detector for a given scenario.
 			return [file join ${::TempFile::tempdir} "CTSimU_Detector_[my hash].aRTdet"]
 		}
 
 		method set_frame { stageCS frame nFrames { w_rotation_in_rad 0 } } {
+			# Set all properties of the detector to match
+			# the given `frame` number, given a total of `nFrames`.
+			# The `stageCS` and `w_rotation_in_rad` are not relevant
+			# for the detector and should be set to `0`.
+			# Because this function is inherited from `::ctsimu::part`,
+			# they cannot be removed.
+
 			# Update window list:
 			foreach window $_windows_front {
 				$window set_frame $frame $nFrames
@@ -252,8 +277,7 @@ namespace eval ::ctsimu {
 			# from the scenario definition file
 			# (at least the geometry and detector sections).
 			# `stage` is the `::ctsimu::coordinate_system` that represents
-			# the stage in the world coordinate system. Necessary because
-			# the source could be attached to the stage coordinate system.
+			# the stage in the world coordinate system.
 			my reset
 
 			set detectorGeometry [::ctsimu::json_extract $jobj {geometry detector}]
@@ -442,6 +466,13 @@ namespace eval ::ctsimu {
 		}
 
 		method set_in_aRTist { xray_kV } {
+			# Set up the detector parameters in aRTist,
+			# possibly generate characteristics curves.
+			# The parameter `xray_kV` should give the maximum
+			# X-ray tube acceleration voltage in kV (or, photon energy in keV).
+			# This information is used to only compute the detector's
+			# sensitivity for a range that actually occurs in the simulation.
+
 			if { [::ctsimu::aRTist_available] } {
 				# Integration Time:
 				set ::Xdetector(AutoD) off
@@ -553,8 +584,9 @@ namespace eval ::ctsimu {
 		method generate { SDD xray_source_current xray_kV } {
 			# Generate a detector dictionary for aRTist.
 			# Input parameters:
-			# - SDD: source-detector distance
-			# - xray_source_current: source current
+			# - SDD: source-detector distance at frame zero.
+			# - xray_source_current: source current at frame zero.
+			# - xray_kV: maximum acceleration voltage during the simulation.
 
 			set pixelSizeX [my get pitch_u]
 			set pixelSizeY [my get pitch_v]

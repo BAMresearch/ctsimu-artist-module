@@ -63,7 +63,7 @@ namespace eval ::ctsimu {
 		}
 
 		method make_unit_coordinate_system { } {
-			# Make coordinate system base unit vectors.
+			# Basis vectors are made into unit vectors.
 			try {
 				$_u to_unit_vector
 				$_v to_unit_vector
@@ -105,6 +105,9 @@ namespace eval ::ctsimu {
 		# -------------------------
 		method get_copy { { new_name 0 } } {
 			# Return a copy of this coordinate system.
+			# Optionally, a `new_name` for the copy can be passed.
+			# Otherwise, the existing name of this coordinate system
+			# will be copied to the new coordinate system.
 			set C [::ctsimu::coordinate_system new]
 
 			$C set_center [$_center get_copy]
@@ -149,6 +152,9 @@ namespace eval ::ctsimu {
 		method in_world { stageCS } {
 			# Return a copy of this coordinate system with
 			# the reference being the world coordinate system.
+			# The stage coordinate system must be passed
+			# as a `::ctsimu::coordinate_system`.
+			# Used to get world coordinates of samples.
 			set cs [my get_copy]
 			if { [my is_attached_to_stage] == 0 } {
 				return $cs
@@ -235,16 +241,19 @@ namespace eval ::ctsimu {
 
 		method translate_u { du } {
 			# Translate coordinate system in u direction by distance du.
+			# For samples, this is the r direction.
 			my translate_along_axis $_u du
 		}
 
 		method translate_v { dv } {
 			# Translate coordinate system in v direction by distance dv.
+			# For samples, this is the s direction.
 			my translate_along_axis $_v dv
 		}
 
 		method translate_w { dw } {
 			# Translate coordinate system in w direction by distance dw.
+			# For samples, this is the t direction.
 			my translate_along_axis $_w dw
 		}
 
@@ -310,6 +319,7 @@ namespace eval ::ctsimu {
 
 		method rotate_around_u { angle_in_rad } {
 			# Rotate coordinate system around u axis by angle.
+			# Samples will rotate around their r axis.
 			if {$angle_in_rad != 0} {
 				set R [::ctsimu::rotation_matrix $_u $angle_in_rad]
 				$_v transform_by_matrix $R
@@ -320,6 +330,7 @@ namespace eval ::ctsimu {
 
 		method rotate_around_v { angle_in_rad } {
 			# Rotate coordinate system around v axis by angle.
+			# Samples will rotate around their s axis.
 			if {$angle_in_rad != 0} {
 				set R [::ctsimu::rotation_matrix $_v $angle_in_rad]
 				$_u transform_by_matrix $R
@@ -330,6 +341,7 @@ namespace eval ::ctsimu {
 
 		method rotate_around_w { angle_in_rad } {
 			# Rotate coordinate system around w axis by angle.
+			# Samples will rotate around their t axis.
 			if {$angle_in_rad != 0} {
 				set R [::ctsimu::rotation_matrix $_w $angle_in_rad]
 				$_u transform_by_matrix $R
@@ -445,7 +457,7 @@ namespace eval ::ctsimu {
 			#   not attached to the stage.
 			# - frame: (default 0)
 			#   Number of frame for which the deviation shall be applied,
-			#   because deviations can be subject to drift.
+			#   because deviations can be subject to drifts.
 			# - nFrames: (default 1)
 			#   Total number of frames in scan.
 			# - only_known_to_reconstruction: (default 0)

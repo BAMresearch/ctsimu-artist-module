@@ -90,10 +90,7 @@ namespace eval ::ctsimu {
 			my set json_file_directory    ""; # Path to JSON file
 			my set start_angle             0
 			my set stop_angle            360
-			my set n_projections        2000
-			my set frame_average           1
 			my set projection_counter_format "%04d"
-			my set proj_nr                 0
 			my set include_final_angle     0
 			my set start_projection_number 0
 			my set scan_direction      "CCW"
@@ -115,9 +112,11 @@ namespace eval ::ctsimu {
 			my set ff_correction_on       0; # run a flat field correction in aRTist?
 
 			my set current_frame          0
-			my set n_frames            2000; # frame_average * n_projections
+			my set frame_average          1
+			my set n_projections       2000
+			my set n_frames            2000; # = frame_average * n_projections
 
-			my set environment_material "void"
+			my set environment_material "void"; # id of the environment material
 
 			$_detector reset
 			$_stage reset
@@ -278,14 +277,17 @@ namespace eval ::ctsimu {
 		}
 
 		method set_next_frame { } {
+			# Set up the next frame in aRTist.
 			my set_frame [expr [my get current_frame]+1]
 		}
 
 		method set_previous_frame { } {
+			# Set up the previous frame in aRTist.
 			my set_frame [expr [my get current_frame]-1]
 		}
 
 		method load_json_scene { json_filename } {
+			# Loads a CTSimU scenario from the given JSON file.
 			::ctsimu::status_info "Reading JSON file..."
 
 			my reset
@@ -503,7 +505,7 @@ namespace eval ::ctsimu {
 		}
 
 		method set_frame { frame } {
-			# Set the frame for the real scene.
+			# Set up the given frame number in the aRTist scene.
 			if { $_json_loaded_successfully == 0 } {
 				# No JSON scene loaded yet?
 				::ctsimu::warning "No scenario loaded."
@@ -594,7 +596,9 @@ namespace eval ::ctsimu {
 		}
 
 		method set_frame_for_recon { frame } {
-			# Set the frame for a reconstruction simulation.
+			# Internally set up coordinate systems for scene as
+			# "seen" by the reconstruction software.
+			# Used to compute projection matrices.
 			my set current_frame $frame
 			set nFrames [my get n_frames]
 
@@ -607,7 +611,7 @@ namespace eval ::ctsimu {
 
 		method update { } {
 			# Calculate some geometry parameters (SDD, SOD, ODD)
-			# for current frame.
+			# for the current frame.
 			set source_cs           [ $_source current_coordinate_system ]
 			set stage_cs            [ $_stage current_coordinate_system ]
 			set detector_cs         [ $_detector current_coordinate_system ]
@@ -624,6 +628,9 @@ namespace eval ::ctsimu {
 		}
 
 		method stop_scan { { noMessage 0 } } {
+			# Stop the scan simulation.
+			# noMessage can be set to 1 if the "Stopped" status message
+			# should not appear in the module's GUI.
 			my _set_run_status 0
 			if { $noMessage == 0 } {
 				::ctsimu::status_info "Stopped."
@@ -631,6 +638,8 @@ namespace eval ::ctsimu {
 		}
 
 		method start_scan { { run 1 } { nruns 1 } } {
+			# Start the scan simulation for the given run number, out of a total of nruns.
+
 			# Some guards to check for correct conditions:
 			if { $run <= 0 } {
 				::ctsimu::fail "Cannot start scan. Number of current run is given as $run. Must be >0."
@@ -699,8 +708,9 @@ namespace eval ::ctsimu {
 		}
 
 		method prepare_postprocessing_configs { } {
-			# Flat field correction Python file, config files for
-			# various reconstruction softwares.
+			# Generates the flat field correction Python script
+			# and config files for various reconstruction softwares,
+			# depending on the current settings.
 
 			# Make projection folder and metadata file:
 			file mkdir [my get run_projection_folder]
@@ -724,6 +734,9 @@ namespace eval ::ctsimu {
 		}
 
 		method render_projection_image { projNr } {
+			# Run a full simulation in aRTist to get the
+			# projection image for the given projection number (`projNr`).
+			# set_frame must have been called beforehand.
 			if { [::ctsimu::aRTist_available] } {
 				set Scale [vtkImageShiftScale New]
 				if {[my get output_datatype] == "float32"} {
@@ -754,6 +767,7 @@ namespace eval ::ctsimu {
 		}
 
 		method save_projection_image { projNr fileNameSuffix} {
+			# Save the currently simulated projection image.
 			set projectionFolder [my get run_projection_folder]
 			set outputBaseName [my get run_output_basename]
 
@@ -821,6 +835,7 @@ namespace eval ::ctsimu {
 		}
 
 		method generate_flats_and_darks { } {
+			# Generate flat field and dark field images (if required by the scenario).
 			if { [::ctsimu::aRTist_available] } {
 				SceneView::SetInteractive 1
 				set imglist {}
@@ -957,7 +972,7 @@ namespace eval ::ctsimu {
 
 		method create_flat_field_correction_script { } {
 			# Create a flat field correction script for Python,
-			# based on the CTSimU Toolbox.
+			# using the CTSimU Toolbox.
 			set ff_filename [my get run_projection_folder]
 			append ff_filename "/"
 			append ff_filename [my get output_basename]
@@ -975,7 +990,7 @@ namespace eval ::ctsimu {
 		}
 
 		method create_metadata_file { } {
-			# A metadata file for the simulation (in JSON).
+			# Create a metadata JSON file for the simulation.
 			set metadata {
 				{
 					"file":
@@ -1135,7 +1150,7 @@ namespace eval ::ctsimu {
 		}
 
 		method create_recon_configs { } {
-			# Create config files for the individual reconstruction programs.
+			# Create config files for the individual reconstruction programs (if required by the scenario).
 			set matrices_openCT {}
 			set matrices_CERA {}
 			set projection_filenames {}
@@ -1210,12 +1225,11 @@ namespace eval ::ctsimu {
 		method projection_matrix { { volumeCS 0 } { imageCS 0 } { mode 0 } } {
 			# Calculate a projection matrix for the current geometry.
 			#
-			# (Same help text as from the CTSimU toolbox.)
 			#
 			# Parameters
 			# ----------
 			# volumeCS : ::ctsimu::coordinate_system
-			#     Position of the volume coordinate system in terms of the
+			#     Position of the reconstruction volume coordinate system in terms of the
 			#     stage coordinate system. If `0` is given, the volume
 			#     coordinate system is assumed to be the stage coordinate system.
 			#     See notes for details.
@@ -1239,7 +1253,7 @@ namespace eval ::ctsimu {
 			# Notes
 			# -----
 			# The image coordinate system (`imageCS`) should match the location,
-			# scale and orientation used by the reconstruction software, and is
+			# scale and orientation used by the reconstruction software and is
 			# expressed in terms of the detector coordinate system.
 			#
 			# The detector coordinate system has its origin at the detector `center`,
@@ -1671,6 +1685,7 @@ namespace eval ::ctsimu {
 		}
 
 		method save_clFDK_script { } {
+			# Creates a .bat file that allows to reconstruct the scan using clFDK.
 			set reconFolder [my get run_recon_folder]
 			set outputBaseName [my get run_output_basename]
 
@@ -1686,6 +1701,7 @@ namespace eval ::ctsimu {
 		}
 
 		method save_openCT_config_file { projectionFilenames projectionMatrices } {
+			# Creates a reconstruction configuration file in the openCT file format.
 			set reconFolder [my get run_recon_folder]
 			set outputBaseName [my get run_output_basename]
 
@@ -1826,6 +1842,7 @@ namespace eval ::ctsimu {
 		}
 
 		method save_VGI { name filename volumeFilename zMirror voxelsizeU voxelsizeV } {
+			# Prepares a VGI file for the reconstruction volume such that it can be loaded with VGSTUDIO.
 			set vgiTemplate {\{volume1\}
 [representation]
 size = $nSizeX $nSizeY $nSizeZ
@@ -1877,6 +1894,7 @@ text = $name}
 		}
 
 		method save_CERA_config_file { projectionMatrices } {
+			# Create a reconstruction config file for SIEMENS CERA.
 			set reconFolder [my get run_recon_folder]
 			set outputBaseName [my get run_output_basename]
 			set ffProjShortPath [my get ff_projection_short_path]

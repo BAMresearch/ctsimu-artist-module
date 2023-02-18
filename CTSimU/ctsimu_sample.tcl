@@ -3,7 +3,7 @@ package require TclOO
 variable BasePath [file dirname [info script]]
 source -encoding utf-8 [file join $BasePath ctsimu_filter.tcl]
 
-# A class for a generic sample.
+# A class for a generic sample. Inherits from ::ctsimu::part.
 
 namespace eval ::ctsimu {
 	::oo::class create sample {
@@ -43,10 +43,10 @@ namespace eval ::ctsimu {
 		}
 
 		method set_from_json { jobj stageCS } {
-			# Import the sample geometry from the JSON object.
-			# The JSON object should contain the complete content
-			# from the scenario definition file
-			# (at least the geometry section containing the stage definition).
+			# Import the sample geometry from the JSON sample object.
+			# The `stageCS` must be given as a `::ctsimu::coordinate_system` object.
+			# If this part is not attached to the stage,
+			# the `$::ctsimu::world` coordinate system can be passed instead.
 			my reset
 			my set_name [::ctsimu::get_value $jobj {name} "Sample"]
 
@@ -79,6 +79,8 @@ namespace eval ::ctsimu {
 		}
 
 		method load_mesh_file { material_manager } {
+			# Load the sample's mesh file into aRTist.
+			# The scenario's ::ctsimu::materialmanager must be passed as an argument.
 			set meshfile [my get surface_mesh_file]
 
 			if { ![my get surface_mesh_file_path_is_absolute] } {
@@ -103,6 +105,7 @@ namespace eval ::ctsimu {
 		}
 
 		method update_mesh_file { material_manager } {
+			# Check if the mesh file has changed (due to drifts) and update it if necessary.
 			if { [my get currently_loaded_mesh_file] != [my get surface_mesh_file] } {
 				if { [::ctsimu::aRTist_available] } {
 					# Replace part by deleting it from the part list

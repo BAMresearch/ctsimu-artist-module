@@ -3,7 +3,7 @@ package require TclOO
 variable BasePath [file dirname [info script]]
 source -encoding utf-8 [file join $BasePath ctsimu_detector.tcl]
 
-# A class for the stage.
+# A class for the stage. Inherits from ::ctsimu::part.
 
 namespace eval ::ctsimu {
 	::oo::class create stage {

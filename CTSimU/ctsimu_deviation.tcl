@@ -15,8 +15,8 @@ source -encoding utf-8 [file join $BasePath ctsimu_scenevector.tcl]
 namespace eval ::ctsimu {
 	set valid_axes [list z y x w v u t s r]
 	set valid_axis_strings [list "r" "s" "t" "u" "v" "w" "x" "y" "z"]
-	set valid_world_axis_designations [list "x" "y" "z"]
-	set valid_local_axis_designations [list "u" "v" "w"]
+	set valid_world_axis_designations  [list "x" "y" "z"]
+	set valid_local_axis_designations  [list "u" "v" "w"]
 	set valid_sample_axis_designations [list "r" "s" "t"]
 
 	::oo::class create deviation {
@@ -90,6 +90,7 @@ namespace eval ::ctsimu {
 		}
 
 		method has_drifts { } {
+			# Returns whether the deviation has any drifts (in amount, axis or pivot).
 			return [expr [$_amount has_drifts] || [$_axis has_drifts] || [$_pivot has_drifts]]
 		}
 

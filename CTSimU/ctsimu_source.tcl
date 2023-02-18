@@ -4,7 +4,7 @@ package require fileutil
 variable BasePath [file dirname [info script]]
 source -encoding utf-8 [file join $BasePath ctsimu_stage.tcl]
 
-# A class for the X-ray source.
+# A class for the X-ray source. Inherits from ::ctsimu::part.
 
 namespace eval ::ctsimu {
 	::oo::class create source {
@@ -40,13 +40,18 @@ namespace eval ::ctsimu {
 		}
 
 		method initialize { material_manager } {
-			# Necessary initialization after constructing, when the source object
-			# shall be used fully (not just as a geometrical object).
+			# Necessary initialization after constructing.
+			# If the source object shall be used fully
+			# (not just as a geometrical object), it needs
+			# to have access to the scenario's material manager.
 			set _material_manager $material_manager
 		}
 
 		method reset { } {
-			# Reset to standard settings.
+			# Reset source to standard settings.
+			# Deletes all previously defined drifts, etc.
+			# Called internally before a new source definition
+			# is loaded from a JSON file.
 			set _previous_hash "0"
 			set _previous_hash_spot "0"
 
@@ -145,7 +150,9 @@ namespace eval ::ctsimu {
 		}
 
 		method hash_spot { } {
-			# Returns a hash for the spot profile
+			# Returns a hash of the spot profile properties.
+			# They are independent of the spectrum and
+			# therefore require a separate hash.
 
 			# Create a unique string:
 			set us "source_spot_[my get timestamp]"
@@ -161,10 +168,21 @@ namespace eval ::ctsimu {
 		}
 
 		method current_temp_file { } {
+			# Returns the name of the current temporary spectrum file.
+			# Temporary files are used to avoid re-generation
+			# of a previously known spectrum for a given scenario.
 			return [file join ${::TempFile::tempdir} "CTSimU_Spectrum_[my hash].xrs"]
 		}
 
 		method set_frame { stageCS frame nFrames { w_rotation_in_rad 0 } } {
+			# Set all properties of the X-ray source to match the given
+			# `frame` number, given a total of `nFrames`.
+			# All drifts are applied, no matter if they are known to the
+			# reconstruction software. The `stageCS` and `w_rotation_in_rad`
+			# are not relevant for the source and should be set to `0`.
+			# Because this function is inherited from `::ctsimu::part`,
+			# they cannot be removed.
+
 			# Update filter list:
 			foreach filter $_filters {
 				$filter set_frame $frame $nFrames
@@ -189,8 +207,7 @@ namespace eval ::ctsimu {
 			# from the scenario definition file
 			# (at least the geometry and source sections).
 			# `stage` is the `::ctsimu::coordinate_system` that represents
-			# the stage in the world coordinate system. Necessary because
-			# the source could be attached to the stage coordinate system.
+			# the stage in the world coordinate system.
 			my reset
 
 			set sourceGeometry [::ctsimu::json_extract $jobj {geometry source}]
@@ -278,6 +295,8 @@ namespace eval ::ctsimu {
 		}
 
 		method set_in_aRTist { } {
+			# Sets up the X-ray source in aRTist: if necessary,
+			# generates the X-ray spectrum and spot image.
 			if { [::ctsimu::aRTist_available] } {
 				# Current:
 				set ::Xsource(Exposure) [my get current]
@@ -433,8 +452,9 @@ namespace eval ::ctsimu {
 		}
 
 		method compute_spectrum { } {
+			# Generate the X-ray spectrum.
 			# Adaption of `proc ComputeSpectrum` from stuff/xsource.tcl.
-			# Assumes that XSource properties are already set.
+			# Assumes that ::XSource properties are already set.
 			#global Xsource Xsource_private
 			variable ComputedSpectra
 
@@ -591,7 +611,8 @@ namespace eval ::ctsimu {
 		}
 
 		method load_spectrum { file } {
-			# Filter the loaded spectrum by external filters, but not by windows.
+			# Load spectrum from CSV or TSV and filter it
+			# by external filters, but not by windows.
 			::ctsimu::info "Loading spectrum file: $file"
 			variable ComputedSpectra
 
@@ -641,6 +662,8 @@ namespace eval ::ctsimu {
 		}
 
 		method make_gaussian_spot_profile { sigmaX sigmaY } {
+			# Generate a spot profile image in aRTist from the
+			# given standard deviations `sigmaX` and `sigmaY` (in mm).
 			set ::Xsource_private(SpotRes) 301
 			set ::Xsource_private(SpotLorentz) 0.0
 
@@ -655,7 +678,8 @@ namespace eval ::ctsimu {
 		}
 
 		method load_spot_image { } {
-			# adapted from xsource.tcl to allow read RAW images of arbitrary size
+			# Load the external intensity map file into aRTist.
+			# Adapted from xsource.tcl to allow reading RAW images of arbitrary size
 			set spot_image_file_absolute_path [::ctsimu::get_absolute_path [my get intensity_map_file]]
 
 			::ctsimu::info "Loading spot image: $spot_image_file_absolute_path"

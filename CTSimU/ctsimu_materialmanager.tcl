@@ -4,14 +4,14 @@ package require rl_json
 variable BasePath [file dirname [info script]]
 source -encoding utf-8 [file join $BasePath ctsimu_material.tcl]
 
-# A class for a sample material.
+# A manager class for the materials of a CTSimU scenario.
 
 namespace eval ::ctsimu {
 	::oo::class create materialmanager {
 		variable _materials
 		variable _void
 
-		constructor { { id 0 } { name "New_Material" } } {
+		constructor { } {
 			set _materials [list]
 		}
 
@@ -22,6 +22,8 @@ namespace eval ::ctsimu {
 		}
 
 		method reset { } {
+			# Delete all materials and reset manager to initial state.
+			# The only remaining materials will be "void" and "none".
 			foreach m $_materials {
 				$m destroy
 			}
@@ -41,6 +43,8 @@ namespace eval ::ctsimu {
 		}
 
 		method get { material_id } {
+			# Get the ::ctsimu::material object that is
+			# identified by the given material_id.
 			foreach m $_materials {
 				if { [$m id] == $material_id } {
 					return $m
@@ -51,14 +55,20 @@ namespace eval ::ctsimu {
 		}
 
 		method density { material_id } {
+			# Get the current mass density of the material
+			# that is identified by the given material_id.
 			return [ [ [my get $material_id] density ] current_value ]
 		}
 
 		method composition { material_id } {
+			# Get the aRTist composition string of the material
+			# that is identified by the given material_id.
 			return [ [my get $material_id] aRTist_composition_string ]
 		}
 
 		method aRTist_id { material_id } {
+			# Get the aRTist ID for the material that is
+			# identified by the given `material_id`.
 			if {$material_id != "null" } {
 				return [[my get $material_id] aRTist_id]
 			} else {
@@ -67,16 +77,24 @@ namespace eval ::ctsimu {
 		}
 
 		method add_material { m } {
+			# Add a ::ctsimu::material object to the material manager.
 			lappend _materials $m
 		}
 
 		method set_frame { frame nFrames } {
+			# Set the current `frame` number, given a total of `nFrames`.
+			# This will update all the materials listed in the material manager
+			# to the given frame number and obey possible drifts.
 			foreach m $_materials {
 				$m set_frame $frame $nFrames
 			}
 		}
 
 		method set_from_json { jsonscene } {
+			# Fill the material manager from a given CTSimU scenario
+			# JSON structure. The full scenario should be passed: the function
+			# tries to find the `"materials"` section on its own and
+			# gives an error if it cannot be found.
 			my reset
 			::ctsimu::status_info "Reading materials..."
 

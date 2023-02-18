@@ -379,22 +379,22 @@ proc InitGUI { parent } {
 
 	set CTProjection  [FoldFrame $model.frmCTProjection -text "CT Projection"     -padding $pad]
 	dataform $CTProjection {
-		{Start Angle}          startAngle     integer   {° deg}
-		{Stop Angle}           stopAngle      integer   {° deg}
+		{Start angle}          startAngle     integer   {° deg}
+		{Stop angle}           stopAngle      integer   {° deg}
 		{Projections}          nProjections   integer   {}
-		{Display Projection #} projNr      integer   {}
+		{Display frame nr.} projNr      integer   {}
 		{Final projection is taken at stop angle}  includeFinalAngle  bool   { }
-		{ } projBtns       buttons { "Show" showProjection_GUI 7 "<" prevProjection 3 ">" nextProjection 3 }
+		{ } projBtns       buttons { "Show frame" showProjection_GUI 12 "<" prevProjection 3 ">" nextProjection 3 }
 	}
 
 	set CTScan  [FoldFrame $model.frmCTScan -text "Simulation"     -padding $pad]
 	dataform $CTScan {
-		{Output Folder}           outputFolder        folder   {}
-		{Projection Base Name}    outputBaseName      string   {}
-		{Start at Projection Nr.} startProjNr         integer  {}
+		{Output folder}           outputFolder        folder   {}
+		{Projection base name}    outputBaseName      string   {}
+		{Start at projection nr.} startProjNr         integer  {}
 		{Scatter image interval}  scatterImgInterval  integer  {}
-		{File Format}             fileFormat          choice   { "TIFF" "tiff" "RAW" "raw" }
-		{Data Type}               dataType            choice   { "uint16" "uint16" "float32" "float32" }
+		{File format}             fileFormat          choice   { "TIFF" "tiff" "RAW" "raw" }
+		{Data type}               dataType            choice   { "uint16" "uint16" "float32" "float32" }
 		{ }                       scanBtn             buttons  { "Run scenario" startScan 12 "Stop" stopScan 7 }
 	}
 
@@ -561,7 +561,7 @@ proc fillCurrentParameters {} {
 	set GUISettings(startAngle)           [$ctsimu_scenario get start_angle]
 	set GUISettings(stopAngle)            [$ctsimu_scenario get stop_angle]
 	set GUISettings(nProjections)         [$ctsimu_scenario get n_projections]
-	set GUISettings(projNr)               [$ctsimu_scenario get proj_nr]
+	set GUISettings(projNr)               [$ctsimu_scenario get current_frame]
 	set GUISettings(outputBaseName)       [$ctsimu_scenario get output_basename]
 	set GUISettings(outputFolder)         [$ctsimu_scenario get output_folder]
 	set GUISettings(fileFormat)           [$ctsimu_scenario get output_fileformat]

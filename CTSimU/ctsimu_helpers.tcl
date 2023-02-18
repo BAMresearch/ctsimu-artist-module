@@ -18,7 +18,7 @@ namespace eval ::ctsimu {
 	proc set_module_namespace { ns } {
 		# Store reference to aRTist module namespace
 		# in ctsimu namespace, so that the modulemain.tcl
-		# can be accessed (used to show GUI status messages).
+		# can be accessed. Used to show GUI status messages.
 		set ::ctsimu::ctsimu_module_namespace $ns
 	}
 
@@ -169,7 +169,7 @@ namespace eval ::ctsimu {
 				}
 			}
 
-			::ctsimu::fail "Syntax Error in JSON file at character position $errpos (around line $errline). [dict get $errordetails errmsg]. Try opening the JSON file in Firefox to find the mistake. Maybe a comma too much? File: $filename"
+			::ctsimu::fail "Syntax error in JSON file at character position $errpos (around line $errline). [dict get $errordetails errmsg]. Try opening the JSON file in Firefox to find the mistake. Maybe a comma too much? File: $filename"
 		}
 
 		::ctsimu::debug "New JSON import method."
@@ -246,7 +246,13 @@ namespace eval ::ctsimu {
 		return $values
 	}
 
-	proc load_csv_into_tab_separated_string { filename { skip_x_le_0 0 } } {
+	proc load_csv_into_tab_separated_string { filename { skip_x_le_zero 0 } } {
+		# Loads CSV or TSV into a tab-separated string
+		# where all value pairs are in a consecutive tab-separated stream.
+		# `skip_x_le_zero` (if set to `1`) allows to skip lines that
+		# contain x-values <= 0 (necessary for X-ray spectra:
+		# aRTist does not support acceleration energies <= 0.)
+
 		# $file will contain the file pointer
 		set file [open $filename]
 
@@ -279,7 +285,7 @@ namespace eval ::ctsimu {
 			    		if {$j > 0} {
 			    			append text "\t"
 			    		} elseif {$entry <= 0} {
-			    			if { $skip_x_le_0 == 1 } {
+			    			if { $skip_x_le_zero == 1 } {
 			    				# If the x value is <= 0, skip this line.
 			    				# Necessary for X-ray spectra:
 			    				# aRTist does not support acceleration energies <= 0.
@@ -298,6 +304,8 @@ namespace eval ::ctsimu {
 	}
 
 	proc load_csv_into_list { filename } {
+		# Loads CSV or TSV into list of consecutive values (line by line).
+
 		# $file will contain the file pointer to test.txt (file must exist)
 		set file [open $filename]
 
@@ -358,7 +366,7 @@ namespace eval ::ctsimu {
 			# If the value is not set to `null`,
 			# still check if it is set to the string "null":
 			set value [::rl_json::json get $json_obj value]
-			return [value_is_null $value]
+			return [::ctsimu::value_is_null $value]
 		}
 
 		return 1
@@ -367,14 +375,14 @@ namespace eval ::ctsimu {
 	proc object_value_is_null_or_zero { json_obj } {
 		# Checks if a JSON object has a `value` parameter
 		# and if this parameter is set to `null` or zero.
-		if [object_value_is_null $json_obj] {
+		if [::ctsimu::object_value_is_null $json_obj] {
 			return 1
 		}
 
 		# At this point the value exists and it is not `null`.
 		# Check if it is 0:
 		set value [::rl_json::json get $json_obj value]
-		return [value_is_null_or_zero $value]
+		return [::ctsimu::value_is_null_or_zero $value]
 	}
 
 	# Getters
@@ -636,6 +644,8 @@ namespace eval ::ctsimu {
 		# an associated `unit`.
 		# Checks which native unit is requested, converts
 		# JSON `value` accordingly.
+		# `fallback_json_unit` is used if the unit is not specified
+		# in the `value_and_unit` JSON object.
 		if { $native_unit == "" } {
 			# No native unit given, simply return value.
 			return [::ctsimu::get_value $value_and_unit value]
@@ -688,7 +698,8 @@ namespace eval ::ctsimu {
 	# More helpers
 	# -----------------
 	proc add_filters_to_list { filter_list jobj key_sequence } {
-		# Add filters from a given key sequence in the json object.
+		# Add filters from a given key sequence in the json object
+		# to the given filter list.
 		if { [::ctsimu::json_exists_and_not_null $jobj $key_sequence] } {
 			if { [::ctsimu::json_type $jobj $key_sequence] == "array" } {
 				set filters [::ctsimu::json_extract $jobj $key_sequence]

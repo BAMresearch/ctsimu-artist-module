@@ -7,7 +7,7 @@ package require math::interpolate
 variable BasePath [file dirname [info script]]
 source -encoding utf-8 [file join $BasePath ctsimu_sample.tcl]
 
-# A class for the detector.
+# A class for the detector. Inherits from ::ctsimu::part.
 
 namespace eval ::ctsimu {
 	::oo::class create detector {
@@ -114,9 +114,6 @@ namespace eval ::ctsimu {
 			my set image_lag        0.0
 			my set frame_average    1
 			my set multisampling    "3x3" "string"
-
-			my set min_energy       0
-			my set max_energy       1000
 
 			# Properties for gray value reproduction:
 			my set gray_value_mode  "imin_imax" "string"
@@ -679,7 +676,7 @@ namespace eval ::ctsimu {
 				set composition [Materials::get $scintillatorMaterialID composition]
 
 				set scintillatorSteps  2
-				set keys        [list $composition $density [my get scintillator_thickness] $scintillatorSteps [my get min_energy] [my get max_energy]]
+				set keys        [list $composition $density [my get scintillator_thickness] $scintillatorSteps 0 $xray_kV]
 
 				ctsimu::info "Computing sensitivity..."
 

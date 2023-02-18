@@ -48,6 +48,21 @@ namespace eval ::ctsimu {
 			return $s
 		}
 
+		method n_rows { } {
+			# Return number of rows
+			return $_n_rows
+		}
+
+		method n_cols { } {
+			# Return number of columns
+			return $_n_cols
+		}
+
+		method size { } {
+			# Get the total number of matrix elements (n_cols * n_rows).
+			return [expr $_n_rows*$_n_cols]
+		}
+
 		method format_json { } {
 			set jmatrix [::rl_json::json new array]
 			foreach row $_rows {
@@ -65,24 +80,9 @@ namespace eval ::ctsimu {
 			return [join $_rows \n]
 		}
 
-		method n_rows { } {
-			# Return number of rows
-			return $_n_rows
-		}
-
-		method n_cols { } {
-			# Return number of columns
-			return $_n_cols
-		}
-
-		method size { } {
-			# Get the total number of matrix elements (n_cols * n_rows).
-			return [expr $_n_rows*$_n_cols]
-		}
-
 		# Getters
 		# -------------------------
-		# Getters currently perform no checks for valid row and col numbers
+		# Getters currently perform no checks for valid row and column numbers
 		# to improve speeds during calculations. Maybe add later...?
 
 		method element { col_index row_index } {
@@ -171,6 +171,7 @@ namespace eval ::ctsimu {
 		}
 
 		method scale { factor } {
+			# Multiply all matrix elements by the given factor.
 			for {set r 0} {$r < $_n_rows} {incr r} {
 				for {set c 0} {$c < $_n_cols} {incr c} {
 					lset _rows $r $c [expr [lindex $_rows $r $c]*$factor]
@@ -198,7 +199,8 @@ namespace eval ::ctsimu {
 		}
 
 		method multiply { M } {
-			# Return the matrix product of this*M.
+			# Matrix multiplication: returns the result of the
+			# multiplication of this matrix with the given matrix M.
 			set result_rows [my n_rows]
 			set result_cols [$M n_cols]
 
@@ -225,12 +227,14 @@ namespace eval ::ctsimu {
 		# given axis vector by the given angle (in rad).
 		set unitAxis [$axis get_unit_vector]
 
+		# Unit axis components:
 		set nx [$unitAxis x]
 		set ny [$unitAxis y]
 		set nz [$unitAxis z]
 
 		$unitAxis destroy
 
+		# The sine and cosine of the angle will be used a lot:
 		set cs [expr cos($angle_in_rad)]
 		set sn [expr sin($angle_in_rad)]
 

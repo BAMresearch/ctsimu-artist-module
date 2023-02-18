@@ -27,6 +27,8 @@ namespace eval ::ctsimu {
 		}
 
 		method add_sample { s } {
+			# Add a ::ctsimu::sample object to the list of managed samples.
+
 			# Give the new sample an id:
 			$s set_id [expr [llength $_samples]+1]
 			lappend _samples $s
@@ -34,13 +36,15 @@ namespace eval ::ctsimu {
 
 		method set_frame { stageCS frame nFrames } {
 			# Set current frame number (propagates to samples).
+			# The current stage coordinate system must be given as a `::ctsimu::coordinate_system`.
 			foreach s $_samples {
 				$s set_frame $stageCS $frame $nFrames 0
 			}
 		}
 
 		method update_scene { stageCS material_manager } {
-			# Move objects in scene to match current frame number.
+			# Move objects in the aRTist scene to match the current frame number.
+			# The current stage coordinate system must be given as a `::ctsimu::coordinate_system`.
 
 			# Create a list of IDs that are available in aRTist's part list:
 			set available_ids [list ]
@@ -60,6 +64,9 @@ namespace eval ::ctsimu {
 		}
 
 		method set_from_json { jsonscene stageCS } {
+			# Import all sample information from a given JSON scenario. The
+			# complete scenario should be passed as a JSON structure.
+			# The stage coordinate system must be given as a `::ctsimu::coordinate_system`.
 			::ctsimu::status_info "Reading sample information..."
 
 			if { [::ctsimu::json_exists_and_not_null $jsonscene {samples}] } {
@@ -81,7 +88,7 @@ namespace eval ::ctsimu {
 		}
 
 		method load_meshes { stageCS material_manager } {
-			# Loads the mesh file of each part into aRTist.
+			# Load the mesh file of each part into aRTist.
 			::ctsimu::status_info "Loading surface meshes..."
 
 			if { [::ctsimu::aRTist_available] } {

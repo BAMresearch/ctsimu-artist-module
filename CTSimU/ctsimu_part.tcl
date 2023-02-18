@@ -10,18 +10,13 @@ source -encoding utf-8 [file join $BasePath ctsimu_coordinate_system.tcl]
 # standard geometries (translations and rotations around given axes).
 # The center, vectors and deviations can all have drifts,
 # allowing for an evolution in time.
-#
-# Each part has its own coordinate system and a parallel "ghost"
-# coordinate system for calculating projection matrices for the
-# reconstruction. This is necessary because the user is free
-# not to pass any deviations to the reconstruction.
 
 namespace eval ::ctsimu {
 	::oo::class create part {
 		variable _attachedToStage
 		variable _static; # immovable object if 1
 		variable _cs; # current coordinate system object+
-		variable _cs_initialized_real; # CS initialized to real scene?
+		variable _cs_initialized_real;  # CS initialized to real scene?
 		variable _cs_initialized_recon; # CS initialized to recon scene?
 		variable _center
 		variable _vector_u
@@ -92,8 +87,7 @@ namespace eval ::ctsimu {
 		}
 
 		method reset { } {
-			# Reset to the default (such as after the
-			# object is constructed). Will result in
+			# Reset to the default. Will result in
 			# standard alignment with the world coordinate system.
 			# Any geometrical deviations are deleted.
 			my attach_to_stage 0
@@ -132,12 +126,12 @@ namespace eval ::ctsimu {
 		}
 
 		method parameter { property } {
-			# Returns the parameter object behind a given `property`
+			# Returns the ::ctsimu::parameter object behind a given `property`
 			return [dict get $_properties $property]
 		}
 
 		method changed { property } {
-			# Has the property changed its value since the last frame?
+			# Has the property changed its value since the last acknowledgment?
 			return [ [my parameter $property] has_changed]
 		}
 
@@ -146,25 +140,28 @@ namespace eval ::ctsimu {
 		}
 
 		method center { } {
+			# Returns the part's center as a ::ctsimu::scenevector
 			return $_center
 		}
 
 		method u { } {
+			# Returns the part's u vector as a ::ctsimu::scenevector
 			return $_vector_u
 		}
 
 		method w { } {
+			# Returns the part's w vector as a ::ctsimu::scenevector
 			return $_vector_w
-		}
-
-		method id { } {
-			# Get the aRTist ID of the part.
-			return $_id
 		}
 
 		method name { } {
 			# Get the name of the part.
 			return $_name
+		}
+
+		method id { } {
+			# Get the aRTist ID of the part.
+			return $_id
 		}
 
 		method is_attached_to_stage { } {
@@ -179,6 +176,8 @@ namespace eval ::ctsimu {
 			# Set a simple property value in
 			# the _properties dict by setting the
 			# respective parameter's standard value.
+			# If the parameter already exists in the internal
+			# properties dictionary, it is reset (i.e., all drifts are deleted).
 
 			# Check if the property already exists:
 			if {[dict exists $_properties $property]} {
@@ -211,7 +210,7 @@ namespace eval ::ctsimu {
 		method set_parameter { property parameter } {
 			# Sets the object in the internal properties dictionary
 			# that is identified by the `property` key to the given
-			# `parameter` (should be a `::ctsimu::parameter` object).
+			# `parameter` (must be a `::ctsimu::parameter` object).
 			# If there is already an entry under the given `property` key,
 			# this old parameter object will be deleted.
 
@@ -351,7 +350,7 @@ namespace eval ::ctsimu {
 		}
 
 		method set_static_if_no_drifts { } {
-			# Sets the object to 'static', i.e., not moving.
+			# Sets the object to 'static' if it does not drift, i.e., not moving.
 			# In this case, its coordinate system does not need to
 			# be re-assembled for each frame.
 
@@ -612,7 +611,7 @@ namespace eval ::ctsimu {
 			#   A ::ctsimu::coordinate_system that represents the stage.
 			#   Only necessary if the coordinate system will be attached to the
 			#   stage. Otherwise, the world coordinate system can be passed as an
-			#   argument.
+			#   argument: $::ctsimu::world.
 			# - frame:
 			#   Frame number to set up.
 			# - nFrames:
@@ -636,8 +635,8 @@ namespace eval ::ctsimu {
 		}
 
 		method set_frame_for_recon { stageCS frame nFrames { w_rotation_in_rad 0 } } {
-			# Set up the part for the given frame number, obeying all
-			# deviations and drifts.
+			# Set up the part for the given frame number, obeying only those
+			# deviations and drifts that are known to the reconstruction software.
 			#
 			# Function arguments:
 			# - stageCS:
@@ -663,7 +662,7 @@ namespace eval ::ctsimu {
 		}
 
 		method place_in_scene { stageCS } {
-			# Set position and orientation of object in aRTist scene.
+			# Set the position and orientation of the part in the aRTist scene.
 
 			set coordinateSystem [[my current_coordinate_system] in_world $stageCS]
 

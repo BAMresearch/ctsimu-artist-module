@@ -1,5 +1,5 @@
 # ::ctsimu::scenevector
-A scene vector is a 3D vector that knows the type of its reference coordinate sytem, given as world, local or sample. It provides functions to convert between coordinate systems and it can handle drifts. Therefore, all three components of a scene vector are of type `::ctsimu::parameter.`
+A scene vector is a 3D vector that knows the type of its reference coordinate sytem, given as world, local or sample. It provides functions to convert between coordinate systems and it can handle drifts. Therefore, all three components of a scene vector are stored as [`::ctsimu::parameter`](parameter.md) objects.
 
 Useful for vectors that can change due to drifts, such as rotation axis and pivot point of a deviation, or, in general, the coordinate system vectors.
 
@@ -11,13 +11,15 @@ Useful for vectors that can change due to drifts, such as rotation axis and pivo
 
 ### General
 
-* `standard_vector` — Creates a `::ctsimu::vector` that represents this vector without any drifts.
-* `drift_vector { frame nFrames { only_known_to_reconstruction 0 } }` — Creates a `::ctsimu::vector` that represents only the drift values for the given `frame` number (out of a total of `nFrames`). Can later be added to the standard value to get the resulting vector respecting all drifts.
-* `vector_for_frame { frame nFrames { only_known_to_reconstruction 0 } }` — Create and return a `::ctsimu::vector` for the given frame, respecting all drifts.
+* `standard_vector` — Creates a [`::ctsimu::vector`](vector.md) that represents this vector without any drifts.
+* `drift_vector { frame nFrames { only_known_to_reconstruction 0 } }` — Creates a [`::ctsimu::vector`](vector.md) that represents only the drift values for the given `frame` number (out of a total of `nFrames`). Can later be added to the standard value to get the resulting vector respecting all drifts.
+* `vector_for_frame { frame { nFrames 0 } { only_known_to_reconstruction 0 } }` — Create and return a [`::ctsimu::vector`](vector.md) for the given frame, respecting all drifts.
+* `print` — Return a human-readable string for the current vector representation.
+* `has_drifts` — Returns `1` if the scene vector drifts during the CT scan, `0` otherwise.
 
 ### Conversion Functions
 
-The following functions all generate and return new `::ctsimu::vector` objects for a specific reference coordinate system, and a specific `frame` out of a total of `nFrames` in the CT scan, obeying any specified vector drifts.
+The following functions all generate and return new [`::ctsimu::vector`](vector.md) objects for a specific reference coordinate system, and a specific `frame` out of a total of `nFrames` in the CT scan, obeying any specified vector drifts.
 
 The first parameter of each function, **`point_or_direction`**, must be a string that is either `"point"` (if your scene vector represents a point coordinate that needs to be transformed) or `"direction"` (if the vector denotes a general direction in space).
 
@@ -25,16 +27,16 @@ The first parameter of each function, **`point_or_direction`**, must be a string
 
 For scene vectors that refer to a sample coordinate system, the `local` coordinate system must be the stage coordinate system if the sample is attached to the stage, or `[self]` if it is located in the world coordinate system (in this case, `sample` would be the world CS as well).
 
-* `in_world { point_or_direction local sample frame nFrames { only_known_to_reconstruction 0 } }` — Create and return a `::ctsimu::vector` in terms of the world coordinate system. Function arguments:
+* `in_world { point_or_direction local sample frame nFrames { only_known_to_reconstruction 0 } }` — Create and return a [`::ctsimu::vector`](vector.md) in terms of the world coordinate system. Function arguments:
 	- `point_or_direction` — A string that specifies whether you need to convert point coordinates (`"point"`) or
 	  a direction (`"direction"`).
-	- `local` — A `::ctsimu::coordinate_system` that represents the object's local CS in terms of world coordinates.
-	- `sample` — A `::ctsimu::coordinate_system` that represents the sample in terms of the stage coordinate system. If you don't want to convert from a sample vector, it doesn't matter what you pass here (pass `0`).
+	- `local` — A [`::ctsimu::coordinate_system`](coordinate_system.md) that represents the object's local CS in terms of world coordinates.
+	- `sample` — A [`::ctsimu::coordinate_system`](coordinate_system.md) that represents the sample in terms of the stage coordinate system. If you don't want to convert from a sample vector, it doesn't matter what you pass here (you can pass `0`).
 	- `frame` — The number of the current frame.
 	- `nFrames` — The total number of frames.
 	- `only_known_to_reconstruction` — Only handle drifts that are known to the recon software.
-* `in_local { point_or_direction local sample frame nFrames { only_known_to_reconstruction 0 } }` — Create and return a `::ctsimu::vector` in terms of the local coordinate system.
-* `in_sample { point_or_direction stage sample frame nFrames { only_known_to_reconstruction 0 } }` — Create and return a `::ctsimu::vector` in terms of the sample coordinate system.
+* `in_local { point_or_direction local sample frame nFrames { only_known_to_reconstruction 0 } }` — Create and return a [`::ctsimu::vector`](vector.md) in terms of the local coordinate system.
+* `in_sample { point_or_direction stage sample frame nFrames { only_known_to_reconstruction 0 } }` — Create and return a [`::ctsimu::vector`](vector.md) in terms of the sample coordinate system.
 
 ### Getters
 
@@ -45,5 +47,5 @@ For scene vectors that refer to a sample coordinate system, the `local` coordina
 * `set_reference { reference }` — Set the reference coordinate system. Must be a string, any of: `"world"`, `"local"` or `"sample"`.
 * `set_native_unit { native_unit }` — Set native unit of vector components. Necessary for the location of points such as the center points of coordinate systems, usually given in `"mm"` as native unit.
 * `set_simple { c0 c1 c2 }` — Set a simple scene vector from three numbers, results in a scene vector without drifts.
-* `set_component { i parameter }` — Set the `i`th vector component to `parameter` (which must be a `::ctsimu::parameter`).
+* `set_component { i parameter }` — Set the `i`th vector component to `parameter` (which must be a [`::ctsimu::parameter`](parameter.md)).
 * `set_from_json { json_object }` — Sets up the scene vector from a CTSimU JSON object that describes a three-component vector.

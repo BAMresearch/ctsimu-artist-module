@@ -15,6 +15,17 @@ namespace eval ::ctsimu {
 		variable _value_has_changed; # parameter value changed since last frame?
 
 		constructor { { native_unit "" } { standard 0 } } {
+			# When a parameter object is constructed, is must be assigned
+			# a valid native_unit to enable the JSON parser to convert the
+			# drift values from the JSON file, if necessary.
+			# See the documentation on native units for a
+			# complete list of valid strings.
+			#
+			# Optionally, a standard value can be passed to the constructor.
+			# The standard value is the "actual" value defined for this
+			# parameter in the JSON file. If a JSON object is used to set up
+			# this parameter, the standard value provided in the constructor
+			# is overwritten by the value given in the JSON file.
 			my set_standard_value $standard
 			my set_native_unit    $native_unit
 			set _drifts           [list]
@@ -31,7 +42,8 @@ namespace eval ::ctsimu {
 		}
 
 		method reset { } {
-			# Delete all drifts and set the parameter's current value to the standard value.
+			# Delete all drifts and set the parameter's current value
+			# to the standard value.
 			foreach drift $_drifts {
 				$drift destroy
 			}
@@ -42,6 +54,9 @@ namespace eval ::ctsimu {
 		}
 
 		method print { frame nFrames } {
+			# Returns a human-readable string that gives information
+			# about the parameter's value for the given `frame` number
+			# (out of a total of `nFrames`).
 			set s "Standard value: $_standard_value, Current value: $_current_value, Native unit: $_native_unit, nDrifts: [llength $_drifts]"
 			foreach d $_drifts {
 				append s "\n  Drift at frame $frame: [$d get_value_for_frame $frame $nFrames]"
@@ -109,10 +124,14 @@ namespace eval ::ctsimu {
 		}
 
 		method has_changed { } {
+			# Has the parameter changed since the last acknowledged change?
+			# (See setter function `acknowledge_change`).
+			# Returns `1` if true, `0` if not.
 			return $_value_has_changed
 		}
 
 		method has_drifts { } {
+			# Does the parameter drift? Returns `1` if yes, `0` if not.
 			if { [llength $_drifts] == 0 } {
 				return 0
 			}
@@ -135,18 +154,25 @@ namespace eval ::ctsimu {
 		}
 
 		method acknowledge_change { { new_change_state 0} } {
+			# Acknowledge a change of the parameter due to a drift.
+			# After the acknowledgment, the function `has_changed`
+			# will return the `new_change_state` value (standard: `0`).
 			set _value_has_changed $new_change_state
 		}
 
 		# General
 		# -------------------------
-		method get_value_for_frame { frame { nFrames 1 } { only_drifts_known_to_reconstruction 0 } } {
+		method set_frame_and_get_value { frame { nFrames 1 } { only_drifts_known_to_reconstruction 0 } } {
 			# Set the new frame number, return current value
 			my set_frame $frame $nFrames $only_drifts_known_to_reconstruction
 			return [my current_value]
 		}
 
 		method get_total_drift_value_for_frame { frame nFrames { only_drifts_known_to_reconstruction 0 } } {
+			# Calculates the total drift value from all drift components,
+			# for the given `frame` out of a total of `nFrames`,
+			# depending on whether all drifts are applied or only
+			# drifts known to the reconstruction software.
 			set total_drift 0
 
 			if { $_native_unit == "string" } {
@@ -259,6 +285,9 @@ namespace eval ::ctsimu {
 		}
 
 		method set_parameter_from_key { json_object key_sequence } {
+			# Tries to find a valid parameter object at the given
+			# `key_sequence` in the given `json_object`. Sets the parameter
+			# if possible and returns `1` on success, `0` otherwise.
 			if { [::ctsimu::json_exists_and_not_null $json_object $key_sequence] } {
 				if { [my set_from_json [::ctsimu::json_extract $json_object $key_sequence]] } {
 					return 1
@@ -285,6 +314,8 @@ namespace eval ::ctsimu {
 		}
 
 		method set_frame { frame nFrames { only_drifts_known_to_reconstruction 0 } } {
+			# Prepares the `current_value` for the given `frame` number
+			# (assuming a total of `nFrames`). This takes into account all drifts.
 			set new_value $_standard_value
 
 			set total_drift [my get_total_drift_value_for_frame $frame $nFrames $only_drifts_known_to_reconstruction]

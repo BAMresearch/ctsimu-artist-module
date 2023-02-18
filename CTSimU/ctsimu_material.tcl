@@ -13,9 +13,9 @@ namespace eval ::ctsimu {
 		variable _parent_material_name
 
 		constructor { parent_material_id parent_material_name { formula "Fe" } { mass_fraction 1 } } {
-			set _parent_material_id $parent_material_id
+			set _parent_material_id   $parent_material_id
 			set _parent_material_name $parent_material_name
-			set _formula    [::ctsimu::parameter new "string" $formula]
+			set _formula       [::ctsimu::parameter new "string" $formula]
 			set _mass_fraction [::ctsimu::parameter new ""       $mass_fraction]
 		}
 
@@ -27,7 +27,7 @@ namespace eval ::ctsimu {
 		# General
 		# ----------
 
-		method set_frame { frame nFrames { forced 0 } } {
+		method set_frame { frame nFrames } {
 			set value_changed [expr { [$_formula set_frame $frame $nFrames] || \
 			                          [$_mass_fraction set_frame $frame $nFrames] }]
 
@@ -49,6 +49,7 @@ namespace eval ::ctsimu {
 		# ----------
 
 		method set_from_json { jsonobj } {
+			# Set up the material component from a JSON material component definition object.
 			if { ![$_formula set_parameter_from_key $jsonobj {formula}] } {
 				::ctsimu::fail "Error reading a formula for material $_parent_material_id ($_parent_material_name)."
 			}
@@ -57,7 +58,7 @@ namespace eval ::ctsimu {
 				::ctsimu::fail "Error reading a mass fraction for material $_parent_material_id ($_parent_material_name)."
 			}
 
-			my set_frame 0 1 1
+			my set_frame 0 1
 		}
 
 		method set_from_json_legacy { jsonobj } {
@@ -70,7 +71,7 @@ namespace eval ::ctsimu {
 			$_mass_fraction reset
 			$_mass_fraction set_standard_value 1
 
-			my set_frame 0 1 1
+			my set_frame 0 1
 		}
 	}
 
@@ -80,16 +81,18 @@ namespace eval ::ctsimu {
 		variable _id
 		variable _name
 		variable _density
-		variable _composition
-		variable _aRTist_composition_string
+		variable _composition; # array of material components
+		variable _aRTist_composition_string; # Material composition string for aRTist's materials list.
 
-		constructor { { id 0 } { name "New_Material" } } {
+		constructor { { id 0 } { name "New_Material" } { density 0 } } {
 			my set_id $id
 			my set_name $name
 			set _aRTist_composition_string ""
 
 			set _density [::ctsimu::parameter new "g/cm^3"]
 			set _composition [list ]
+
+			my set_density $density
 		}
 
 		destructor {
@@ -100,6 +103,8 @@ namespace eval ::ctsimu {
 		}
 
 		method reset { } {
+			# Reset density to `0` (with no drifts),
+			# clear all material composition entries.
 			set _aRTist_composition_string ""
 
 			$_density reset
@@ -113,6 +118,7 @@ namespace eval ::ctsimu {
 		# General
 		# ----------
 		method add_to_aRTist { } {
+			# Add material to aRTist's materials list.
 			if { ([my aRTist_id] != "void") && ([my aRTist_id] != "none") } {
 				set values [dict create]
 				dict set values density [$_density current_value]
@@ -127,19 +133,24 @@ namespace eval ::ctsimu {
 		}
 
 		method set_frame { frame nFrames { forced 0 } } {
-			# Return a bitwise OR of all return values.
-			# If any of the values has changed, the result will be 1.
-			set density_changed [$_density set_frame $frame $nFrames $forced]
+			# Set the `frame` number, given a total of `nFrames`.
+			# This will obey any possibly defined drifts for density
+			# and material composition.
+			# If `forced` is set to `1`, the material will be
+			# updated in aRTist, no matter if it has changed or not.
+			set density_changed [$_density set_frame $frame $nFrames]
 
 			set composition_changed 0
 			foreach component $_composition {
-				set composition_changed [expr { $composition_changed || [$component set_frame $frame $nFrames $forced] }]
+				set composition_changed [expr { $composition_changed || [$component set_frame $frame $nFrames] }]
 			}
 
 			if { $composition_changed || $forced } {
 				my generate_aRTist_composition_string
 			}
 
+			# Return a bitwise OR of all return values.
+			# If any of the values has changed, the result will be 1.
 			set value_changed [expr ($density_changed || $composition_changed)]
 
 			# Update aRTist materials list if a value has changed:
@@ -158,7 +169,8 @@ namespace eval ::ctsimu {
 
 		method aRTist_id { } {
 			# The material id for the aRTist material manager.
-			# Add 'CTSimU' as prefix to avoid overwriting existing materials.
+			# The prefix `CTSimU_` is added to all material IDs
+			# to avoid overwriting existing materials.
 
 			if { ($_id != "void") && ($_id != "none") } {
 				# Check density and return "void" if density is not >0:
@@ -182,11 +194,13 @@ namespace eval ::ctsimu {
 		}
 
 		method aRTist_composition_string { } {
+			# Material composition string for aRTist's materials list.
 			return $_aRTist_composition_string
 		}
 
 		method generate_aRTist_composition_string { } {
-			# Generate the composition string for aRTist.
+			# Generate the material composition string for aRTist,
+			# which contains the chemical formulas and mass fractions.
 
 			# Check if all mass fractions are equal. In this case, we can
 			# omit mass fractions in the composition string.
@@ -245,16 +259,19 @@ namespace eval ::ctsimu {
 		}
 
 		method set_density { density } {
-			# Set simple numerical value for density.
+			# Set a simple numerical value for the density.
 			$_density reset
 			$_density set_standard_value $density
 		}
 
 		method add_component { component } {
+			# Add a ::ctsimu::material_component object to the
+			# list of material components.
 			lappend _composition $component
 		}
 
 		method set_from_json { jsonobj } {
+			# Set up the material from a JSON material definition object.
 			my reset
 
 			my set_id [::ctsimu::get_value $jsonobj {id} "null"]

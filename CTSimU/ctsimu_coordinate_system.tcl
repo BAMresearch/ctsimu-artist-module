@@ -467,7 +467,7 @@ namespace eval ::ctsimu {
 
 			set known_to_recon [$deviation known_to_reconstruction]
 			if { ($only_known_to_reconstruction==0) || ($known_to_recon==1) } {
-				set value [[$deviation amount] get_value_for_frame $frame $nFrames $only_known_to_reconstruction]
+				set value [[$deviation amount] set_frame_and_get_value $frame $nFrames $only_known_to_reconstruction]
 
 				if { [$deviation type] == "translation" } {
 					if { [$deviation native_unit] == "mm" } {

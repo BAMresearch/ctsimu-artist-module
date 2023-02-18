@@ -5,14 +5,14 @@ A class to set up and generate a detector. Inherits from [`::ctsimu::part`](part
 
 ### Constructor
 
-* `constructor { { name "Detector" } { id "D" } }`
+* `constructor { { name "CTSimU_Detector" } { id "D" } }`
 
-	A name for the detector can be passed as an argument to the constructor. Useful for debugging, because it appears in error messages as well. Usually, `"Detector"` is fine. The `id` designates aRTist's identifier for the object (to find it in the part list).
+	A name for the detector can be passed as an argument to the constructor. Useful for debugging, because it appears in error messages as well. The `id` designates aRTist's identifier for the object (to find it in the part list).
 
 ### General
 
 * `initialize { material_manager { SDD 1000 } { current 1 } }` — Necessary initialization after constructing, when the detector object shall be used fully (not just as a geometrical object). The `SDD` and X-ray tube `current` refer to the conditions at frame zero, and are stored by the detector if a re-calculation of gray value characteristics becomes necessary. The initial frame-zero parameters are kept because the imin/imax method gives the minimum and maximum gray values for free-beam conditions in frame zero.
-* `reset { }` — Reset detector to standard settings. Deletes all previously defined drifts, etc. Called internally before a new detector definition is loaded from a JSON file.
+* `reset` — Reset detector to standard settings. Deletes all previously defined drifts, etc. Called internally before a new detector definition is loaded from a JSON file.
 * `set_in_aRTist { xray_kV }` — Set up the detector parameters in aRTist, possibly generate characteristics curves. The parameter `xray_kV` should give the maximum X-ray tube acceleration voltage in kV (or, photon energy in keV). This information is used to only compute the detector's sensitivity for a range that actually occurs in the simulation.
 * `generate { SDD xray_source_current xray_kV }` — Generate a detector dictionary for aRTist. Input parameters:
 	- `SDD`: source-detector distance at frame zero.
@@ -21,18 +21,18 @@ A class to set up and generate a detector. Inherits from [`::ctsimu::part`](part
 
 ### Getters
 
-* `physical_width { }` — Detector's physical width in mm.
-* `physical_height { }` — Detector's physical height in mm.
-* `pixel_area_m2 { }` — Area of a pixel in m².
-* `max_gray_value { }` — The maximum grey value that can be stored using the image bit depth.
-* `hash { }` — Returns a hash of all properties that are relevant for the generation of the detector. If one of the parameters changes, the hash changes as well and the detector is re-generated for the new frame.
-* `current_temp_file { }` — Returns the name of the current temporary detector file. Temporary files are used to avoid re-generation of a previously known detector for a given scenario.
+* `physical_width` — Detector's physical width in mm.
+* `physical_height` — Detector's physical height in mm.
+* `pixel_area_m2` — Area of a pixel in m².
+* `max_gray_value` — The maximum grey value that can be stored using the image bit depth.
+* `hash` — Returns a hash of all properties that are relevant for the generation of the detector. If one of the parameters changes, the hash changes as well and the detector is re-generated for the new frame.
+* `current_temp_file` — Returns the name of the current temporary detector file. Temporary files are used to avoid re-generation of a previously known detector for a given scenario.
 
 ### Setters
 
-* `set_frame { stageCS frame nFrames { w_rotation_in_rad 0 } }` — Set all properties of the detector to match the given `frame` number, given a total of `nFrames`. All drifts are applied, no matter if they are known to the reconstruction software. The `stageCS` and `w_rotation_in_rad` are not relevant for the detector and should be set to `0`. Because this function is inherited from `::ctsimu::part`, they cannot be removed.
-* `set_frame_for_recon { stageCS frame nFrames { w_rotation_in_rad 0 } }` — Set all properties of the detector to match the given `frame` number, given a total of `nFrames`. Only those drifts which are known to the reconstruction software are applied. The `stageCS` and `w_rotation_in_rad` are not relevant for the detector and should be set to `0`. Because this function is inherited from `::ctsimu::part`, they cannot be removed.
-* `set_from_json { jobj stage }` — Import the detector definition and geometry from the given JSON object (`jobj`). The JSON object should contain the complete content from the scenario definition file (at least the geometry and detector sections). `stage` is the `::ctsimu::coordinate_system` that represents the stage in the world coordinate system.
+* `set_frame { stageCS frame nFrames { w_rotation_in_rad 0 } }` — Set all properties of the detector to match the given `frame` number, given a total of `nFrames`. All drifts are applied, no matter if they are known to the reconstruction software. The `stageCS` and `w_rotation_in_rad` are not relevant for the detector and should be set to `0`. Because this function is inherited from [`::ctsimu::part`](part.md), they cannot be removed.
+* `set_frame_for_recon { stageCS frame nFrames { w_rotation_in_rad 0 } }` — Set all properties of the detector to match the given `frame` number, given a total of `nFrames`. Only those drifts which are known to the reconstruction software are applied. The `stageCS` and `w_rotation_in_rad` are not relevant for the detector and should be set to `0`. Because this function is inherited from [`::ctsimu::part`](part.md), they cannot be removed.
+* `set_from_json { jobj stage }` — Import the detector definition and geometry from the given JSON object (`jobj`). The JSON object should contain the complete content from the scenario definition file (at least the geometry and detector sections). `stage` is the [`::ctsimu::coordinate_system`](coordinate_system.md) that represents the stage in the world coordinate system.
 
 ## Properties
 
@@ -57,8 +57,6 @@ The following table gives an overview of the currently used keys, their standard
 | `image_lag`                       | `0.0`          | `""`        |                                                                   |
 | `frame_average`                   | `1`            | `""`        |                                                                   |
 | `multisampling`                   | `"3x3"`        | `"string"`  |                                                                   |
-| `min_energy`                      | `0`            | `""`        |                                                                   |
-| `max_energy`                      | `1000`         | `""`        |                                                                   |
 | `primary_energy_mode`             | `0`            | `"bool"`    | `0`, `1`                                                          |
 | `primary_intensity_mode`          | `0`            | `"bool"`    | `0`, `1`                                                          |
 | `gray_value_mode`                 | `"imin_imax"`  | `"string"`  | `"imin_imax"`, `"linear"`, `"file"`                               |

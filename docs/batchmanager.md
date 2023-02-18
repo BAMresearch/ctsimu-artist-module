@@ -23,11 +23,11 @@ Handles and runs a batch queue of JSON scenario files.
 ### Batch jobs and execution
 
 * `sync_batchlist_into_manager { }` — Updates the batch manager to be in sync with aRTist's GUI batch list.
-* `add_batch_job { bj }` — Add a `::ctsimu::batchjob` to the batch manager.
+* `add_batch_job { bj }` — Add a [`::ctsimu::batchjob`](batchjob.md) to the batch manager.
 * `add_batch_job_to_GUIlist { bj }` — Add the given batch job to the module's aRTist GUI list. Automatically executed by `add_batch_job`.
 * `add_batch_job_from_json { jsonfile }` — Create a new batch job for the given JSON scenario file.
 * `clear { }` — Clear the batch manager in sync with the GUI list.
-* `run_batch { global_scenario }` — Starts the batch execution. Parameter: `global_scenario` is the `::ctsimu::scenario` object of the aRTist scene that the batch manager should control. When used outside of aRTist, any `::ctsimu::scenario` object can be passed.
+* `run_batch { global_scenario }` — Starts the batch execution. Parameter: `global_scenario` is the [`::ctsimu::scenario`](scenario.md) object of the aRTist scene that the batch manager should control. When used outside of aRTist, any [`::ctsimu::scenario`](scenario.md) object can be passed.
 * `stop_batch { }` — Stop the current batch execution.
 
 ### Batch list import/export

@@ -1,6 +1,6 @@
 # Native Units
 
-Native units are the internal foundation units that the CTSimU module uses to operate. They need to be specified when instantiating objects of type `::ctsimu::parameter`, `::ctsimu::drift` and `::ctsimu::scenevector`.
+Native units are the internal foundation units that the CTSimU module uses to operate. They need to be specified when instantiating objects of type [`::ctsimu::parameter`](parameter.md), [`::ctsimu::drift`](drift.md) and [`::ctsimu::scenevector`](scenevector.md).
 
 The following list specifies all currently used native units:
 

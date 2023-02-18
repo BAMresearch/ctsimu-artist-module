@@ -6,8 +6,8 @@ source -encoding utf-8 [file join $BasePath ctsimu_parameter.tcl]
 # A scene vector is a 3D vector that knows the type of its
 # reference coordinate sytem, given as world, local or sample.
 # It provides functions to convert between these coordinate systems
-# and it can handle drifts.
-# Therefore, all three vector components are of type ::ctsimu::parameter.
+# and it can handle drifts. Therefore, all three vector components
+# are stored as ::ctsimu::parameter objects.
 #
 # Useful for vectors that can change due to drifts,
 # such as rotation axis and pivot point of a deviation,
@@ -48,10 +48,12 @@ namespace eval ::ctsimu {
 		}
 
 		method print { } {
+			# Return a human-readable string for the current vector representation.
 			return "([$_c0 current_value], [$_c1 current_value], [$_c2 current_value]) in [my reference]"
 		}
 
 		method has_drifts { } {
+			# Returns 1 if the scene vector drifts during the CT scan, 0 otherwise.
 			return [expr [$_c0 has_drifts] || [$_c1 has_drifts] || [$_c2 has_drifts]]
 		}
 
@@ -85,7 +87,7 @@ namespace eval ::ctsimu {
 			$_c1 set_standard_value $c1
 			$_c2 set_standard_value $c2
 
-			# Deletes all drifts and sets parameter's
+			# Deletes all drifts and set parameter's
 			# current value to standard value:
 			$_c0 reset
 			$_c1 reset
@@ -148,9 +150,9 @@ namespace eval ::ctsimu {
 			# for the given frame, respecting all drifts.
 
 			# Get vector components, respecting drifts:
-			set v0 [$_c0 get_value_for_frame $frame $nFrames $only_known_to_reconstruction]
-			set v1 [$_c1 get_value_for_frame $frame $nFrames $only_known_to_reconstruction]
-			set v2 [$_c2 get_value_for_frame $frame $nFrames $only_known_to_reconstruction]
+			set v0 [$_c0 set_frame_and_get_value $frame $nFrames $only_known_to_reconstruction]
+			set v1 [$_c1 set_frame_and_get_value $frame $nFrames $only_known_to_reconstruction]
+			set v2 [$_c2 set_frame_and_get_value $frame $nFrames $only_known_to_reconstruction]
 
 			# Build a vector:
 			set v [::ctsimu::vector new [list $v0 $v1 $v2]]
@@ -179,7 +181,7 @@ namespace eval ::ctsimu {
 			#   A ::ctsimu::coordinate_system that represents the sample
 			#   in terms of the stage coordinate system.
 			#   If you don't want to convert from a sample vector,
-			#   it doesn't matter what you pass here (pass `0`).
+			#   it doesn't matter what you pass here (you can pass `0`).
 			#
 			# - frame:
 			#   The number of the current frame.

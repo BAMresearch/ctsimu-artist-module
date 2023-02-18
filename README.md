@@ -1,38 +1,198 @@
-# CTSimU aRTist Module
+# CTSimU aRTist Module 1.2.0
 
-This is a module for the radiographic simulator [aRTist](http://artist.bam.de/) which reads and sets up the scenario from a [CTSimU JSON description](https://bamresearch.github.io/ctsimu-scenarios/). With the module, it is also possible to simulate the complete CT scan as described in the JSON scenario.
+This is a module for the radiographic simulator [aRTist](http://artist.bam.de/) which reads and sets up the scenario from a [CTSimU Scenario Description](https://bamresearch.github.io/ctsimu-scenarios/) file. With the module, it is also possible to simulate the complete CT scan as described in the JSON scenario.
 
 ## Requirements
 
-+ aRTist Version 2.12 or higher,
-+ `rl_json` extension, which comes by default since aRTist 2.10.2.
++ aRTist, version 2.12. Support for higher versions currently unknown.
 
 ## Installation
 
-1. Download the aRTist package file (`CTSimU-<version>.artp`) for the latest [Release](https://github.com/BAMresearch/ctsimu-artist-module/releases).
+1. Download the aRTist package file (`CTSimU-<version>.artp`) for the latest [release](https://github.com/BAMresearch/ctsimu-artist-module/releases).
 2. Drag and drop the `.artp` file into your aRTist window to install the module.
+
+## Example Scenarios
+
+You can find [example scenario files](https://github.com/BAMresearch/ctsimu-scenarios/tree/main/examples) that you can load with this module in aRTist on the Github repository for the CTSimU Scenario Descriptions.
 
 ## Known Limitations
 
-+ None of the drift definitions of the JSON scenario description are implemented yet.
-+ Continuous-motion scans are not supported.
-+ Drifts between frames of an averaged projection are not handled. Therefore, motion blurring within one projection cannot be simulated.
-+ Parallel beam geometries are not supported.
-+ External focal spot profile images are not being loaded yet.
++ **Pixel binning** is not supported. Such an operation can be applied as a post-processing step using the [CTSimU Toolbox](https://github.com/BAMresearch/ctsimu-toolbox).
++ **Continuous-motion** scans are not supported, only stop&go mode.
++ Drifts between the frames of an averaged projection are not handled. Therefore, **motion blurring** within one projection cannot be simulated.
++ **Parallel beam** geometries are not supported. As a workaround, a very high source-detector distance could be chosen in the JSON file.
++ Detector: **rear window and filters** are not supported, only the *front* versions. If they are needed for a scatter simulation, they should be included in the scene as samples (fixed to the world coordinate system).
++ If **flat-field correction** is turned on in the JSON file, aRTist's internal flat-field correction will be used. This means that the flat-field corrected image will be re-scaled to the mean intensity of the flat field image, instead of the free-beam maximum, and an ideal (noise-free) image will be taken for aRTist's internal flat-field image. It is recommended to turn off flat-field `correction` in the JSON file, and instead use the [CTSimU Toolbox](https://github.com/BAMresearch/ctsimu-toolbox) to run the correction after the simulation (using the simulated flat field and dark field images).
+
+## Tcl API
+
+The module is written in Tcl, in a way that it can also be used without aRTist (in a limited way). There are also functions to control the module within aRTist by passing a prepared Tcl script as an argument to an aRTist instance. The [documentation](docs/README.md) of the code, API and classes can be found in the `docs` folder. You can find demo Tcl scripts in the [examples](examples/) folder of this repository.
 
 ## Deploying a new version
 
 The `deploy.sh` script can be used to create an `.artp` file for aRTist for a certain version number. The new version number is passed as an argument:
 
-	./deploy.sh version
+	./deploy.sh "<version>"
 
 For example:
 
-	./deploy.sh "0.8.15"
+	./deploy.sh "1.2.0"
 
 Note: the aRTist package file (`.artp`) should not be part of the git repository. Instead, it can be uploaded to Github as a file attachment to a new release.
 
+## Feature Support of JSON Scenarios
+
+The following table lists the module's current support status for the JSON parameters defined by the [CTSimU file format](https://bamresearch.github.io/ctsimu-scenarios/).
+
+| Parameter                                             | Support     | Drift Support                                      |
+| :---------------------------------------------------- | :---------- | :------------------------------------------------- |
+| `environment material_id`                             | yes         | only in material definition (density, composition) |
+| `environment temperature`                             | no          | no                                                 |
+| `geometry detector center x/y/z`                      | yes         | yes                                                |
+| `geometry detector vector_u x/y/z`                    | yes         | yes                                                |
+| `geometry detector vector_w x/y/z`                    | yes         | yes                                                |
+| `geometry detector deviations`                        | yes         | yes                                                |
+| `geometry source type`                                | `cone`      | no                                                 |
+| `geometry source beam_divergence`                     | no          | no                                                 |
+| `geometry source center x/y/z`                        | yes         | yes                                                |
+| `geometry source vector_u x/y/z`                      | yes         | yes                                                |
+| `geometry source vector_w x/y/z`                      | yes         | yes                                                |
+| `geometry source deviations`                          | yes         | yes                                                |
+| `geometry stage center x/y/z`                         | yes         | yes                                                |
+| `geometry stage vector_u x/y/z`                       | yes         | yes                                                |
+| `geometry stage vector_w x/y/z`                       | yes         | yes                                                |
+| `geometry stage deviations`                           | yes         | yes                                                |
+| `detector model`                                      | yes         | no                                                 |
+| `detector manufacturer`                               | yes         | no                                                 |
+| `detector type`                                       | yes         | no                                                 |
+| `detector columns`                                    | yes         | yes                                                |
+| `detector rows`                                       | yes         | yes                                                |
+| `detector pixel_pitch u/v`                            | yes         | yes                                                |
+| `detector bit_depth`                                  | yes         | no                                                 |
+| `detector integration_time`                           | yes         | yes                                                |
+| `detector dead_time`                                  | no          | no                                                 |
+| `detector image_lag`                                  | no          | no                                                 |
+| `detector gray_value imax`                            | yes         | yes                                                |
+| `detector gray_value imin`                            | yes         | yes                                                |
+| `detector gray_value factor`                          | yes         | yes                                                |
+| `detector gray_value offset`                          | yes         | yes                                                |
+| `detector gray_value intensity_characteristics_file`  | yes         | yes                                                |
+| `detector gray_value efficiency_characteristics_file` | yes         | yes                                                |
+| `detector noise snr_at_imax`                          | yes         | yes                                                |
+| `detector noise noise_characteristics_file`           | yes         | yes                                                |
+| `detector gain`                                       | no          | no                                                 |
+| `detector unsharpness basic_spatial_resolution`       | yes         | yes                                                |
+| `detector unsharpness mtf`                            | yes         | yes                                                |
+| `detector bad_pixel_map`                              | no          | no                                                 |
+| `detector scintillator material_id`                   | yes         | only in material definition (density, composition) |
+| `detector scintillator thickness`                     | yes         | yes                                                |
+| `detector window front`                               | yes         | yes                                                |
+| `detector window rear`                                | no          | no                                                 |
+| `detector filters front`                              | yes         | yes                                                |
+| `detector filters rear`                               | no          | no                                                 |
+| `source model`                                        | yes         | no                                                 |
+| `source manufacturer`                                 | yes         | no                                                 |
+| `source voltage`                                      | yes         | yes                                                |
+| `source current`                                      | yes         | yes                                                |
+| `source target material_id`                           | yes         | only in material definition (density, composition) |
+| `source target type`                                  | yes         | no                                                 |
+| `source target thickness`                             | yes         | yes                                                |
+| `source target angle incidence`                       | yes         | yes                                                |
+| `source target angle emission`                        | yes         | yes                                                |
+| `source spot size u/v/w`                              | yes         | yes                                                |
+| `source spot sigma u/v/w`                             | yes         | yes                                                |
+| `source spot intensity_map file`                      | yes         | yes                                                |
+| `source spot intensity_map type`                      | yes         | no                                                 |
+| `source spot intensity_map dim_x/y/z`                 | yes         | no                                                 |
+| `source spot intensity_map endian`                    | yes         | no                                                 |
+| `source spot intensity_map headersize`                | yes         | no                                                 |
+| `source spectrum monochromatic`                       | yes         | no                                                 |
+| `source spectrum file`                                | yes         | yes                                                |
+| `source window material_id`                           | yes         | only in material definition (density, composition) |
+| `source window thickness`                             | yes         | yes                                                |
+| `source filters material_id`                          | yes         | only in material definition (density, composition) |
+| `source filters thickness`                            | yes         | yes                                                |
+| `samples name`                                        | yes         | no                                                 |
+| `samples file`                                        | yes         | yes                                                |
+| `samples unit`                                        | yes         | no                                                 |
+| `samples scaling_factor r/s/t`                        | yes         | yes                                                |
+| `samples material_id`                                 | yes         | only in material definition (density, composition) |
+| `samples position center u/v/w/x/y/z`                 | yes         | yes                                                |
+| `samples position vector_r u/v/w/x/y/z`               | yes         | yes                                                |
+| `samples position vector_t u/v/w/x/y/z`               | yes         | yes                                                |
+| `samples position deviations`                         | yes         | yes                                                |
+| `acquisition start_angle`                             | yes         | no                                                 |
+| `acquisition stop_angle`                              | yes         | no                                                 |
+| `acquisition direction`                               | yes         | no                                                 |
+| `acquisition scan_mode`                               | `"stop+go"` | no                                                 |
+| `acquisition scan_speed`                              | no          | no                                                 |
+| `acquisition number_of_projections`                   | yes         | no                                                 |
+| `acquisition include_final_angle`                     | yes         | no                                                 |
+| `acquisition frame_average`                           | yes         | no                                                 |
+| `acquisition dark_field number`                       | yes         | no                                                 |
+| `acquisition dark_field frame_average`                | -           | no                                                 |
+| `acquisition dark_field ideal`                        | only ideal  | no                                                 |
+| `acquisition dark_field correction`                   | no          | no                                                 |
+| `acquisition flat_field number`                       | yes         | no                                                 |
+| `acquisition flat_field frame_average`                | yes         | no                                                 |
+| `acquisition flat_field ideal`                        | yes         | no                                                 |
+| `acquisition flat_field correction`                   | yes         | no                                                 |
+| `acquisition pixel_binning u/v`                       | no          | no                                                 |
+| `acquisition pixel_binning u/v`                       | no          | no                                                 |
+| `acquisition scattering`                              | yes (McRay) | no                                                 |
+| `materials id`                                        | yes         | no                                                 |
+| `materials name`                                      | yes         | no                                                 |
+| `materials density`                                   | yes         | yes                                                |
+| `materials composition formula`                       | yes         | yes                                                |
+| `materials composition mass_fraction`                 | yes         | yes                                                |
+| `simulation aRTist multisampling_detector`            | yes         | yes                                                |
+| `simulation aRTist multisampling_spot`                | yes         | yes                                                |
+| `simulation aRTist spectral_resolution`               | yes         | no                                                 |
+| `simulation aRTist scattering_mcray_photons`          | yes         | no                                                 |
+| `simulation aRTist scattering_image_interval`         | yes         | no                                                 |
+| `simulation aRTist long_range_unsharpness extension`  | yes         | yes                                                |
+| `simulation aRTist long_range_unsharpness ratio`      | yes         | yes                                                |
+| `simulation aRTist primary_energies`                  | yes         | no                                                 |
+| `simulation aRTist primary_intensities`               | yes         | no                                                 |
+
+### Deviations
+
+[Geometry deviations](https://bamresearch.github.io/ctsimu-scenarios/geometry.html#deviations) as specified in the file format are fully supported.
+
+| Parameter                  | Support     | Drift Support  |
+| :------------------------- | :---------- | :------------- |
+| `type`                     | yes         | no             |
+| `axis` as name string      | yes         | no             |
+| `axis x/y/z`               | yes         | yes            |
+| `axis u/v/w`               | yes         | yes            |
+| `axis r/s/t`               | yes         | yes            |
+| `pivot x/y/z`              | yes         | yes            |
+| `pivot u/v/w`              | yes         | yes            |
+| `pivot r/s/t`              | yes         | yes            |
+| `amount`                   | yes         | yes            |
+| `known_to_reconstruction`  | yes         | no             |
+
+
+## The devil in the details
+
++ If **X-ray spectra** are loaded from an external file instead of being generated in aRTist, the JSON file should still specify the tube's correct acceleration `voltage`. If the maximum energy in the spectrum drifts significantly (by more than 20 keV), the source's `voltage` parameter should also drift, reflecting the maximum energy in the spectrum. Alternatively, instead of a drift, the `voltage` parameter could simply represent the maximum acceleration voltage during the scan. The reason is that the maximum photon energy is needed for the computation of the detector's sensitivity characteristics, in order to save computation time and only run the computations for the necessary energy range. This maximum photon energy is determined from the source's `voltage` parameter and not from an externally loaded spectrum.
++ **X-ray spectra** are *always* expected to be already filtered by any defined source `window`. If the window thickness or its material drifts, the externally loaded spectrum will **not** be re-filtered to account for these changes. Instead, the externally loaded spectrum should drift as well (to account for the changing window). If aRTist calculates the spectrum itself, any window drifts are taken into account.
++ When using **frame averaging,** make sure to understand how aRTist's frame averaging works. aRTist's approach is to shift the SNR curve to the intensity of the integration time of the accumulated number of averaged frames, and then take one projection image. It does not calculate several frames and mathematically average them. This can lead an undesired result if you have a non-standard SNR curve, especially when aRTist has to interpolate the curve to higher intensities if they are not explicitly given.
+
 ## Version History
+
+### 1.2.0
++ General support for file format version 1.0, 1.1 and 1.2
++ Parameter drifts are supported
++ Scatter images can be calculated for several frames, instead of calculating a new scatter image for each frame.
++ Option to restart aRTist after each batch run. (To free memory.)
++ New supported JSON features:
+	- new geometrical deviations (translations and rotations along arbitrary axes or pivot points)
+	- source: spot images
+	- detector: MTF
+	- detector: quantum efficiency
+	- detector: external noise characteristics files
+	- `known_to_reconstruction` parameter for geometrical deviations and drifts is obeyed when calculating projection matrices.
 
 ### 0.8.18
 + Fix in CERA reconstruction config files: the `Datatype` parameter is now inactive (made into a comment), only `OutputDatatype` left as valid parameter for the volume data type.

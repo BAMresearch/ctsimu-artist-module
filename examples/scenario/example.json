@@ -1,0 +1,467 @@
+{
+	"file": {
+		"name": "Full example scenario",
+		"description": "Tetrahedron in a rigid frame.",
+
+		"contact": "David Plotzki",
+		"date_created": "2020-04-23",
+		"date_changed": "2023-02-12",
+		"version": {"major": 1, "minor": 10},
+
+		"file_type": "CTSimU Scenario",
+		"file_format_version": {"major": 1, "minor": 2}
+	},
+
+	"environment": {
+		"material_id": "Air",
+		"temperature": {
+			"value": 20, "unit": "C",
+			"uncertainty": {"value": 0.5, "unit": "C"}
+		}
+	},
+
+	"geometry": {
+		"detector": {
+			"center": {
+				"x": {"value": 400, "unit": "mm"},
+				"y": {"value":   0, "unit": "mm"},
+				"z": {"value":   0, "unit": "mm"}
+			},
+
+			"vector_u": {
+				"x": {"value":  0},
+				"y": {"value": -1},
+				"z": {"value":  0}
+			},
+			"vector_w": {
+				"x": {"value":  1},
+				"y": {"value":  0},
+				"z": {"value":  0}
+			},
+
+			"deviations": [
+				{
+					"type": "translation",
+					"axis": "x",
+					"amount": {"value": 0.5, "unit": "mm"},
+					"known_to_reconstruction": false
+				},
+				{
+					"type": "rotation",
+					"axis": "w",
+					"amount": {"value": 2.3e-2, "unit": "rad"},
+					"known_to_reconstruction": true
+				},
+				{
+					"type": "rotation",
+					"axis": {
+						"x": {"value":  2.0},
+						"y": {"value": -3.0},
+						"z": {"value":  5.3}
+					},
+					"pivot": {
+						"u": {"value":  1.0, "unit": "mm"},
+						"v": {"value": -2.0, "unit": "mm"},
+						"w": {"value":  2.5, "unit": "mm"}
+					},
+					"amount": {"value": 1.3, "unit": "deg"},
+					"known_to_reconstruction": true
+				}
+			]
+		},
+
+		"source": {
+			"type": "cone",
+			"beam_divergence": {
+				"u": {"value": 0, "unit": "deg"},
+				"v": {"value": 0, "unit": "deg"}
+			},
+
+			"center": {
+				"x": {"value": 0, "unit": "mm"},
+				"y": {"value": 0, "unit": "mm"},
+				"z": {"value": 0, "unit": "mm"}
+			},
+
+			"vector_u": {
+				"x": {"value":  0},
+				"y": {"value": -1},
+				"z": {"value":  0}
+			},
+			"vector_w": {
+				"x": {"value":  1},
+				"y": {"value":  0},
+				"z": {"value":  0}
+			},
+
+			"deviations": []
+		},
+
+		"stage": {
+			"center": {
+				"x": {"value": 275, "unit": "mm"},
+				"y": {"value":   0, "unit": "mm"},
+				"z": {"value":   0, "unit": "mm"}
+			},
+
+			"vector_u": {
+				"x": {"value":  1},
+				"y": {"value":  0},
+				"z": {"value":  0}
+			},
+			"vector_w": {
+				"x": {"value":  0},
+				"y": {"value":  0},
+				"z": {"value":  1}
+			},
+
+			"deviations": [
+				{
+					"comment": "axis wobble",
+					"type": "rotation",
+					"axis": {
+					  "u": {"value": 1},
+					  "v": {"value": 1},
+					  "w": {"value": 0}
+					},
+					"amount": {"value": 4, "unit": "deg"},
+					"known_to_reconstruction": false
+				}
+			]
+		}
+	},
+
+	"detector": {
+		"model":        "DT-1",
+		"manufacturer": "Detector Company",
+		"type":         "real",
+		"columns":      {"value": 200, "unit": "px"},
+		"rows":         {"value": 150, "unit": "px"},
+		"pixel_pitch": {
+			"u": {"value": 1.3, "unit": "mm"},
+			"v": {"value": 1.3, "unit": "mm"}
+		},
+		"bit_depth":  {"value": 16},
+		"integration_time": {"value": 0.5, "unit": "s"},
+		"dead_time":  {"value": 50,   "unit": "ms"},
+		"image_lag":  {"value": 0.05, "unit": null},
+		"gray_value": {
+			"imax":   {"value": 45000},
+			"imin":   {"value":   180},
+
+			"factor": {"value": 1.8e13, "unit": "1/J"},
+			"offset": {"value":    180, "unit": null},
+
+			"intensity_characteristics_file": {"value": "detector_gray_values.tsv"},
+			"efficiency_characteristics_file": {"value": "detector_efficiency.tsv"}
+		},
+		"noise": {
+			"snr_at_imax": {"value": 205.3},
+			"noise_characteristics_file": {"value": "detector_noise.tsv"}
+		},
+		"gain": {"value": 3},
+		"unsharpness": {
+			"basic_spatial_resolution": {"value": 0.1, "unit": "mm"},
+			"mtf": {"value": "detector_mtf.tsv"}
+		},
+		"bad_pixel_map": {
+			"file": {"value": "badpixels.raw", "drifts": null},
+			"type": "int16",
+			"endian": "little",
+			"headersize": 0
+		},
+		"scintillator": {
+			"material_id": "CsI",
+			"thickness": {"value": 0.15, "unit": "mm"}
+		},
+		"window": {
+			"front": [
+				{
+					"material_id": "Kapton",
+					"thickness": {"value": 0.13, "unit": "mm"}
+				}
+			],
+			"rear": []
+		},
+		"filters": {
+			"front": [
+				{
+					"material_id": "Al",
+					"thickness": {"value": 0.2, "unit": "mm"}
+				},
+				{
+					"material_id": "Cu",
+					"thickness": {"value": 0.1, "unit": "mm"}
+				}
+			],
+			"rear": [
+				{
+					"material_id": "Al",
+					"thickness": {"value": 2.0, "unit": "mm"}
+				}
+			]
+		}
+	},
+
+	"source": {
+		"model":        "XS-1",
+		"manufacturer": "X-ray Tube Company",
+		"voltage": {"value": 130, "unit": "kV"},
+		"current": {"value": 143, "unit": "uA"},
+		"target": {
+			"material_id": "W",
+			"type": "reflection",
+			"thickness": null,
+			"angle": {
+				"incidence": {"value": 45, "unit": "deg"},
+				"emission":  {"value": 45, "unit": "deg"}
+			}
+		},
+		"spot": {
+			"size": {
+				"u": {"value": 100.0, "unit": "um"},
+				"v": {"value": 100.0, "unit": "um"},
+				"w": {"value":   0.0, "unit": "um"}
+			},
+			"sigma": {
+				"u": {"value":  50.0, "unit": "um"},
+				"v": {"value":  50.0, "unit": "um"},
+				"w": {"value":   0.0, "unit": "um"}
+			},
+			"intensity_map": null
+		},
+		"spectrum": {
+			"monochromatic": false,
+			"file": {"value": "tube_spectrum_130kV.tsv", "drifts": null}
+		},
+		"window": [
+			{
+				"material_id": "Al",
+				"thickness": {"value": 4.0, "unit": "mm"}
+			}
+		],
+		"filters": [
+			{
+				"material_id": "Brass",
+				"thickness": {"value": 0.2, "unit": "mm"}
+			},
+			{
+				"material_id": "Cu",
+				"thickness": {"value": 0.17, "unit": "mm"}
+			}
+		]
+	},
+
+	"samples": [
+		{
+			"name": "Tetrahedron",
+			"file": {"value": "tetra.stl", "drifts": null},
+			"unit": "mm",
+			"scaling_factor": {
+				"r": {"value": 0.75, "drifts": null},
+				"s": {"value": 0.75, "drifts": null},
+				"t": {"value": 0.75, "drifts": null}
+			},
+			"material_id": "Glass Ceramic",
+			"position": {
+				"center": {
+					"u": {"value":  0, "unit": "mm"},
+					"v": {"value": 20, "unit": "mm"},
+					"w": {"value":  0, "unit": "mm"}
+				},
+
+				"vector_r": {
+					"u": {"value":  1},
+					"v": {"value":  0},
+					"w": {"value":  0}
+				},
+				"vector_t": {
+					"u": {"value":  0},
+					"v": {"value": -0.2},
+					"w": {"value":  1}
+				},
+
+				"deviations": []
+			}
+		},
+		{
+			"name": "Attachment Frame",
+			"file": {"value": "frame.stl", "drifts": null},
+			"unit": "mm",
+			"scaling_factor": {
+				"r": {"value": 1.0, "drifts": null},
+				"s": {"value": 1.0, "drifts": null},
+				"t": {"value": 1.0, "drifts": null}
+			},
+			"material_id": "Al",
+			"position": {
+				"center": {
+					"x": {"value": 275, "unit": "mm"},
+					"y": {"value":   0, "unit": "mm"},
+					"z": {"value":   0, "unit": "mm"}
+				},
+
+				"vector_r": {
+					"x": {"value":  1},
+					"y": {"value":  0},
+					"z": {"value":  0}
+				},
+				"vector_t": {
+					"x": {"value":  0},
+					"y": {"value":  1},
+					"z": {"value":  0}
+				},
+
+				"deviations": []
+			}
+		}
+	],
+
+	"acquisition": {
+		"start_angle": {"value":   0, "unit": "deg"},
+		"stop_angle":  {"value": 320, "unit": "deg"},
+		"direction": "CCW",
+		"scan_mode": "stop+go",
+		"scan_speed": null,
+		"number_of_projections": 21,
+		"include_final_angle": true,
+		"frame_average": 3,
+		"dark_field": {
+			"number": 1,
+			"frame_average": 1,
+			"ideal": true,
+			"correction": false
+		},
+		"flat_field": {
+			"number": 3,
+			"frame_average": 20,
+			"ideal": false,
+			"correction": false
+		},
+		"pixel_binning": {"u": 1, "v": 1},
+		"scattering": false
+	},
+
+	"materials": [
+		{
+			"id":   "Air",
+			"name": "Air",
+			"density": {"value": 1.293, "unit": "kg/m^3"},
+			"composition": [
+				{
+					"formula": {"value": "N2"},
+					"mass_fraction": {"value": 0.7552}
+				},
+				{
+					"formula": {"value": "O2"},
+					"mass_fraction": {"value": 0.2314}
+				},
+				{
+					"formula": {"value": "Ar"},
+					"mass_fraction": {"value": 0.0128}
+				},
+				{
+					"formula": {"value": "CO2"},
+					"mass_fraction": {"value": 0.0006}
+				}
+			]
+		},
+		{
+			"id":   "Al",
+			"name": "Aluminium",
+			"density": {"value": 2.6989, "unit": "g/cm^3"},
+			"composition": [
+				{
+					"formula": {"value": "Al"},
+					"mass_fraction": {"value": 1}
+				}
+			]
+		},
+		{
+			"id":   "W",
+			"name": "Tungsten",
+			"density": {"value": 19.25, "unit": "g/cm^3"},
+			"composition": [
+				{
+					"formula": {"value": "W"},
+					"mass_fraction": {"value": 1}
+				}
+			]
+		},
+		{
+			"id":   "CsI",
+			"name": "Caesium Iodide",
+			"density": {"value": 4.51, "unit": "g/cm^3"},
+			"composition": [
+				{
+					"formula": {"value": "CsI"},
+					"mass_fraction": {"value": 1}
+				}
+			]
+		},
+		{
+			"id":   "Brass",
+			"name": "Brass",
+			"density": {"value": 8860, "unit": "kg/m^3"},
+			"composition": [
+				{
+					"formula": {"value": "CuZn5"},
+					"mass_fraction": {"value": 1}
+				}
+			]
+		},
+		{
+			"id":   "Cu",
+			"name": "Copper",
+			"density": {"value": 8.92, "unit": "g/cm^3"},
+			"composition": [
+				{
+					"formula": {"value": "Cu"},
+					"mass_fraction": {"value": 1}
+				}
+			]
+		},
+		{
+			"id":   "Kapton",
+			"name": "Kapton 50HN (Polyimide film)",
+			"density": {"value": 1.42, "unit": "g/cm^3"},
+			"composition": [
+				{
+					"formula": {"value": "C16H14N4O4"},
+					"mass_fraction": {"value": 1}
+				}
+			]
+		},
+		{
+			"id":   "Glass Ceramic",
+			"name": "Glass Ceramic",
+			"density": {"value": 2.53, "unit": "g/cm^3", "drifts": null},
+			"composition": [
+				{
+					"formula": {"value": "Al2O3", "drifts": null},
+					"mass_fraction": {"value": 0.4, "drifts": null}
+				},
+				{
+					"formula": {"value": "SiO2", "drifts": null},
+					"mass_fraction": {"value": 0.6, "drifts": null}
+				}
+			]
+		}
+	],
+
+	"simulation": {
+		"aRTist": {
+			"multisampling_detector": {"value": "3x3"},
+			"multisampling_spot": {"value": "30"},
+			"spectral_resolution": {"value": 1, "unit": "keV"},
+			"scattering_mcray_photons": {"value": 5e7},
+			"scattering_image_interval": {"value": 5},
+			"long_range_unsharpness": {
+				"extension": {"value": 2, "unit":  "mm"},
+				"ratio":     {"value": 10, "unit": "%"}
+			},
+			"primary_energies": false,
+			"primary_intensities": false
+		}
+	}
+}

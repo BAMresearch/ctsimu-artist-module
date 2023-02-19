@@ -6,7 +6,7 @@
 if [ $# -eq 0 ]
 	then
 		echo "ERROR: Please give the new version number: ./deploy.sh <VERSION>"
-		echo "Example: ./deploy.sh \"0.8.13\""
+		echo "Example: ./deploy.sh \"1.2.0\""
 		exit
 fi
 VERSION=$1

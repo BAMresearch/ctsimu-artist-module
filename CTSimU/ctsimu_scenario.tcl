@@ -903,6 +903,7 @@ namespace eval ::ctsimu {
 
 						if {[my get n_flats] > 1} {
 							# Save all frames as individual images
+							set projCtrFmt [::ctsimu::generate_projection_counter_format [my get n_flats]]
 							for {set flatImgNr 0} {$flatImgNr < [my get n_flats]} {incr flatImgNr} {
 								set fnr [expr $flatImgNr+1]
 								::ctsimu::status_info "Taking flat field $fnr/[my get n_flats]..."

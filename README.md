@@ -1,4 +1,4 @@
-# CTSimU aRTist Module 1.2.0
+# CTSimU aRTist Module
 
 This is a module for the radiographic simulator [aRTist](http://artist.bam.de/) which reads and sets up the scenario from a [CTSimU Scenario Description](https://bamresearch.github.io/ctsimu-scenarios/) file. With the module, it is also possible to simulate the complete CT scan as described in the JSON scenario.
 
@@ -292,6 +292,9 @@ For example:
 Note: the aRTist package file (`.artp`) should not be part of the git repository. Instead, it can be uploaded to Github as a file attachment to a new release.
 
 ## Version History
+
+### 1.2.1
++ Bug fix: projection counter error for more than one ideal flat field.
 
 ### 1.2.0
 + General support for file format version 1.0, 1.1 and 1.2

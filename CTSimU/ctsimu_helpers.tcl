@@ -425,7 +425,7 @@ namespace eval ::ctsimu {
 
 	proc json_extract { dictionary keys } {
 		# Get the JSON sub-object that is located
-		# by a given sequence of `keys` in the JSON dictionary.
+		# at a given sequence of `keys` in the JSON dictionary.
 		if [::rl_json::json exists $dictionary {*}$keys] {
 			return [::rl_json::json extract $dictionary {*}$keys]
 		}
@@ -449,9 +449,7 @@ namespace eval ::ctsimu {
 
 	# Unit Conversion
 	# -----------------------------
-	# Unit conversion functions take a JSON object that must
-	# contain a `value` and a `unit`. Each function supports
-	# the allowed units from the CTSimU file format specification.
+	# Each function supports the allowed units from the CTSimU file format specification.
 
 	proc in_mm { value unit } {
 		# Converts a length to mm.
@@ -516,7 +514,7 @@ namespace eval ::ctsimu {
 	}
 
 	proc in_mA { value unit } {
-		# Converts a current to mA.
+		# Converts an electric current to mA.
 		if {$value != "null"} {
 			switch $unit {
 				"uA" {return [expr $value * 1e-3]}
@@ -527,7 +525,7 @@ namespace eval ::ctsimu {
 			return "null"
 		}
 
-		::ctsimu::fail "Not a valid unit of current: \'$unit\'"
+		::ctsimu::fail "Not a valid unit of electric current: \'$unit\'"
 	}
 
 	proc in_kV { value unit } {
@@ -556,7 +554,7 @@ namespace eval ::ctsimu {
 			return "null"
 		}
 
-		::ctsimu::fail "Not a valid unit of density: \'$unit\'"
+		::ctsimu::fail "Not a valid unit of mass density: \'$unit\'"
 	}
 
 	proc in_lp_per_mm { value unit } {
@@ -677,10 +675,9 @@ namespace eval ::ctsimu {
 		}
 	}
 
-	proc get_value_in_unit { native_unit dictionary keys {fail_value 0} } {
-		# Takes a sequence of JSON keys from the given dictionary where
-		# a JSON object with a value/unit pair must be located.
-		# Returns the value of this JSON object in the requested native_unit.
+	proc get_value_in_native_unit { native_unit dictionary keys {fail_value 0} } {
+		# Get a parameter value in the `native_unit`,
+		# located at a sequence of `keys` in a given `dictionary`.
 		if { [::ctsimu::json_exists_and_not_null $dictionary $keys] } {
 			set value_unit_pair [::ctsimu::json_extract $dictionary $keys]
 			if {![::ctsimu::object_value_is_null $value_unit_pair] || $native_unit == "string" || $native_unit == "bool"} {

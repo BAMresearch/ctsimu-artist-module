@@ -15,7 +15,7 @@ namespace eval ::ctsimu {
 		variable _value_has_changed; # parameter value changed since last frame?
 
 		constructor { { native_unit "" } { standard 0 } } {
-			# When a parameter object is constructed, is must be assigned
+			# When a parameter object is constructed, it must be assigned
 			# a valid native_unit to enable the JSON parser to convert the
 			# drift values from the JSON file, if necessary.
 			# See the documentation on native units for a
@@ -123,7 +123,7 @@ namespace eval ::ctsimu {
 			return $_standard_value
 		}
 
-		method has_changed { } {
+		method changed { } {
 			# Has the parameter changed since the last acknowledged change?
 			# (See setter function `acknowledge_change`).
 			# Returns `1` if true, `0` if not.
@@ -149,13 +149,14 @@ namespace eval ::ctsimu {
 
 		method set_standard_value { value } {
 			# Set the parameter's standard value.
+			# Automatically sets the current value to the standard value.
 			set _standard_value $value
 			set _current_value $value
 		}
 
 		method acknowledge_change { { new_change_state 0} } {
 			# Acknowledge a change of the parameter due to a drift.
-			# After the acknowledgment, the function `has_changed`
+			# After the acknowledgment, the function `changed`
 			# will return the `new_change_state` value (standard: `0`).
 			set _value_has_changed $new_change_state
 		}
@@ -163,7 +164,7 @@ namespace eval ::ctsimu {
 		# General
 		# -------------------------
 		method set_frame_and_get_value { frame { nFrames 1 } { only_drifts_known_to_reconstruction 0 } } {
-			# Set the new frame number, return current value
+			# Set the new frame number, return the new current value
 			my set_frame $frame $nFrames $only_drifts_known_to_reconstruction
 			return [my current_value]
 		}
@@ -215,7 +216,7 @@ namespace eval ::ctsimu {
 		method add_drift { json_drift_obj } {
 			# Generates a ctsimu::drift object
 			# (from a JSON object that defines a drift)
-			# and adds it to its internal list of drifts to handle.
+			# and adds it to the parameter's internal list of drifts to handle.
 			set d [ctsimu::drift new $_native_unit]
 			$d set_from_json $json_drift_obj
 			lappend _drifts $d
@@ -300,11 +301,11 @@ namespace eval ::ctsimu {
 		method set_parameter_from_possible_keys { json_object key_sequences } {
 			# Searches the JSON object for each
 			# key sequence in the given list of key_sequences.
-			# The first sequence that matches is taken
-			# for the parameter.
+			# The first sequence that can be found is taken
+			# to set up the parameter.
 			foreach keyseq $key_sequences {
 				if { [my set_parameter_from_key $json_object $keyseq] } {
-					# Returned succesfully, so we can finish this...
+					# Returned succesfully, so we are done here.
 
 					return 1
 				}
@@ -315,7 +316,8 @@ namespace eval ::ctsimu {
 
 		method set_frame { frame nFrames { only_drifts_known_to_reconstruction 0 } } {
 			# Prepares the `current_value` for the given `frame` number
-			# (assuming a total of `nFrames`). This takes into account all drifts.
+			# (assuming a total of `nFrames`). This takes into account all drifts
+			# (or only the ones known to reconstruction).
 			set new_value $_standard_value
 
 			set total_drift [my get_total_drift_value_for_frame $frame $nFrames $only_drifts_known_to_reconstruction]

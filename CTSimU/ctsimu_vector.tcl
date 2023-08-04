@@ -336,12 +336,12 @@ namespace eval ::ctsimu {
 			# Rotate this vector around given axis vector by given angle (in rad).
 			if {$angle_in_rad != 0} {
 				set R [::ctsimu::rotation_matrix $axis $angle_in_rad]
-				my transform_by_matrix $R
+				my transform $R
 				$R destroy
 			}
 		}
 
-		method transform_by_matrix { M } {
+		method transform { M } {
 			# Multiply matrix M to this vector v: r=Mv,
 			# and set this vector to the result r of this transformation.
 			set r [$M multiply_vector [self]]

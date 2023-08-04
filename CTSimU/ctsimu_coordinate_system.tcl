@@ -3,7 +3,7 @@ package require TclOO
 variable BasePath [file dirname [info script]]
 source -encoding utf-8 [file join $BasePath ctsimu_deviation.tcl]
 
-# Class for a coordinate system with three basis vectors.
+# Coordinate system with three basis vectors and a center point.
 
 namespace eval ::ctsimu {
 	::oo::class create coordinate_system {
@@ -12,7 +12,7 @@ namespace eval ::ctsimu {
 		variable _u
 		variable _v
 		variable _w
-		variable _attachedToStage
+		variable _attached_to_stage
 
 		constructor { { name "" } } {
 			# Initialize center and direction vectors u, v, w to empty vectors.
@@ -36,7 +36,7 @@ namespace eval ::ctsimu {
 		}
 
 		method reset { } {
-			# Resets the coordinate system to a standard world coordinate system
+			# Reset the coordinate system to a standard world coordinate system
 			$_center set_values [list 0 0 0]
 			$_u      set_values [list 1 0 0]
 			$_v      set_values [list 0 1 0]
@@ -91,7 +91,7 @@ namespace eval ::ctsimu {
 			# Set up the coordinate system from vector components (all floats)
 			# for the center (cx, cy, cz), the u vector (first basis vector,
 			# ux, uy, uz) and the w vector (third basis vector, wx, wy, wz).
-			# attached should be 1 if the reference coordinate system is
+			# `attached` should be 1 if the reference coordinate system is
 			# the stage ("attached to stage") and 0 if not.
 
 			set c [::ctsimu::vector new [list $cx $cy $cz]]
@@ -146,7 +146,7 @@ namespace eval ::ctsimu {
 
 		method is_attached_to_stage { } {
 			# Return the 'attached to stage' property.
-			return $_attachedToStage
+			return $_attached_to_stage
 		}
 
 		method in_world { stageCS } {
@@ -200,7 +200,7 @@ namespace eval ::ctsimu {
 
 		method attach_to_stage { attached } {
 			# 0: not attached, 1: attached to stage.
-			set _attachedToStage $attached
+			set _attached_to_stage $attached
 		}
 
 		# Transformations
@@ -210,9 +210,9 @@ namespace eval ::ctsimu {
 			$_center add $translation_vector
 		}
 
-		method translate_along_axis { axis distance } {
-			# Shift center along `axis` by given `distance`.
-			set t [$axis get_unit_vector]
+		method translate_in_direction { direction distance } {
+			# Shift center in `direction` by given `distance`.
+			set t [$direction get_unit_vector]
 			$t scale $distance
 			my translate $t
 			$t destroy
@@ -242,19 +242,19 @@ namespace eval ::ctsimu {
 		method translate_u { du } {
 			# Translate coordinate system in u direction by distance du.
 			# For samples, this is the r direction.
-			my translate_along_axis $_u du
+			my translate_in_direction $_u du
 		}
 
 		method translate_v { dv } {
 			# Translate coordinate system in v direction by distance dv.
 			# For samples, this is the s direction.
-			my translate_along_axis $_v dv
+			my translate_in_direction $_v dv
 		}
 
 		method translate_w { dw } {
 			# Translate coordinate system in w direction by distance dw.
 			# For samples, this is the t direction.
-			my translate_along_axis $_w dw
+			my translate_in_direction $_w dw
 		}
 
 		method rotate { axis angle_in_rad } {
@@ -264,9 +264,9 @@ namespace eval ::ctsimu {
 			# the center of the coordinate system.
 			if {$angle_in_rad != 0} {
 				set R [::ctsimu::rotation_matrix $axis $angle_in_rad]
-				$_u transform_by_matrix $R
-				$_v transform_by_matrix $R
-				$_w transform_by_matrix $R
+				$_u transform $R
+				$_v transform $R
+				$_w transform $R
 				$R destroy
 			}
 		}
@@ -322,8 +322,8 @@ namespace eval ::ctsimu {
 			# Samples will rotate around their r axis.
 			if {$angle_in_rad != 0} {
 				set R [::ctsimu::rotation_matrix $_u $angle_in_rad]
-				$_v transform_by_matrix $R
-				$_w transform_by_matrix $R
+				$_v transform $R
+				$_w transform $R
 				$R destroy
 			}
 		}
@@ -333,8 +333,8 @@ namespace eval ::ctsimu {
 			# Samples will rotate around their s axis.
 			if {$angle_in_rad != 0} {
 				set R [::ctsimu::rotation_matrix $_v $angle_in_rad]
-				$_u transform_by_matrix $R
-				$_w transform_by_matrix $R
+				$_u transform $R
+				$_w transform $R
 				$R destroy
 			}
 		}
@@ -344,8 +344,8 @@ namespace eval ::ctsimu {
 			# Samples will rotate around their t axis.
 			if {$angle_in_rad != 0} {
 				set R [::ctsimu::rotation_matrix $_w $angle_in_rad]
-				$_u transform_by_matrix $R
-				$_v transform_by_matrix $R
+				$_u transform $R
+				$_v transform $R
 				$R destroy
 			}
 		}
@@ -382,7 +382,8 @@ namespace eval ::ctsimu {
 
 			if { [$rotationAxis length] == 0 } {
 				if { [$wTo dot $wFrom] < 0 } {
-					# 180° flip; vectors point in opposite direction. Rotation axis is another CS basis vector.
+					# 180° flip; vectors point in opposite direction.
+					# Rotation axis is another CS basis vector.
 					$rotationAxis destroy
 					set rotationAxis [[$csFromCopy u] get_copy]
 				} else {
@@ -395,7 +396,8 @@ namespace eval ::ctsimu {
 				if { $rotationAngle != 0 } {
 					my rotate_around_pivot_point $rotationAxis $rotationAngle [$csToCopy center]
 
-					# Also rotate the csFrom to make calculation of rotation around u axis possible (next step):
+					# Also rotate csFrom to make calculation of
+					# rotation around u axis possible (next step):
 					$csFromCopy rotate $rotationAxis $rotationAngle
 				}
 			}
@@ -435,9 +437,9 @@ namespace eval ::ctsimu {
 
 			# Rotate basis vectors into csTo:
 			set R [::ctsimu::basis_transform_matrix $csFrom $csTo]; # rotation matrix
-			$_u transform_by_matrix $R
-			$_v transform_by_matrix $R
-			$_w transform_by_matrix $R
+			$_u transform $R
+			$_v transform $R
+			$_w transform $R
 			$R destroy
 
 			# Move center point from 'csFrom' to 'csTo':
@@ -478,21 +480,21 @@ namespace eval ::ctsimu {
 							# be expressed in any coordinate system (world, local, sample).
 							# Therefore, the axis is a ::ctsimu::scenevector, which can
 							# give us the translation vector for the current frame:
-							set translation_axis [[$deviation axis] in_world "direction" \
+							set translation_axis [[$deviation axis] direction_in_world \
 									[self object] $::ctsimu::world \
 									$frame $nFrames $only_known_to_reconstruction]
 
-							my translate_along_axis $translation_axis $value
+							my translate_in_direction $translation_axis $value
 
 							$translation_axis destroy
 						} else {
 							# Object is in stage coordinate system.
 							# --------------------------------------
-							set translation_axis [[$deviation axis] in_local "direction" \
+							set translation_axis [[$deviation axis] direction_in_local \
 									$stage [self object] \
 									$frame $nFrames $only_known_to_reconstruction]
 
-							my translate_along_axis $translation_axis $value
+							my translate_in_direction $translation_axis $value
 
 							$translation_axis destroy
 						}
@@ -504,9 +506,9 @@ namespace eval ::ctsimu {
 						if { [my is_attached_to_stage] == 0 } {
 							# Object in world coordinate system.
 							# --------------------------------------
-							set rotation_axis [[$deviation axis] in_world "direction" \
+							set rotation_axis [[$deviation axis] direction_in_world \
 									[self object] $::ctsimu::world $frame $nFrames $only_known_to_reconstruction]
-							set pivot_point [[$deviation pivot] in_world "point" \
+							set pivot_point [[$deviation pivot] point_in_world \
 									[self object] $::ctsimu::world $frame $nFrames $only_known_to_reconstruction]
 
 							my rotate_around_pivot_point $rotation_axis $value $pivot_point
@@ -516,10 +518,10 @@ namespace eval ::ctsimu {
 						} else {
 							# Object is in stage coordinate system.
 							# --------------------------------------
-							set rotation_axis [[$deviation axis] in_local "direction" \
+							set rotation_axis [[$deviation axis] direction_in_local \
 									$stage [self object] \
 									$frame $nFrames $only_known_to_reconstruction]
-							set pivot_point [[$deviation pivot] in_local "point" \
+							set pivot_point [[$deviation pivot] point_in_local \
 									$stage [self object] \
 									$frame $nFrames $only_known_to_reconstruction]
 
@@ -610,13 +612,13 @@ namespace eval ::ctsimu {
 		# (mathematically, this is always the 'world'):
 		set point_in_to [$point get_copy]
 		set R_to_world [::ctsimu::basis_transform_matrix $csFrom $::ctsimu::world]
-		$point_in_to transform_by_matrix $R_to_world
+		$point_in_to transform $R_to_world
 		$point_in_to add [$csFrom center]
 
 		# Move point to the target coordinate system:
 		$point_in_to subtract [$csTo center]
 		set R_to_to [::ctsimu::basis_transform_matrix $::ctsimu::world $csTo]
-		$point_in_to transform_by_matrix $R_to_to
+		$point_in_to transform $R_to_to
 
 		$R_to_world destroy
 		$R_to_to destroy

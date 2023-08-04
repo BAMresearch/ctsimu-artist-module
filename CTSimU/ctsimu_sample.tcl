@@ -85,7 +85,7 @@ namespace eval ::ctsimu {
 
 			if { ![my get surface_mesh_file_path_is_absolute] } {
 				# If the surface mesh location is a relative path,
-				# the location of the JSON file need to be appended
+				# the location of the JSON file needs to be appended
 				# in front:
 				set meshfile [::ctsimu::get_absolute_path [my get surface_mesh_file]]
 			}

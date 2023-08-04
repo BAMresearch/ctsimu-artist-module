@@ -171,7 +171,7 @@ namespace eval ::ctsimu {
 		}
 
 		method max_gray_value { } {
-			# The maximum grey value that can be stored
+			# The maximum gray value that can be stored
 			# using the image bit depth.
 			return [expr pow(2, [my get bit_depth])-1]
 		}
@@ -271,7 +271,7 @@ namespace eval ::ctsimu {
 		method set_from_json { jobj stage } {
 			# Import the detector definition and geometry from the JSON object.
 			# The JSON object should contain the complete content
-			# from the scenario definition file
+			# of the scenario definition file
 			# (at least the geometry and detector sections).
 			# `stage` is the `::ctsimu::coordinate_system` that represents
 			# the stage in the world coordinate system.
@@ -304,7 +304,7 @@ namespace eval ::ctsimu {
 				# Check if the detector type is valid:
 				set value [my get type]
 				if { ![::ctsimu::is_valid $value {"ideal" "real"}] } {
-					::ctsimu::warning "No valid detector type: $value. Should be \"ideal\" or \"real\". Using standard value: \"ideal\"."
+					::ctsimu::warning "Not a valid detector type: \"$value\". Should be \"ideal\" or \"real\". Using standard value: \"ideal\"."
 					my set type "ideal"
 				}
 			}
@@ -409,7 +409,7 @@ namespace eval ::ctsimu {
 			my set_parameter_from_key long_range_ratio $jobj {simulation aRTist long_range_unsharpness ratio} 0
 
 			# Bad pixel map
-			my set_parameter_from_key bad_pixel_map $detprops {bad_pixel_map} "null"
+			my set_parameter_from_key bad_pixel_map $detprops {bad_pixel_map file} "null"
 			my set_parameter_value bad_pixel_map_type $detprops {bad_pixel_map type} "null"
 
 			# Scintillator

@@ -4,7 +4,7 @@ variable BasePath [file dirname [info script]]
 source -encoding utf-8 [file join $BasePath ctsimu_parameter.tcl]
 
 # A scene vector is a 3D vector that knows the type of its
-# reference coordinate sytem, given as world, local or sample.
+# reference coordinate system, given as world, local or sample.
 # It provides functions to convert between these coordinate systems
 # and it can handle drifts. Therefore, all three vector components
 # are stored as ::ctsimu::parameter objects.
@@ -113,7 +113,8 @@ namespace eval ::ctsimu {
 		# -------------------------
 		method standard_vector { } {
 			# Create a ::ctsimu::vector that represents
-			# this vector without any drifts.
+			# this vector in its standard orientation
+			# (without any drifts applied).
 
 			# Get vector components, not respecting drifts:
 			set v0 [$_c0 standard_value]
@@ -160,19 +161,13 @@ namespace eval ::ctsimu {
 			return $v
 		}
 
-		method in_world { point_or_direction local sample frame nFrames { only_known_to_reconstruction 0 } } {
-			# Create and return a ::ctsimu::vector
+		method point_in_world { local sample frame nFrames { only_known_to_reconstruction 0 } } {
+			# Create and return a ::ctsimu::vector for point coordinates
 			# in terms of the world coordinate system
 			# for the given frame, respecting all drifts.
 			#
-			#
-			# Function arguments:
-			# -------------------------
-			# - point_or_direction:
-			#   A string that specifies whether you need
-			#   to convert point coordinates ("point") or
-			#   a direction ("direction").
-			#
+			# Parameters
+			# ----------
 			# - local:
 			#   A ::ctsimu::coordinate_system that represents the object's
 			#   local CS in terms of world coordinates.
@@ -199,13 +194,8 @@ namespace eval ::ctsimu {
 				return $v
 			} elseif { $_reference == "local" } {
 				# Convert from local to world.
-				if { $point_or_direction == "point" } {
-					set v_in_world [::ctsimu::change_reference_frame_of_point $v $local $::ctsimu::world]
-				} elseif { $point_or_direction == "direction" } {
-					set v_in_world [::ctsimu::change_reference_frame_of_direction $v $local $::ctsimu::world]
-				} else {
-					::ctsimu::fail "Transformation type point_or_direction must be either \"point\" or \"direction\"."
-				}
+				set v_in_world [::ctsimu::change_reference_frame_of_point $v $local $::ctsimu::world]
+
 				$v destroy
 				return $v_in_world
 			} elseif { $_reference == "sample" } {
@@ -214,15 +204,8 @@ namespace eval ::ctsimu {
 				# we therefore transform to the world a first time...
 				# ...and a second time to transform it
 				# from the stage to the world:
-				if { $point_or_direction == "point" } {
-					set v_in_stage [::ctsimu::change_reference_frame_of_point $v $sample $::ctsimu::world]
-					set v_in_world [::ctsimu::change_reference_frame_of_point $v_in_stage $local $::ctsimu::world]
-				} elseif { $point_or_direction == "direction" } {
-					set v_in_stage [::ctsimu::change_reference_frame_of_direction $v $sample $::ctsimu::world]
-					set v_in_world [::ctsimu::change_reference_frame_of_direction $v_in_stage $local $::ctsimu::world]
-				} else {
-					::ctsimu::fail "Transformation type point_or_direction must be either \"point\" or \"direction\"."
-				}
+				set v_in_stage [::ctsimu::change_reference_frame_of_point $v $sample $::ctsimu::world]
+				set v_in_world [::ctsimu::change_reference_frame_of_point $v_in_stage $local $::ctsimu::world]
 
 				$v destroy
 				$v_in_stage destroy
@@ -230,18 +213,13 @@ namespace eval ::ctsimu {
 			}
 		}
 
-		method in_local { point_or_direction local sample frame nFrames { only_known_to_reconstruction 0 } } {
-			# Create and return a ::ctsimu::vector
+		method point_in_local { local sample frame nFrames { only_known_to_reconstruction 0 } } {
+			# Create and return a ::ctsimu::vector for point coordinates
 			# in terms of the local coordinate system
 			# for the given frame, respecting all drifts.
 			#
-			# Function arguments:
-			# -------------------------
-			# - point_or_direction:
-			#   A string that specifies whether you need
-			#   to convert point coordinates ("point") or
-			#   just a direction ("direction").
-			#
+			# Parameters
+			# ----------
 			# - local:
 			#   A ::ctsimu::coordinate_system that represents the object's
 			#   local CS in terms of world coordinates.
@@ -265,13 +243,8 @@ namespace eval ::ctsimu {
 
 			if { $_reference == "world" } {
 				# Convert from world to local.
-				if { $point_or_direction == "point" } {
-					set v_in_local [::ctsimu::change_reference_frame_of_point $v $::ctsimu::world $local]
-				} elseif { $point_or_direction == "direction" } {
-					set v_in_local [::ctsimu::change_reference_frame_of_direction $v $::ctsimu::world $local]
-				} else {
-					::ctsimu::fail "Transformation type point_or_direction must be either \"point\" or \"direction\"."
-				}
+				set v_in_local [::ctsimu::change_reference_frame_of_point $v $::ctsimu::world $local]
+
 				$v destroy
 				return $v_in_local
 			} elseif { $_reference == "local" } {
@@ -281,33 +254,25 @@ namespace eval ::ctsimu {
 				# The sample's "world" is the stage (here: local).
 				# To get the sample coordinates in stage coordinates,
 				# we therefore transform to the world.
-				if { $point_or_direction == "point" } {
-					set v_in_stage [::ctsimu::change_reference_frame_of_point $v $sample $::ctsimu::world]
-				} elseif { $point_or_direction == "direction" } {
-					set v_in_stage [::ctsimu::change_reference_frame_of_direction $v $sample $::ctsimu::world]
-				}
+				set v_in_stage [::ctsimu::change_reference_frame_of_point $v $sample $::ctsimu::world]
 
 				$v destroy
 				return $v_in_stage
 			}
 		}
 
-		method in_sample { point_or_direction stage sample frame nFrames { only_known_to_reconstruction 0 } } {
-			# Create and return a ::ctsimu::vector
+		method point_in_sample { stage sample frame nFrames { only_known_to_reconstruction 0 } } {
+			# Create and return a ::ctsimu::vector for point coordinates
 			# in the sample coordinate system
 			# for the given frame, respecting all drifts.
 			#
-			# The sample must be attached to the stage.
-			# Note that a conversion from one sample CS to
+			# The sample must be attached to the stage,
+			# otherwise, use `in_local` instead.
+			# Note that a direct conversion from one sample CS to
 			# another is not possible with this function.
 			#
-			# Function arguments:
-			# -------------------------
-			# - point_or_direction:
-			#   A string that specifies whether you need
-			#   to convert point coordinates ("point") or
-			#   just a direction ("direction").
-			#
+			# Parameters
+			# ----------
 			# - stage:
 			#   A ::ctsimu::coordinate_system that represents the local CS
 			#   of the stage in terms of world coordinates.
@@ -329,18 +294,11 @@ namespace eval ::ctsimu {
 			set v [my vector_for_frame $frame $nFrames $only_known_to_reconstruction]
 
 			if { $_reference == "world" } {
-				# From world to local (i.e., the stage)...
+				# From world to stage...
 				# ...and a second time from world to sample
 				# because the stage is the sample's "world":
-				if { $point_or_direction == "point" } {
-					set v_in_stage [::ctsimu::change_reference_frame_of_point $v $::ctsimu::world $stage]
-					set v_in_sample [::ctsimu::change_reference_frame_of_point $v_in_stage $::ctsimu::world $sample]
-				} elseif { $point_or_direction == "direction" } {
-					set v_in_stage [::ctsimu::change_reference_frame_of_direction $v $::ctsimu::world $stage]
-					set v_in_sample [::ctsimu::change_reference_frame_of_direction $v_in_stage $::ctsimu::world $sample]
-				} else {
-					::ctsimu::fail "Transformation type point_or_direction must be either \"point\" or \"direction\"."
-				}
+				set v_in_stage [::ctsimu::change_reference_frame_of_point $v $::ctsimu::world $stage]
+				set v_in_sample [::ctsimu::change_reference_frame_of_point $v_in_stage $::ctsimu::world $sample]
 
 				$v destroy
 				$v_in_stage destroy
@@ -349,13 +307,164 @@ namespace eval ::ctsimu {
 				# Convert from stage to sample. Because
 				# the stage is the sample's world, we actually
 				# convert from world to sample.
-				if { $point_or_direction == "point" } {
-					set v_in_sample [::ctsimu::change_reference_frame_of_point $v $::ctsimu::world $sample]
-				} elseif { $point_or_direction == "direction" } {
-					set v_in_sample [::ctsimu::change_reference_frame_of_direction $v $::ctsimu::world $sample]
-				} else {
-					::ctsimu::fail "Transformation type point_or_direction must be either \"point\" or \"direction\"."
-				}
+				set v_in_sample [::ctsimu::change_reference_frame_of_point $v $::ctsimu::world $sample]
+
+				$v destroy
+				return $v_in_sample
+			} elseif { $_reference == "sample" } {
+				# Already in sample coordinate system:
+				return $v
+			}
+		}
+
+		method direction_in_world { local sample frame nFrames { only_known_to_reconstruction 0 } } {
+			# Create and return a ::ctsimu::vector for a direction
+			# in terms of the world coordinate system
+			# for the given frame, respecting all drifts.
+			#
+			# Parameters
+			# ----------
+			# - local:
+			#   A ::ctsimu::coordinate_system that represents the object's
+			#   local CS in terms of world coordinates.
+			#
+			# - sample:
+			#   A ::ctsimu::coordinate_system that represents the sample
+			#   in terms of the stage coordinate system.
+			#   If you don't want to convert from a sample vector,
+			#   it doesn't matter what you pass here (you can pass `0`).
+			#
+			# - frame:
+			#   The number of the current frame.
+			#
+			# - nFrames:
+			#   The total number of frames.
+			#
+			# - only_known_to_reconstruction:
+			#   Only handle drifts that are known to the recon software.
+
+			set v [my vector_for_frame $frame $nFrames $only_known_to_reconstruction]
+
+			if { $_reference == "world" } {
+				# Already in world.
+				return $v
+			} elseif { $_reference == "local" } {
+				# Convert from local to world.
+				set v_in_world [::ctsimu::change_reference_frame_of_direction $v $local $::ctsimu::world]
+
+				$v destroy
+				return $v_in_world
+			} elseif { $_reference == "sample" } {
+				# The sample's "world" is the stage (here: local).
+				# To get the sample coordinates in stage coordinates,
+				# we therefore transform to the world a first time...
+				# ...and a second time to transform it
+				# from the stage to the world:
+				set v_in_stage [::ctsimu::change_reference_frame_of_direction $v $sample $::ctsimu::world]
+				set v_in_world [::ctsimu::change_reference_frame_of_direction $v_in_stage $local $::ctsimu::world]
+
+				$v destroy
+				$v_in_stage destroy
+				return $v_in_world
+			}
+		}
+
+		method direction_in_local { local sample frame nFrames { only_known_to_reconstruction 0 } } {
+			# Create and return a ::ctsimu::vector for a direction
+			# in terms of the local coordinate system
+			# for the given frame, respecting all drifts.
+			#
+			# Parameters
+			# ----------
+			# - local:
+			#   A ::ctsimu::coordinate_system that represents the object's
+			#   local CS in terms of world coordinates.
+			#
+			# - sample:
+			#   A ::ctsimu::coordinate_system that represents the sample
+			#   in terms of the stage coordinate system.
+			#   If you don't want to convert from a sample vector,
+			#   it doesn't matter what you pass here (pass `0`).
+			#
+			# - frame:
+			#   The number of the current frame.
+			#
+			# - nFrames:
+			#   The total number of frames.
+			#
+			# - only_known_to_reconstruction:
+			#   Only handle drifts that are known to the recon software.
+
+			set v [my vector_for_frame $frame $nFrames $only_known_to_reconstruction]
+
+			if { $_reference == "world" } {
+				# Convert from world to local.
+				set v_in_local [::ctsimu::change_reference_frame_of_direction $v $::ctsimu::world $local]
+
+				$v destroy
+				return $v_in_local
+			} elseif { $_reference == "local" } {
+				# Already in local.
+				return $v
+			} elseif { $_reference == "sample" } {
+				# The sample's "world" is the stage (here: local).
+				# To get the sample coordinates in stage coordinates,
+				# we therefore transform to the world.
+				set v_in_stage [::ctsimu::change_reference_frame_of_direction $v $sample $::ctsimu::world]
+
+				$v destroy
+				return $v_in_stage
+			}
+		}
+
+		method direction_in_sample { stage sample frame nFrames { only_known_to_reconstruction 0 } } {
+			# Create and return a ::ctsimu::vector for a direction
+			# in the sample coordinate system
+			# for the given frame, respecting all drifts.
+			#
+			# The sample must be attached to the stage,
+			# otherwise, use `in_local` instead.
+			# Note that a direct conversion from one sample CS to
+			# another is not possible with this function.
+			#
+			# Parameters
+			# ----------
+			# - stage:
+			#   A ::ctsimu::coordinate_system that represents the local CS
+			#   of the stage in terms of world coordinates.
+			#
+			# - sample:
+			#   A ::ctsimu::coordinate_system that represents the sample
+			#   in terms of the stage coordinate system.
+			#   MUST BE THE SAME SAMPLE TO WHICH THIS SCENE VECTOR REFERS!
+			#
+			# - frame:
+			#   The number of the current frame.
+			#
+			# - nFrames:
+			#   The total number of frames.
+			#
+			# - only_known_to_reconstruction:
+			#   Only handle drifts that are known to the recon software.
+
+			set v [my vector_for_frame $frame $nFrames $only_known_to_reconstruction]
+
+			if { $_reference == "world" } {
+				# From world to stage...
+				# ...and a second time from world to sample
+				# because the stage is the sample's "world":
+				set v_in_stage [::ctsimu::change_reference_frame_of_direction $v $::ctsimu::world $stage]
+				set v_in_sample [::ctsimu::change_reference_frame_of_direction $v_in_stage $::ctsimu::world $sample]
+
+				$v destroy
+				$v_in_stage destroy
+				return $v_in_sample
+			} elseif { $_reference == "local" } {
+				# Convert from stage to sample. Because
+				# the stage is the sample's world, we actually
+				# convert from world to sample.
+				set v_in_sample [::ctsimu::change_reference_frame_of_direction $v $::ctsimu::world $sample]
+
 				$v destroy
 				return $v_in_sample
 			} elseif { $_reference == "sample" } {

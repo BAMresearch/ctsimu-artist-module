@@ -355,13 +355,13 @@ namespace eval ::ctsimu {
 			# Acquisition Parameters
 			# -------------------------
 			::ctsimu::status_info "Reading acquisition parameters..."
-			my set start_angle [::ctsimu::get_value_in_unit "deg" $jsonstring {acquisition start_angle} 0]
-			my set stop_angle [::ctsimu::get_value_in_unit "deg" $jsonstring {acquisition stop_angle} 360]
+			my set start_angle [::ctsimu::get_value_in_native_unit "deg" $jsonstring {acquisition start_angle} 0]
+			my set stop_angle [::ctsimu::get_value_in_native_unit "deg" $jsonstring {acquisition stop_angle} 360]
 
 			my set n_projections [::ctsimu::get_value $jsonstring {acquisition number_of_projections} 1]
 			my set frame_average [::ctsimu::get_value $jsonstring {acquisition frame_average} 1]
 
-			my set include_final_angle [::ctsimu::get_value_in_unit "bool" $jsonstring {acquisition include_final_angle} 0]
+			my set include_final_angle [::ctsimu::get_value_in_native_unit "bool" $jsonstring {acquisition include_final_angle} 0]
 			my set scan_direction [::ctsimu::get_value $jsonstring {acquisition direction} "CCW"]
 
 			# Dark and flat field correction settings
@@ -370,7 +370,7 @@ namespace eval ::ctsimu {
 			# aRTist can currently only take ideal dark field images.
 			# Averaging=1 and ideal mode are therefore currently forced.
 			#my set n_darks_avg [::ctsimu::get_value $jsonstring {acquisition dark_field frame_average} 1]
-			# my set dark_field_ideal [::ctsimu::get_value_in_unit "bool" $jsonstring {acquisition dark_field ideal} 0]
+			# my set dark_field_ideal [::ctsimu::get_value_in_native_unit "bool" $jsonstring {acquisition dark_field ideal} 0]
 			if { [my get n_darks] > 0 } {
 				# In (currently forced) ideal mode, one dark image is enough.
 				my set n_darks 1
@@ -378,10 +378,10 @@ namespace eval ::ctsimu {
 
 			my set n_flats [::ctsimu::get_value $jsonstring {acquisition flat_field number} 0]
 			my set n_flats_avg [::ctsimu::get_value $jsonstring {acquisition flat_field frame_average} 1]
-			my set flat_field_ideal [::ctsimu::get_value_in_unit "bool" $jsonstring {acquisition flat_field ideal} 0]
+			my set flat_field_ideal [::ctsimu::get_value_in_native_unit "bool" $jsonstring {acquisition flat_field ideal} 0]
 
 
-			my set ff_correction_on [::ctsimu::get_value_in_unit "bool" $jsonstring {acquisition flat_field correction} 0]
+			my set ff_correction_on [::ctsimu::get_value_in_native_unit "bool" $jsonstring {acquisition flat_field correction} 0]
 
 			# Materials
 			# -------------
@@ -408,7 +408,7 @@ namespace eval ::ctsimu {
 
 			# Detector
 			# -------------
-			::ctsimu::status_info "Reading detector source parameters..."
+			::ctsimu::status_info "Reading detector parameters..."
 			$_detector set_from_json $jsonstring [$_stage current_coordinate_system]
 			::ctsimu::info "Detector hash: [$_detector hash]"
 
@@ -476,7 +476,7 @@ namespace eval ::ctsimu {
 
 			# Scattering
 			# -----------------
-			my set scattering_on [::ctsimu::get_value_in_unit "bool" $jsonstring {acquisition scattering} 0]
+			my set scattering_on [::ctsimu::get_value_in_native_unit "bool" $jsonstring {acquisition scattering} 0]
 			my set scattering_image_interval [::ctsimu::get_value $jsonstring {simulation aRTist scattering_image_interval value} [my get scattering_image_interval]]
 			my set scattering_mcray_photons [::ctsimu::get_value $jsonstring {simulation aRTist scattering_mcray_photons value} [my get scattering_mcray_photons]]
 

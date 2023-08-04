@@ -46,15 +46,6 @@ namespace eval ::ctsimu {
 			$_amount destroy
 		}
 
-		method reset { } {
-			# Delete all drifts and set the parameter's current value to the standard value.
-			$_amount destroy
-
-			my set_type ""
-			my set_axis ""
-			my set_known_to_reconstruction 1
-		}
-
 		# Getters
 		# -------------------------
 		method type { } {
@@ -169,14 +160,6 @@ namespace eval ::ctsimu {
 			# Set up the deviation from a JSON deviation structure.
 			if { [::ctsimu::json_exists_and_not_null $json_obj type] } {
 				my set_type [::ctsimu::get_value $json_obj {type} ""]
-
-				if { [my type] == "translation" } {
-					$_amount set_native_unit "mm"
-				} elseif { [my type] == "rotation" } {
-					$_amount set_native_unit "rad"
-				} else {
-					::ctsimu::fail "Invalid deviation type: [my type]. Must be \"rotation\" or \"translation\"."
-				}
 			} else {
 				::ctsimu::fail "A deviation must provide a \"type\": either \"rotation\" or \"translation\"."
 				return 0
@@ -197,11 +180,11 @@ namespace eval ::ctsimu {
 					if { [$_axis set_from_json [::ctsimu::json_extract $json_obj {axis}]] } {
 						# Success
 					} else {
-						::ctsimu::fail "::ctsimu::fail setting up deviation axis from JSON file. Vector definition seems to be incorrect."
+						::ctsimu::fail "Failed to set up deviation axis from JSON file. Vector definition seems to be incorrect."
 						return 0
 					}
 				} else {
-					::ctsimu::fail "::ctsimu::fail setting up deviation axis from JSON file."
+					::ctsimu::fail "Failed to set up deviation axis from JSON file."
 					return 0
 				}
 			} else {
@@ -221,13 +204,13 @@ namespace eval ::ctsimu {
 				if { [$_pivot set_from_json [::ctsimu::json_extract $json_obj {pivot}]] } {
 					# Success
 				} else {
-					::ctsimu::fail "::ctsimu::fail setting up deviation's pivot point from JSON file. Vector definition seems to be incorrect."
+					::ctsimu::fail "Failed to set up deviation's pivot point from JSON file. Vector definition seems to be incorrect."
 					return 0
 				}
 			}
 
 			my set_amount_from_json [::ctsimu::json_extract $json_obj {amount}]
-			my set_known_to_reconstruction [::ctsimu::get_value_in_unit "bool" $json_obj {known_to_reconstruction} 1]
+			my set_known_to_reconstruction [::ctsimu::get_value_in_native_unit "bool" $json_obj {known_to_reconstruction} 1]
 
 			return 1
 		}

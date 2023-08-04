@@ -13,9 +13,9 @@ source -encoding utf-8 [file join $BasePath ctsimu_coordinate_system.tcl]
 
 namespace eval ::ctsimu {
 	::oo::class create part {
-		variable _attachedToStage
+		variable _attached_to_stage
 		variable _static; # immovable object if 1
-		variable _cs; # current coordinate system object+
+		variable _cs; # current coordinate system object
 		variable _cs_initialized_real;  # CS initialized to real scene?
 		variable _cs_initialized_recon; # CS initialized to recon scene?
 		variable _center
@@ -132,7 +132,7 @@ namespace eval ::ctsimu {
 
 		method changed { property } {
 			# Has the property changed its value since the last acknowledgment?
-			return [ [my parameter $property] has_changed]
+			return [ [my parameter $property] changed]
 		}
 
 		method current_coordinate_system { } {
@@ -166,7 +166,7 @@ namespace eval ::ctsimu {
 
 		method is_attached_to_stage { } {
 			# Return the 'attached to stage' property.
-			return $_attachedToStage
+			return $_attached_to_stage
 		}
 
 
@@ -177,7 +177,9 @@ namespace eval ::ctsimu {
 			# the _properties dict by setting the
 			# respective parameter's standard value.
 			# If the parameter already exists in the internal
-			# properties dictionary, it is reset (i.e., all drifts are deleted).
+			# properties dictionary, the parameter is reset
+			# (i.e., all its drifts are deleted) before the
+			# new standard value is set.
 
 			# Check if the property already exists:
 			if {[dict exists $_properties $property]} {
@@ -227,7 +229,7 @@ namespace eval ::ctsimu {
 		method set_parameter_value { property dictionary key_sequence { fail_value 0 } { native_unit "" } } {
 			# Sets the value for the parameter that is identified
 			# by the `property` key in the internal properties dictionary.
-			# The new value is taken from the given JSON `dictionary`,
+			# The new value is taken from the given JSON `dictionary`
 			# and located by the given `key_sequence`. Optionally,
 			# a `fail_value` can be specified if the value cannot be
 			# found at the given `key_sequence`. Also, a `native_unit`
@@ -346,7 +348,7 @@ namespace eval ::ctsimu {
 
 		method attach_to_stage { attached } {
 			# 0: not attached, 1: attached to stage.
-			set _attachedToStage $attached
+			set _attached_to_stage $attached
 		}
 
 		method set_static_if_no_drifts { } {
@@ -356,7 +358,7 @@ namespace eval ::ctsimu {
 
 			set _static 0
 
-			if { $_attachedToStage == 0 } {
+			if { $_attached_to_stage == 0 } {
 				# Count drifts:
 				if { [$_center has_drifts] || [$_vector_u has_drifts] || [$_vector_w has_drifts] } {
 					return
@@ -462,7 +464,7 @@ namespace eval ::ctsimu {
 			if {[::ctsimu::json_exists_and_not_null $geometry deviations]} {
 				set jsonType [::ctsimu::json_type $geometry deviations]
 				if { $jsonType == "array"} {
-					# Go over all elements in the deviations array
+					# Go through all elements in the deviations array
 					# and add them to this part's list of deviations.
 					set jsonDevArray [::ctsimu::json_extract $geometry {deviations}]
 					::rl_json::json foreach jsonDev $jsonDevArray {
@@ -472,9 +474,9 @@ namespace eval ::ctsimu {
 						}
 					}
 				} elseif { $jsonType == "object"} {
-					# Only one drift defined as a direct object?
-					# Actually not supported by file system,
-					# but let's be generous.
+					# Only one drift defined directly as a direct object?
+					# Actually not supported by file format,
+					# but let's be generous and try...
 					set dev [::ctsimu::deviation new]
 					if { [$dev set_from_json [::ctsimu::json_extract $geometry {deviations}]] } {
 						lappend _deviations $dev
@@ -488,7 +490,7 @@ namespace eval ::ctsimu {
 			if {[::ctsimu::json_exists_and_not_null $geometry deviation]} {
 				set known_to_recon 1
 				if {[::ctsimu::json_exists_and_not_null $geometry {deviation known_to_reconstruction}]} {
-					set known_to_recon [::ctsimu::get_value_in_unit "bool" $geometry {deviation known_to_reconstruction}]
+					set known_to_recon [::ctsimu::get_value_in_native_unit "bool" $geometry {deviation known_to_reconstruction}]
 				}
 
 				foreach axis $::ctsimu::valid_axes {
@@ -504,7 +506,11 @@ namespace eval ::ctsimu {
 						$pos_dev set_axis "$axis"
 						$pos_dev set_known_to_reconstruction $known_to_recon
 						[$pos_dev amount] set_from_json [::ctsimu::json_extract $geometry [list deviation position $axis]]
-						lappend _deviations $pos_dev; # _legacy_deviations not necessary here.
+
+						# Legacy_deviations not necessary here
+						# because positional translations are fully
+						# compatible with the new file format:
+						lappend _deviations $pos_dev
 					}
 				}
 
@@ -536,9 +542,9 @@ namespace eval ::ctsimu {
 		}
 
 		method set_frame_cs { stageCS frame nFrames only_known_to_reconstruction { w_rotation_in_rad 0 } } {
-			# Set up the current coordinate system such
+			# Set up the part's current coordinate system such
 			# that it complies with the 'frame' number
-			# and all necessary drifts and deviations.
+			# and all necessary drifts and deviations
 			# (assuming a total number of 'nFrames').
 			#
 			# This function is used by `set_frame`
@@ -578,15 +584,18 @@ namespace eval ::ctsimu {
 			# Drifts (center and vector components):
 			# -----------------------------------------------
 			# Build a translation vector for the center point
-			# from the total drift for this frame, and apply
+			# from the total drift for this frame and apply
 			# the translation:
-			set center_drift [$_center drift_vector $frame $nFrames $only_known_to_reconstruction]
-			$_cs translate $center_drift
+			if { [$_center has_drifts] } {
+				set center_drift [$_center drift_vector $frame $nFrames $only_known_to_reconstruction]
+				$_cs translate $center_drift
+				$center_drift destroy
+			}
 
-			set vector_u_drift [$_vector_u drift_vector $frame $nFrames $only_known_to_reconstruction]
-			set vector_w_drift [$_vector_w drift_vector $frame $nFrames $only_known_to_reconstruction]
+			if { [$_vector_u has_drifts] || [$_vector_w has_drifts] } {
+				set vector_u_drift [$_vector_u drift_vector $frame $nFrames $only_known_to_reconstruction]
+				set vector_w_drift [$_vector_w drift_vector $frame $nFrames $only_known_to_reconstruction]
 
-			if { ([$vector_u_drift length] > 0) || ([$vector_w_drift length] > 0)} {
 				set new_u [[$_cs u] get_copy]
 				set new_w [[$_cs w] get_copy]
 				$new_u add $vector_u_drift
@@ -595,11 +604,10 @@ namespace eval ::ctsimu {
 				set new_center [[$_cs center] get_copy]
 				$_cs make_from_vectors $new_center $new_u $new_w [$_cs is_attached_to_stage]
 				$_cs make_unit_coordinate_system
-			}
 
-			$center_drift destroy
-			$vector_u_drift destroy
-			$vector_w_drift destroy
+				$vector_u_drift destroy
+				$vector_w_drift destroy
+			}
 		}
 
 		method set_frame { stageCS frame nFrames { w_rotation_in_rad 0 } } {
@@ -630,7 +638,11 @@ namespace eval ::ctsimu {
 
 			# Set the frame for all elements of the properties dict:
 			dict for { key value } $_properties {
-				[my parameter $key] set_frame $frame $nFrames
+				try {
+					[my parameter $key] set_frame $frame $nFrames
+				} on error { result } {
+					::ctsimu::fail "Error setting frame for parameter '$key' of part '[my name]': $result"
+				}
 			}
 		}
 
@@ -653,7 +665,7 @@ namespace eval ::ctsimu {
 			#   for the given frame. Only used for the CT rotation
 			#   of the sample stage.
 
-			# Set up the current CS obeying all drifts:
+			# Set up the current CS obeying only recon-known drifts:
 			if { ($_cs_initialized_recon == 0) || ($_static == 0) } {
 				my set_frame_cs $stageCS $frame $nFrames 1 $w_rotation_in_rad
 				set _cs_initialized_real  0

@@ -97,7 +97,7 @@ namespace eval ::ctsimu {
 
 			# Known to reconstruction
 			if { [::ctsimu::json_exists_and_not_null $json_object {known_to_reconstruction}] } {
-				my set_known_to_reconstruction [::ctsimu::get_value_in_unit "bool" $json_object {known_to_reconstruction} 1]
+				my set_known_to_reconstruction [::ctsimu::get_value_in_native_unit "bool" $json_object {known_to_reconstruction} 1]
 			}
 
 			# Get drift value(s)
@@ -141,8 +141,8 @@ namespace eval ::ctsimu {
 			# Returns a drift value for the given frame number,
 			# assuming a total number of nFrames. If interpolation
 			# is activated, linear interpolation will take place between
-			# drift values, but also for frame numbers outside the
-			# expected range: 0 < frame > nFrames.
+			# drift values, but also for frame numbers outside of the
+			# expected range: (frame < 0) and (frame >= nFrames).
 			# Note that the frame number starts at 0.
 			set nTrajectoryPoints [llength $_trajectory]
 
@@ -182,14 +182,14 @@ namespace eval ::ctsimu {
 						}
 
 						if { $_interpolation == 1 } {
-							# Linear interpolation...
+							# Linear interpolation:
 							set rightIndex [expr int($leftIndex+1)]
 
 							# We return a weighted average of the two drift
 							# values where the current frame is "in between".
 
-							# Weight for the right bin is trunc(trajectoryIndex).
-							# Tcl doesn't known trunc(), so we need to do a trick.
+							# Weight for the right bin is frac(trajectoryIndex).
+							# Tcl doesn't know frac(), so we need to do a trick.
 							# This will remove the number in front of the decimal sign
 							# and leave us with all decimal places after the decimal point.
 							# e.g. 3.1415 -> 0.1415
@@ -203,6 +203,7 @@ namespace eval ::ctsimu {
 							# Linear interpolation between left and right trajectory point:
 							return [expr {$leftWeight*[lindex $_trajectory $leftIndex] + $rightWeight*[lindex $_trajectory $rightIndex]} ]
 						} else {
+							# No interpolation.
 							# Return the value at the last drift value index
 							# that would apply to this frame position.
 							return [ lindex $_trajectory $leftIndex ]
@@ -266,7 +267,7 @@ namespace eval ::ctsimu {
 						return $driftValue
 					}
 				} else {
-					# If "scan" only has 1 or 0 frames, simply return the first trajectory value
+					# If "scan" only has 1 or 0 frames, simply return the first trajectory value.
 					return [ lindex $_trajectory 0 ]
 				}
 			} else {

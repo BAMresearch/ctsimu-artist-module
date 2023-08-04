@@ -23,7 +23,3 @@ Like any parameter, they can have drifts, which means they can change over time.
 * `set_known_to_reconstruction { known }` — Sets the `known_to_reconstruction` property to true (`known` = `1`) or false (`known` = `0`).
 * `set_amount_from_json { json_obj }` — Set the deviation's amount from a JSON object, which is a parameter with a value and potentially a drift. This function is usually not called from the outside, but used by `set_from_json`.
 * `set_from_json { json_obj }` — Set up the deviation from a JSON deviation structure.
-
-### General
-
-* `reset` — Delete all drifts and set the parameter's current value to the standard value.

@@ -59,7 +59,7 @@ This module adds the following functions to the `::ctsimu` namespace:
 ### Transformations
 
 * `translate { vec }` — Shift center by given translation vector.
-* `translate_along_axis { axis distance }` — Shift center along `axis` by given `distance`.
+* `translate_in_direction { axis distance }` — Shift center along `axis` by given `distance`.
 * `translate_x { dx }` — Translate coordinate system in x direction by distance `dx`.
 * `translate_y { dy }` — Translate coordinate system in y direction by distance `dy`.
 * `translate_z { dz }` — Translate coordinate system in z direction by distance `dz`.

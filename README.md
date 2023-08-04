@@ -214,7 +214,6 @@ The following table lists the module's current support status for the JSON param
 | `acquisition flat_field ideal`                        | yes         | no                                                 |
 | `acquisition flat_field correction`                   | yes         | no                                                 |
 | `acquisition pixel_binning u/v`                       | no          | no                                                 |
-| `acquisition pixel_binning u/v`                       | no          | no                                                 |
 | `acquisition scattering`                              | yes (McRay) | no                                                 |
 | `materials id`                                        | yes         | no                                                 |
 | `materials name`                                      | yes         | no                                                 |
@@ -277,7 +276,7 @@ The module supports additional parameters that are specific for aRTist. These ca
 
 + If **X-ray spectra** are loaded from an external file instead of being generated in aRTist, the JSON file should still specify the tube's correct acceleration `voltage`. If the maximum energy in the spectrum drifts significantly (by more than 20 keV), the source's `voltage` parameter should also drift, reflecting the maximum energy in the spectrum. Alternatively, instead of a drift, the `voltage` parameter could simply represent the maximum acceleration voltage during the scan. The reason is that the maximum photon energy is needed for the computation of the detector's sensitivity characteristics, in order to save computation time and only run the computations for the necessary energy range. This maximum photon energy is determined from the source's `voltage` parameter and not from an externally loaded spectrum.
 + **X-ray spectra** are *always* expected to be already filtered by any defined source `window`. If the window thickness or its material drifts, the externally loaded spectrum will **not** be re-filtered to account for these changes. Instead, the externally loaded spectrum should drift as well (to account for the changing window). If aRTist calculates the spectrum itself, any window drifts are taken into account.
-+ When using **frame averaging,** make sure to understand how aRTist's frame averaging works. aRTist's approach is to shift the SNR curve to the intensity of the integration time of the accumulated number of averaged frames, and then take one projection image. It does not calculate several frames and mathematically average them. This can lead an undesired result if you have a non-standard SNR curve, especially when aRTist has to interpolate the curve to higher intensities if they are not explicitly given.
++ When using **frame averaging,** make sure to understand how aRTist's frame averaging works. aRTist's approach is to shift the SNR curve to the intensity of the integration time of the accumulated number of averaged frames, and then take one projection image. It does not calculate several frames and mathematically average them. This can give an undesired result if you have a non-standard SNR curve, especially when aRTist has to interpolate the curve to higher intensities if they are not explicitly given.
 
 ## Deploying a new version
 

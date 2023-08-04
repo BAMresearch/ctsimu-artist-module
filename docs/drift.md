@@ -7,12 +7,12 @@ This submodule provides a general class to handle the drift of an arbitrary para
 
 * `constructor { native_unit }`
 
-    When a drift object is constructed, is must be assigned a valid `native_unit` to enable the JSON parser to convert the drift values from the JSON file, if necessary. See the documentation on [native units](native_units.md) for a complete list of valid strings.
+    When a drift object is constructed, it must be assigned a valid `native_unit` to enable the JSON parser to convert the drift values from the JSON file, if necessary. See the documentation on [native units](native_units.md) for a complete list of valid strings.
 
 ### General
 
 * `reset` — Reset drift object to standard parameters. Clears the trajectory list as well. Used by the constructor as initialization function.
-* `get_value_for_frame { frame nFrames }` — Returns a drift value for the given `frame` number, assuming a total number of `nFrames`. If interpolation is activated, linear interpolation will take place between drift values, but also for frame numbers outside the expected range: `0 < frame` or `frame > nFrames`. Note that the `frame` number starts at `0`.
+* `get_value_for_frame { frame nFrames }` — Returns a drift value for the given `frame` number, assuming a total number of `nFrames`. If interpolation is activated, linear interpolation will take place between drift values, but also for frame numbers outside of the expected range: (`frame` < 0) and (`frame` >= `nFrames`). Note that the `frame` number starts at `0`.
 
 ### Getters
 

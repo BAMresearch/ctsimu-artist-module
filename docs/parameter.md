@@ -26,7 +26,7 @@ CTSimU defines a [JSON-based file format](https://bamresearch.github.io/ctsimu-s
 
 * `constructor { { native_unit "" } { standard 0 } }`
 
-    When a parameter object is constructed, is must be assigned a valid `native_unit` to enable the JSON parser to convert the drift values from the JSON file, if necessary. See the documentation on [native units](native_units.md) for a complete list of valid strings.
+    When a parameter object is constructed, it must be assigned a valid `native_unit` to enable the JSON parser to convert the drift values from the JSON file, if necessary. See the documentation on [native units](native_units.md) for a complete list of valid strings.
 
     Optionally, a `standard` value can be passed to the constructor. The standard value is the "actual" `value` defined for this parameter in the JSON file. If a JSON object is used to set up this parameter, the `standard` value provided in the constructor is overwritten by the `value` given in the JSON file.
 
@@ -56,11 +56,11 @@ CTSimU defines a [JSON-based file format](https://bamresearch.github.io/ctsimu-s
 * `current_value` — Get the parameter's current value. Should be used after `set_frame`.
 * `maximum_value { nFrames { only_drifts_known_to_reconstruction 0 } }` — Get the maximum value during the evolution of `nFrames`, given drifts.
 * `minimum_value { nFrames { only_drifts_known_to_reconstruction 0 } }` — Get the minimum value during the evolution of `nFrames`, given drifts.
-* `has_changed` — Has the parameter changed since the last acknowledged change? (See setter function `acknowledge_change`). Returns `1` if true, `0` if not.
+* `changed` — Has the parameter changed since the last acknowledged change? (See setter function `acknowledge_change`). Returns `1` if true, `0` if not.
 * `has_drifts` — Does the parameter drift? Returns `1` if yes, `0` if not.
 
 ### Setters
 
 * `set_native_unit { native_unit }` — Set the parameter's native unit.
-* `set_standard_value { value }` — Set the parameter's standard value.
-* `acknowledge_change { { new_change_state 0} }` — Acknowledge a change of the parameter due to a drift. After the acknowledgment, the function `has_changed` will return the `new_change_state` value (standard: `0`).
+* `set_standard_value { value }` — Set the parameter's standard value. Automatically sets the current value to the standard value.
+* `acknowledge_change { { new_change_state 0} }` — Acknowledge a change of the parameter due to a drift. After the acknowledgment, the function `changed` will return the `new_change_state` value (standard: `0`).

@@ -69,4 +69,4 @@ All setter functions automatically convert the given values to double when stori
 * `cross { other }` — Returns cross product with other vector.
 * `angle { other }` — Calculate angle between this vector and `other` vector, using the dot product definition.
 * `rotate { axis angle_in_rad }` — Rotate this vector around given `axis` vector by given angle (in rad).
-* `transform_by_matrix { M }` — Multiply matrix `M` to this vector `v`: `r=Mv`, and set this vector to the result `r` of this transformation.
+* `transform { M }` — Multiply matrix `M` to this vector `v`: `r=Mv`, and set this vector to the result `r` of this transformation.

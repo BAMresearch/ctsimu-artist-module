@@ -56,7 +56,7 @@ The following properties can be set:
 
 ## Submodules
 
-The following list gives an overview over the submodules and provides the source order in which their files are include. The links lead to the description of each submodule and its class and function definitions.
+The following list gives an overview over the submodules and provides the source order in which their files are included. The links lead to the description of each submodule and its class and function definitions.
 
 * **`ctsimu_main.tcl`**
 

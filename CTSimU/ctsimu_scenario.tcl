@@ -1335,19 +1335,30 @@ namespace eval ::ctsimu {
 
 					[$volume w] invert; # mirror volume
 				}
-			} elseif { $imageCS != 0 } {
-				set image [$imageCS get_copy]
 			} else {
-				# Set a standard coordinate system. Results in pure
-				# detector coordinate system after transformation.
-				set image [::ctsimu::coordinate_system new "Image"]
-				$image reset
+				if { $imageCS != 0 } {
+					set image [$imageCS get_copy]
+				} else {
+					# Set a standard coordinate system. Results in pure
+					# detector coordinate system after transformation.
+					set image [::ctsimu::coordinate_system new "Image"]
+					$image reset
+				}
+
+				if { $volumeCS != 0 } {
+					set volume [$volumeCS get_copy]
+				} else {
+					# Set a standard coordinate system. Results in pure
+					# detector coordinate system after transformation.
+					set volume [::ctsimu::coordinate_system new "Volume"]
+					$volume reset
+				}
 			}
 
 			set source [ [$_source current_coordinate_system] get_copy]
 
-			# The scale factors are derived from the lengths of the basis
-			# vectors of the volume CS.
+			# The volume scale factors are derived from the lengths of
+			# the basis vectors of the volume CS.
 			set scale_volume_u [ [$volume u] length ]
 			set scale_volume_v [ [$volume v] length ]
 			set scale_volume_w [ [$volume w] length ]
@@ -1356,8 +1367,8 @@ namespace eval ::ctsimu {
 			# express it in terms of the world CS:
 			$image change_reference_frame [$_detector current_coordinate_system] $::ctsimu::world
 
-			# The scale factors are derived from the lengths of the basis
-			# vectors of the image CS.
+			# The image scale factors are derived from the lengths of
+			# the basis vectors of the image CS.
 			set scale_image_u [ [$image u] length ]
 			set scale_image_v [ [$image v] length ]
 			set scale_image_w [ [$image w] length ]

@@ -56,7 +56,13 @@ namespace eval ::ctsimu {
 
 			# openCT config file options:
 			my set create_openct_config_file 1
-			my set openct_output_datatype   "float32"
+			my set openct_output_datatype    "float32"
+			my set openct_abs_paths          0
+			my set openct_uncorrected        0
+
+			# clFDK config file options:
+			my set create_clfdk_config_file  1
+			my set clfdk_output_datatype     "float32"
 
 			# Sample and material manager:
 			set _sample_manager [::ctsimu::samplemanager new]
@@ -270,9 +276,11 @@ namespace eval ::ctsimu {
 			if { $nruns > 1 } {
 				my set dots_to_root "../.."
 				my set ff_projection_short_path "projections/$s_run/corrected"
+				my set uncorrected_short_path "projections/$s_run"
 			} else {
 				my set dots_to_root ".."
 				my set ff_projection_short_path "projections/corrected"
+				my set uncorrected_short_path "projections"
 			}
 		}
 
@@ -1203,12 +1211,16 @@ namespace eval ::ctsimu {
 
 			# Create recon config files:
 			if { [my get create_openct_config_file] == 1} {
-				my save_clFDK_script
 				my save_openCT_config_file $projection_filenames $matrices_openCT
 			}
 
 			if { [my get create_cera_config_file] == 1} {
 				my save_CERA_config_file $matrices_CERA
+			}
+
+			if { [my get create_clfdk_config_file] == 1} {
+				my save_clFDK_script
+				my save_clFDK_config_file $projection_filenames $matrices_openCT
 			}
 
 			# Destroy matrix objects:
@@ -1704,9 +1716,9 @@ namespace eval ::ctsimu {
 			append batFilename "_recon_clFDK.bat"
 
 			set batFileContent "CHCP 65001\n"
-			set batFileContent "clfdk $outputBaseName"
-			append batFileContent "_recon_openCT.json $outputBaseName"
-			append batFileContent "_recon_openCT iformat json"
+			set batFileContent "clfdk \"$outputBaseName"
+			append batFileContent "_recon_clFDK.json\" \"$outputBaseName"
+			append batFileContent "_recon_clFDK\" iformat json dtype [my get clfdk_output_datatype]"
 
 			fileutil::writeFile -encoding utf-8 $batFilename $batFileContent
 		}
@@ -1728,7 +1740,10 @@ namespace eval ::ctsimu {
 			# match voxel size with CERA
 			set vsu [my get cera_voxelSizeU]
 			set vsv [my get cera_voxelSizeV]
-			my save_VGI $openCTvginame $openCTvgifile $reconVolumeFilename 0 $vsu $vsv
+
+			# A VGI file is currently not necessary, because
+			# openCT files are usually reconstructed inside VGSTUDIO...?
+			#my save_VGI $openCTvginame $openCTvgifile $reconVolumeFilename 0 $vsu $vsv [my get openct_output_datatype]
 
 			set fileType "TIFF"
 			if {[my get output_fileformat] == "raw"} {
@@ -1736,7 +1751,7 @@ namespace eval ::ctsimu {
 			}
 
 			set dataType "UInt16"
-			if {[my get output_datatype] == "32bit"} {
+			if {[my get output_datatype] == "float32"} {
 				set dataType "Float32"
 			}
 
@@ -1764,11 +1779,12 @@ namespace eval ::ctsimu {
 							"skipBytes": 0,
 							"endianness": "Little",
 							"directory": "",
-							"files": []},
+							"files": []
+						},
 						"detectorCoordinateFrame": "OriginAtDetectorCenter.VerticalAxisRunningDownwards",
 						"detectorCoordinateDimension": "Length",
 						"matrices": []
-						},
+					},
 					"geometry": {
 						"detectorPixel": [],
 						"detectorSize": [],
@@ -1776,11 +1792,10 @@ namespace eval ::ctsimu {
 						"objectBoundingBox": {
 							"centerXYZ": [0, 0, 0],
 							"sizeXYZ": [1, 1, 1]
-							}
-						},
+						}
+					},
 					"corrections":{
 						"brightImages":{
-						  "directory": "",
 						  "dataType":"",
 						  "fileType":"",
 						  "skipBytes": 0,
@@ -1809,7 +1824,28 @@ namespace eval ::ctsimu {
 			::rl_json::json set geomjson volumeName [::rl_json::json new string $reconVolumeFilename]
 			::rl_json::json set geomjson projections numProjections $nProjections
 
-			::rl_json::json set geomjson projections images directory [::rl_json::json new string "[my get dots_to_root]/[my get ff_projection_short_path]"]
+			set fileExtension ".tif"
+			set headerSizeValid 0
+			if {[my get output_fileformat] == "raw"} {
+				set fileExtension ".raw"
+				set headerSizeValid 1
+			}
+
+			if {[my get openct_abs_paths]} {
+				# Use absolute paths
+				set projPath "[my get output_folder]"
+			} else {
+				# Use relative paths
+				set projPath "[my get dots_to_root]"
+			}
+
+			if {[my get openct_uncorrected]} {
+				append projPath "/[my get uncorrected_short_path]"
+			} else {
+				append projPath "/[my get ff_projection_short_path]"
+			}
+
+			::rl_json::json set geomjson projections images directory [::rl_json::json new string "$projPath"]
 			::rl_json::json set geomjson projections images fileType [::rl_json::json new string $fileType]
 			::rl_json::json set geomjson projections images dataType [::rl_json::json new string $dataType]
 
@@ -1832,15 +1868,203 @@ namespace eval ::ctsimu {
 
 			::rl_json::json set geomjson geometry objectBoundingBox sizeXYZ [::rl_json::json new array [list number $bbSizeXY] [list number $bbSizeXY] [list number $bbSizeZ]]
 
+			# Corrections
+			if {[my get openct_uncorrected]} {
+				# Dark field:
+				if {[my get n_darks] > 0} {
+					::rl_json::json set geomjson corrections darkImage fileType [::rl_json::json new string $fileType]
+					::rl_json::json set geomjson corrections darkImage dataType [::rl_json::json new string $dataType]
+
+					set dark_filename "$projPath/[my get run_output_basename]_dark$fileExtension"
+					::rl_json::json set geomjson corrections darkImage file [::rl_json::json new string "$dark_filename"]
+				} else {
+					::rl_json::json set geomjson corrections darkImage [::rl_json::json new null]
+				}
+
+				# Flat field:
+				if {[my get n_flats] > 0} {
+					::rl_json::json set geomjson corrections brightImages fileType [::rl_json::json new string $fileType]
+					::rl_json::json set geomjson corrections brightImages dataType [::rl_json::json new string $dataType]
+					::rl_json::json set geomjson corrections brightImages directory [::rl_json::json new string "$projPath"]
+
+					if {[my get n_flats] == 1} {
+						set flat_filename "[my get run_output_basename]_flat$fileExtension"
+						::rl_json::json set geomjson corrections brightImages files end+1 [::rl_json::json new string "$projectionFile"]
+					} else {
+						set flat_filename_prefix "[my get run_output_basename]_flat_"
+						set projCtrFmt [::ctsimu::generate_projection_counter_format [my get n_flats]]
+
+						for {set p 0} {$p < [my get n_flats]} {incr p} {
+							# Flat field filename:
+							set fileNameSuffix [format $projCtrFmt $p]
+							set currFile "$flat_filename_prefix"
+							append currFile "$fileNameSuffix$fileExtension"
+							::rl_json::json set geomjson corrections brightImages files end+1 [::rl_json::json new string "$currFile"]
+						}
+					}
+				} else {
+					::rl_json::json set geomjson corrections brightImages [::rl_json::json new null]
+				}
+
+				# Bad pixel mask
+				::rl_json::json set geomjson corrections badPixelMask [::rl_json::json new null]
+			} else {
+				# Deactivate corrections
+				::rl_json::json set geomjson corrections [::rl_json::json new null]
+			}
+
 			fileutil::writeFile -encoding utf-8 $configFilename [::rl_json::json pretty $geomjson]
 		}
 
-		method save_VGI { name filename volumeFilename zMirror voxelsizeU voxelsizeV } {
+		method save_clFDK_config_file { projectionFilenames projectionMatrices } {
+			# Creates a reconstruction configuration file for clFDK.
+			# clFDK uses the openCT file format, but currently an older version
+			# than version 1.0.0 that is written as the default openCT config file.
+			set reconFolder [my get run_recon_folder]
+			set outputBaseName [my get run_output_basename]
+
+			set configFilename "$reconFolder/$outputBaseName"
+			append configFilename "_recon_clFDK.json"
+
+			set reconVolumeFilename "$outputBaseName"
+			append reconVolumeFilename "_recon_clFDK.img"
+
+			set openCTvgifile "$reconFolder/${outputBaseName}_recon_clFDK.vgi"
+			set openCTvginame "${outputBaseName}_recon_openCT"
+
+			# match voxel size with CERA
+			set vsu [my get cera_voxelSizeU]
+			set vsv [my get cera_voxelSizeV]
+			my save_VGI $openCTvginame $openCTvgifile $reconVolumeFilename 0 $vsu $vsv [my get clfdk_output_datatype]
+
+			set fileType "TIFF"
+			if {[my get output_fileformat] == "raw"} {
+				set fileType "RAW"
+			}
+
+			set dataType "UInt16"
+			if {[my get output_datatype] == "32bit"} {
+				set dataType "Float32"
+			}
+
+			set nProjections [llength $projectionFilenames]
+
+			set startAngle [my get start_angle]
+			set stopAngle  [my get stop_angle]
+			set totalAngle [expr $stopAngle - $startAngle]
+
+			set geomjson {
+				{
+					"version": {"major":1, "minor":0},
+					"openCTJSON":     {
+					    "versionMajor": 1,
+					    "versionMinor": 0,
+					    "revisionNumber": 0,
+					    "variant": "FreeTrajectoryCBCTScan"
+					},
+					"units": {
+					    "length": "Millimeter"
+					},
+					"volumeName": "",
+					"projections": {
+						"numProjections": 0,
+						"intensityDomain": true,
+						"images": {
+							"directory": "",
+							"dataType": "",
+							"fileType": "",
+							"files": []},
+						"matrices": []
+						},
+					"geometry": {
+						"totalAngle": null,
+						"skipAngle": 0,
+						"detectorPixel": [],
+						"detectorSize": [],
+						"mirrorDetectorAxis": "",
+						"distanceSourceObject": null,
+						"distanceObjectDetector": null,
+						"objectBoundingBox": []
+						},
+					 "corrections":{
+						"brightImages":{
+						  "directory": "",
+						  "dataType":"",
+						  "fileType":"",
+						  "files":[]
+						},
+
+						"darkImage":{
+						  "file":"",
+						  "dataType":"",
+						  "fileType":""
+						},
+
+						"badPixelMask":{
+						  "file":"",
+						  "dataType":"",
+						  "fileType":""
+						},
+
+						"intensities":[]
+					  }
+				}
+			}
+
+			::rl_json::json set geomjson volumeName [::rl_json::json new string $reconVolumeFilename]
+			::rl_json::json set geomjson projections numProjections $nProjections
+
+			::rl_json::json set geomjson projections images directory [::rl_json::json new string "."]
+			::rl_json::json set geomjson projections images fileType [::rl_json::json new string $fileType]
+			::rl_json::json set geomjson projections images dataType [::rl_json::json new string $dataType]
+
+			foreach projectionFile $projectionFilenames {
+				::rl_json::json set geomjson projections images files end+1 [::rl_json::json new string "[my get dots_to_root]/[my get ff_projection_short_path]/$projectionFile"]
+			}
+
+			foreach P $projectionMatrices {
+				::rl_json::json set geomjson projections matrices end+1 [$P format_json]
+			}
+
+			foreach projectionFile $projectionFilenames {
+				::rl_json::json set geomjson corrections intensities end+1 [::rl_json::json new number [$_detector get gv_max]]
+			}
+
+			::rl_json::json set geomjson geometry totalAngle $totalAngle
+
+			::rl_json::json set geomjson geometry detectorSize end+1 [$_detector physical_width]
+			::rl_json::json set geomjson geometry detectorSize end+1 [$_detector physical_height]
+
+			::rl_json::json set geomjson geometry detectorPixel end+1 [$_detector get columns]
+			::rl_json::json set geomjson geometry detectorPixel end+1 [$_detector get rows]
+
+			set bbSizeXY [expr [$_detector get columns] * $vsu]
+			set bbSizeZ  [expr [$_detector get rows] * $vsv]
+
+			# Scale the unit cube to match the bounding box:
+			set S [::ctsimu::matrix new 4 4]
+			$S set_row 0 [list $bbSizeXY 0 0 0]
+			$S set_row 1 [list 0 $bbSizeXY 0 0]
+			$S set_row 2 [list 0 0 $bbSizeZ  0]
+			$S set_row 3 [list 0 0 0 1]
+			# Rotate the bounding box to the stage CS:
+			set R [::ctsimu::basis_transform_matrix $::ctsimu::world [$_stage current_coordinate_system] 1]
+
+			set RS [$R multiply $S]
+			::rl_json::json set geomjson geometry objectBoundingBox [$RS format_json]
+
+			::rl_json::json set geomjson geometry distanceSourceObject [my get cera_R]
+			::rl_json::json set geomjson geometry distanceObjectDetector [my get cera_ODD]
+
+			fileutil::writeFile -encoding utf-8 $configFilename [::rl_json::json pretty $geomjson]
+		}
+
+		method save_VGI { name filename volumeFilename zMirror voxelsizeU voxelsizeV outputDataType } {
 			# Prepares a VGI file for the reconstruction volume such that it can be loaded with VGSTUDIO.
 			set vgiTemplate {\{volume1\}
 [representation]
 size = $nSizeX $nSizeY $nSizeZ
-datatype = $ceradataTypeOutput
+datatype = $dataTypeOutput
 datarange = $datarangelow $datarangeupper
 bitsperelement = $bits
 [file1]
@@ -1848,7 +2072,7 @@ SkipHeader = 0
 FileFormat = raw
 Size = $nSizeX $nSizeY $nSizeZ
 Name = $volumeFilename
-Datatype = $ceradataTypeOutput
+Datatype = $dataTypeOutput
 datarange = $datarangelow $datarangeupper
 BitsPerElement = $bits
 \{volumeprimitive12\}
@@ -1859,13 +2083,13 @@ unit = mm
 volume = volume1
 [description]
 text = $name}
-			if { [my get cera_output_datatype] == "uint16" } {
-				set ceradataTypeOutput "unsigned integer"
+			if { $outputDataType == "uint16" } {
+				set dataTypeOutput "unsigned integer"
 				set bits "16"
 				set datarangelow "0"
 				set datarangeupper "-1"
 			} else {
-				set ceradataTypeOutput "float"
+				set dataTypeOutput "float"
 				set bits "32"
 				set datarangelow "-1"
 				set datarangeupper "1"
@@ -2026,7 +2250,7 @@ GlobalI0Value = $globalI0
 			set CERAvginame "${outputBaseName}_recon_cera"
 			set vsu [my get cera_voxelSizeU]
 			set vsv [my get cera_voxelSizeV]
-			my save_VGI $CERAvginame $CERAvgifile $CERAoutfile 0 $vsu $vsv
+			my save_VGI $CERAvginame $CERAvgifile $CERAoutfile 0 $vsu $vsv [my get cera_output_datatype]
 
 			set SOD  [my get cera_R]
 			set SDD  [my get cera_D]

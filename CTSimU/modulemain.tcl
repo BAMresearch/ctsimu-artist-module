@@ -87,8 +87,24 @@ proc Init {} {
 		$ctsimu_scenario set create_openct_config_file [dict get $prefs cfgFileOpenCT]
 	}
 
-	if { [dict exists $prefs openctOutputDatatype] } {
-		$ctsimu_scenario set openct_output_datatype [dict get $prefs openctOutputDatatype]
+#	if { [dict exists $prefs openctOutputDatatype] } {
+#		$ctsimu_scenario set openct_output_datatype [dict get $prefs openctOutputDatatype]
+#	}
+
+	if { [dict exists $prefs openctAbsPaths] } {
+		$ctsimu_scenario set openct_abs_paths [dict get $prefs openctAbsPaths]
+	}
+
+	if { [dict exists $prefs openctUncorrected] } {
+		$ctsimu_scenario set openct_uncorrected [dict get $prefs openctUncorrected]
+	}
+
+	if { [dict exists $prefs cfgFileCLFDK] } {
+		$ctsimu_scenario set create_clfdk_config_file [dict get $prefs cfgFileCLFDK]
+	}
+
+	if { [dict exists $prefs clfdkOutputDatatype] } {
+		$ctsimu_scenario set clfdk_output_datatype [dict get $prefs clfdkOutputDatatype]
 	}
 
 	# Feed the imported settings (so far) to the GUI:
@@ -450,23 +466,35 @@ proc InitGUI { parent } {
 		{Show stage coordinate system in scene}       showStageInScene     bool   { }
 		{Restart aRTist after each batch run}         restartArtistAfterBatchRun   bool   { }
 	}
-
 	set buttons [ttk::frame $generalCfgGroup.frmButtons]
 	grid $buttons - -sticky snew
 
 
-	set reconCfgGroup   [FoldFrame $settings.frmReconCfg  -text "Reconstruction"  -padding $pad]
-	dataform $reconCfgGroup {
+	set ceraCfgGroup   [FoldFrame $settings.frmCeraCfg  -text "CERA Reconstruction"  -padding $pad]
+	dataform $ceraCfgGroup {
 		{Create CERA config file}   cfgFileCERA          bool   { }
 		{CERA volume data type}     ceraOutputDatatype   choice { "uint16" "uint16" "float32" "float32" }
-		{Create OpenCT config file} cfgFileOpenCT        bool   { }
-		{OpenCT volume data type}   openctOutputDatatype choice { "uint16" "uint16" "float32" "float32" }
 	}
-
-	set buttons [ttk::frame $reconCfgGroup.frmButtons]
+	set buttons [ttk::frame $ceraCfgGroup.frmButtons]
 	grid $buttons - -sticky snew
 
+	set openctCfgGroup   [FoldFrame $settings.frmOpenCTCfg  -text "openCT Reconstruction"  -padding $pad]
+	dataform $openctCfgGroup {
+		{Create OpenCT config file} cfgFileOpenCT        bool   { }
+		{Use absolute file paths}   openctAbsPaths       bool   { }
+		{Run flat/dark correction in reconstruction software}   openctUncorrected   bool   { }
+	}
+#		{OpenCT volume data type}   openctOutputDatatype choice { "uint16" "uint16" "float32" "float32" }
+	set buttons [ttk::frame $openctCfgGroup.frmButtons]
+	grid $buttons - -sticky snew
 
+	set clfdkCfgGroup   [FoldFrame $settings.frmCLFDKCfg  -text "clFDK Reconstruction"  -padding $pad]
+	dataform $clfdkCfgGroup {
+		{Create clFDK config file} cfgFileCLFDK         bool   { }
+		{clFDK volume data type}   clfdkOutputDatatype  choice { "uint16" "uint16" "float32" "float32" }
+	}
+	set buttons [ttk::frame $clfdkCfgGroup.frmButtons]
+	grid $buttons - -sticky snew
 
 	foreach item [winfo children $settings] { grid $item -sticky snew }
 
@@ -580,7 +608,12 @@ proc fillCurrentParameters {} {
 	set GUISettings(ceraOutputDatatype)   [$ctsimu_scenario get cera_output_datatype]
 
 	set GUISettings(cfgFileOpenCT)        [$ctsimu_scenario get create_openct_config_file]
-	set GUISettings(openctOutputDatatype) [$ctsimu_scenario get openct_output_datatype]
+#	set GUISettings(openctOutputDatatype) [$ctsimu_scenario get openct_output_datatype]
+	set GUISettings(openctAbsPaths)       [$ctsimu_scenario get openct_abs_paths]
+	set GUISettings(openctUncorrected)    [$ctsimu_scenario get openct_uncorrected]
+
+	set GUISettings(cfgFileCLFDK)         [$ctsimu_scenario get create_clfdk_config_file]
+	set GUISettings(clfdkOutputDatatype)  [$ctsimu_scenario get clfdk_output_datatype]
 }
 
 proc applyCurrentSettings {} {
@@ -598,7 +631,12 @@ proc applyCurrentSettings {} {
 	$ctsimu_scenario set cera_output_datatype      $GUISettings(ceraOutputDatatype)
 
 	$ctsimu_scenario set create_openct_config_file $GUISettings(cfgFileOpenCT)
-	$ctsimu_scenario set openct_output_datatype    $GUISettings(openctOutputDatatype)
+#	$ctsimu_scenario set openct_output_datatype    $GUISettings(openctOutputDatatype)
+	$ctsimu_scenario set openct_abs_paths          $GUISettings(openctAbsPaths)
+	$ctsimu_scenario set openct_uncorrected        $GUISettings(openctUncorrected)
+
+	$ctsimu_scenario set create_clfdk_config_file  $GUISettings(cfgFileCLFDK)
+	$ctsimu_scenario set clfdk_output_datatype     $GUISettings(clfdkOutputDatatype)
 
 	$ctsimu_scenario set output_fileformat         $GUISettings(fileFormat)
 	$ctsimu_scenario set output_datatype           $GUISettings(dataType)
@@ -622,7 +660,12 @@ proc applyCurrentSettings {} {
 	dict set storeSettings ceraOutputDatatype [$ctsimu_scenario get cera_output_datatype]
 
 	dict set storeSettings cfgFileOpenCT [$ctsimu_scenario get create_openct_config_file]
-	dict set storeSettings openctOutputDatatype [$ctsimu_scenario get openct_output_datatype]
+#	dict set storeSettings openctOutputDatatype [$ctsimu_scenario get openct_output_datatype]
+	dict set storeSettings openctAbsPaths [$ctsimu_scenario get openct_abs_paths]
+	dict set storeSettings openctUncorrected [$ctsimu_scenario get openct_uncorrected]
+
+	dict set storeSettings cfgFileCLFDK [$ctsimu_scenario get create_clfdk_config_file]
+	dict set storeSettings clfdkOutputDatatype [$ctsimu_scenario get clfdk_output_datatype]
 
 	# Save the settings dict in preferences file:
 	Preferences::Set CTSimU Settings $storeSettings

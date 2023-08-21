@@ -1293,17 +1293,9 @@ namespace eval ::ctsimu {
 				set image [::ctsimu::coordinate_system new "Image"]
 				$image reset
 
-				# The 3D volume (reconstruction space).
-				if { $volumeCS != 0 } {
-					set volume [$volumeCS get_copy]
-
-					# The given volume CS would be given in terms of the stage CS.
-					# Transform to world CS:
-					$volume change_reference_frame [$_stage current_coordinate_system] $::ctsimu::world
-				} else {
-					# The volume CS is the current stage CS:
-					set volume [ [$_stage current_coordinate_system] get_copy]
-				}
+				# Override volume CS:
+				set volume [::ctsimu::coordinate_system new "Volume"]
+				$volume reset
 
 				if { $mode == "openCT" } {
 					# openCT places the origin of the image CS at the detector
@@ -1333,7 +1325,7 @@ namespace eval ::ctsimu {
 					[$image u] scale [$_detector get pitch_u]
 					[$image v] scale [expr -[$_detector get pitch_v]]
 
-					[$volume w] invert; # mirror volume
+					[$volume w] invert; # mirror reconstruction volume
 				}
 			} else {
 				if { $imageCS != 0 } {
@@ -1349,7 +1341,7 @@ namespace eval ::ctsimu {
 					set volume [$volumeCS get_copy]
 				} else {
 					# Set a standard coordinate system. Results in pure
-					# detector coordinate system after transformation.
+					# stage coordinate system after transformation.
 					set volume [::ctsimu::coordinate_system new "Volume"]
 					$volume reset
 				}
@@ -1366,6 +1358,10 @@ namespace eval ::ctsimu {
 			# Detach the image CS from the detector CS and
 			# express it in terms of the world CS:
 			$image change_reference_frame [$_detector current_coordinate_system] $::ctsimu::world
+
+			# Detach the volume CS from the stage CS and
+			# express it in terms of the world CS:
+			$volume change_reference_frame [$_stage current_coordinate_system] $::ctsimu::world
 
 			# The image scale factors are derived from the lengths of
 			# the basis vectors of the image CS.
@@ -1506,6 +1502,7 @@ namespace eval ::ctsimu {
 			$csDetector rotate_around_u 3.141592653589793
 
 			# Construct the CERA world coordinate system:
+			# --------------------------------------------------
 			# z axis points in v direction of our detector CS:
 			set cera_z [ [$csDetector v] get_copy]
 			set z0 [$cera_z x]
@@ -1534,6 +1531,7 @@ namespace eval ::ctsimu {
 				set x1 [expr -($O1 - $S1 + $t*$w1)/$SOD]
 				set x2 [expr -($O2 - $S2 + $t*$w2)/$SOD]
 			} else {
+				# SOD == 0
 				set x0 -1
 				set x1 0
 				set x2 0

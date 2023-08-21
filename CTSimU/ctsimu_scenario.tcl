@@ -1623,6 +1623,7 @@ namespace eval ::ctsimu {
 				set voxelsizeV 1
 			}
 
+			# Intersection point of principal ray with detector:
 			set detectorIntersectionPoint [$xaxis get_copy]
 			$detectorIntersectionPoint scale [expr -$SDDcera]
 			set stageOnDetector [ [$detectorInCERA center] to $detectorIntersectionPoint]
@@ -1741,19 +1742,15 @@ namespace eval ::ctsimu {
 
 			set nProjections [llength $projectionFilenames]
 
-			set startAngle [my get start_angle]
-			set stopAngle  [my get stop_angle]
-			set totalAngle [expr $stopAngle - $startAngle]
-
 			set geomjson {
 				{
-					"version": {"major":1, "minor":0},
-					"openCTJSON":     {
+					"openCTJSON": {
 					    "versionMajor": 1,
 					    "versionMinor": 0,
 					    "revisionNumber": 0,
 					    "variant": "FreeTrajectoryCBCTScan"
 					},
+					"hints": null,
 					"units": {
 					    "length": "Millimeter"
 					},
@@ -1762,67 +1759,67 @@ namespace eval ::ctsimu {
 						"numProjections": 0,
 						"intensityDomain": true,
 						"images": {
-							"directory": "",
 							"dataType": "",
 							"fileType": "",
+							"skipBytes": 0,
+							"endianness": "Little",
+							"directory": "",
 							"files": []},
+						"detectorCoordinateFrame": "OriginAtDetectorCenter.VerticalAxisRunningDownwards",
+						"detectorCoordinateDimension": "Length",
 						"matrices": []
 						},
 					"geometry": {
-						"totalAngle": null,
-						"skipAngle": 0,
 						"detectorPixel": [],
 						"detectorSize": [],
 						"mirrorDetectorAxis": "",
-						"distanceSourceObject": null,
-						"distanceObjectDetector": null,
-						"objectBoundingBox": []
+						"objectBoundingBox": {
+							"centerXYZ": [0, 0, 0],
+							"sizeXYZ": [1, 1, 1]
+							}
 						},
-					 "corrections":{
+					"corrections":{
 						"brightImages":{
 						  "directory": "",
 						  "dataType":"",
 						  "fileType":"",
-						  "files":[]
+						  "skipBytes": 0,
+						  "endianness": "Little",
+						  "directory": "",
+						  "files": []
 						},
 
 						"darkImage":{
 						  "file":"",
 						  "dataType":"",
-						  "fileType":""
+						  "fileType":"",
+						  "skipBytes": 0,
+						  "endianness": "Little"
 						},
 
 						"badPixelMask":{
 						  "file":"",
 						  "dataType":"",
 						  "fileType":""
-						},
-
-						"intensities":[]
-					  }
+						}
+					}
 				}
 			}
 
 			::rl_json::json set geomjson volumeName [::rl_json::json new string $reconVolumeFilename]
 			::rl_json::json set geomjson projections numProjections $nProjections
 
-			::rl_json::json set geomjson projections images directory [::rl_json::json new string "."]
+			::rl_json::json set geomjson projections images directory [::rl_json::json new string "[my get dots_to_root]/[my get ff_projection_short_path]"]
 			::rl_json::json set geomjson projections images fileType [::rl_json::json new string $fileType]
 			::rl_json::json set geomjson projections images dataType [::rl_json::json new string $dataType]
 
 			foreach projectionFile $projectionFilenames {
-				::rl_json::json set geomjson projections images files end+1 [::rl_json::json new string "[my get dots_to_root]/[my get ff_projection_short_path]/$projectionFile"]
+				::rl_json::json set geomjson projections images files end+1 [::rl_json::json new string "$projectionFile"]
 			}
 
 			foreach P $projectionMatrices {
 				::rl_json::json set geomjson projections matrices end+1 [$P format_json]
 			}
-
-			foreach projectionFile $projectionFilenames {
-				::rl_json::json set geomjson corrections intensities end+1 [::rl_json::json new number [$_detector get gv_max]]
-			}
-
-			::rl_json::json set geomjson geometry totalAngle $totalAngle
 
 			::rl_json::json set geomjson geometry detectorSize end+1 [$_detector physical_width]
 			::rl_json::json set geomjson geometry detectorSize end+1 [$_detector physical_height]
@@ -1833,20 +1830,7 @@ namespace eval ::ctsimu {
 			set bbSizeXY [expr [$_detector get columns] * $vsu]
 			set bbSizeZ  [expr [$_detector get rows] * $vsv]
 
-			# Scale the unit cube to match the bounding box:
-			set S [::ctsimu::matrix new 4 4]
-			$S set_row 0 [list $bbSizeXY 0 0 0]
-			$S set_row 1 [list 0 $bbSizeXY 0 0]
-			$S set_row 2 [list 0 0 $bbSizeZ  0]
-			$S set_row 3 [list 0 0 0 1]
-			# Rotate the bounding box to the stage CS:
-			set R [::ctsimu::basis_transform_matrix $::ctsimu::world [$_stage current_coordinate_system] 1]
-
-			set RS [$R multiply $S]
-			::rl_json::json set geomjson geometry objectBoundingBox [$RS format_json]
-
-			::rl_json::json set geomjson geometry distanceSourceObject [my get cera_R]
-			::rl_json::json set geomjson geometry distanceObjectDetector [my get cera_ODD]
+			::rl_json::json set geomjson geometry objectBoundingBox sizeXYZ [::rl_json::json new array [list number $bbSizeXY] [list number $bbSizeXY] [list number $bbSizeZ]]
 
 			fileutil::writeFile -encoding utf-8 $configFilename [::rl_json::json pretty $geomjson]
 		}

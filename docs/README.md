@@ -34,7 +34,11 @@ The following properties can be set:
 | `create_cera_config_file`       | `0` or `1`                | Create a CERA reconstruction config file?                |
 | `cera_output_datatype`          | `"uint16"` or `"float32"` | Output datatype of the CERA volume.                      |
 | `create_openct_config_file`     | `0` or `1`                | Create an openCT reconstruction config file?             |
-| `openct_output_datatype`        | `"uint16"` or `"float32"` | Output datatype of the openCT reconstruction volume.     |
+| `openct_output_datatype`        | `"uint16"` or `"float32"` | Output datatype of the openCT reconstruction volume (currently not used).     |
+| `openct_abs_paths`              | `0` or `1`                | Use absolute file paths in openCT config file?           |
+| `openct_uncorrected`            | `0` or `1`                | Use uncorrected projection images and leave correction to reconstruction software? |
+| `create_clfdk_config_file`      | `0` or `1`                | Create a clFDK reconstruction config file?               |
+| `clfdk_output_datatype`         | `"uint16"` or `"float32"` | Output datatype of the clFDK reconstruction volume.      |
 
 ### Functions for single scenarios
 

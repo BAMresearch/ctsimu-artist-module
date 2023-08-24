@@ -1189,7 +1189,7 @@ namespace eval ::ctsimu {
 				my set_frame_for_recon $p
 
 				# Calculate and store projection matrices:
-				if { [my get create_openct_config_file] == 1} {
+				if { ([my get create_openct_config_file] == 1) || ([my get create_clfdk_config_file] == 1)} {
 					set P_openCT [my projection_matrix 0 0 "openCT"]
 					lappend matrices_openCT $P_openCT
 				}
@@ -1228,7 +1228,11 @@ namespace eval ::ctsimu {
 
 			if { [my get create_clfdk_config_file] == 1} {
 				my save_clFDK_script
-				my save_clFDK_config_file $projection_filenames $matrices_openCT
+
+				if { [my get create_openct_config_file] == 0} {
+					# We still need the openCT JSON file for clFDK.
+					my save_openCT_config_file $projection_filenames $matrices_openCT
+				}
 			}
 
 			# Destroy matrix objects:
@@ -1725,8 +1729,8 @@ namespace eval ::ctsimu {
 
 			set batFileContent "CHCP 65001\n"
 			set batFileContent "clfdk \"$outputBaseName"
-			append batFileContent "_recon_clFDK.json\" \"$outputBaseName"
-			append batFileContent "_recon_clFDK\" iformat json dtype [my get clfdk_output_datatype]"
+			append batFileContent "_recon_openCT.json\" \"$outputBaseName"
+			append batFileContent "_recon_openCT\" iformat json dtype [my get clfdk_output_datatype]"
 
 			fileutil::writeFile -encoding utf-8 $batFilename $batFileContent
 		}

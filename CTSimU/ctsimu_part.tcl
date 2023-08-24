@@ -351,33 +351,38 @@ namespace eval ::ctsimu {
 			set _attached_to_stage $attached
 		}
 
-		method set_static_if_no_drifts { } {
-			# Sets the object to 'static' if it does not drift, i.e., not moving.
-			# In this case, its coordinate system does not need to
-			# be re-assembled for each frame.
-
-			set _static 0
-
+		method is_static { } {
+			# Check if part is static or if it drifts during the scan.
+			# The default stage rotation is not taken into account here.
 			if { $_attached_to_stage == 0 } {
-				# Count drifts:
 				if { [$_center has_drifts] || [$_vector_u has_drifts] || [$_vector_w has_drifts] } {
-					return
+					return 0
 				}
 
 				foreach dev $_deviations {
 					if { [$dev has_drifts] } {
-						return
+						return 0
 					}
 				}
 
 				foreach ldev $_legacy_deviations {
 					if { [$ldev has_drifts] } {
-						return
+						return 0
 					}
 				}
 
-				set _static 1
+				return 1
 			}
+
+			return 0
+		}
+
+		method set_static_if_no_drifts { } {
+			# Sets the object to 'static' if it does not drift, i.e., not moving.
+			# In this case, its coordinate system does not need to
+			# be re-assembled for each frame.
+
+			set _static [my is_static]
 		}
 
 		# General

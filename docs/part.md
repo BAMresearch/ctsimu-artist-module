@@ -53,4 +53,5 @@ They have a coordinate system and can define deviations from their standard geom
 * `set_u { u }` — Set vector u. Expects a [`::ctsimu::scenevector`](scenevector.md).
 * `set_w { w }` — Set vector w. Expects a [`::ctsimu::scenevector`](scenevector.md).
 * `attach_to_stage { attached }` — Set `1` if the part is attached to the stage coordinate system, or `0` if the world coordinate system is the reference.
+* `is_static` — Returns `1` if the part drifts during the CT scan, `0` if not. The default stage rotation is not taken into account here.
 * `set_static_if_no_drifts` — Sets the object to 'static' if it does not drift, i.e., not moving. In this case, its coordinate system does not need to be re-assembled for each frame.

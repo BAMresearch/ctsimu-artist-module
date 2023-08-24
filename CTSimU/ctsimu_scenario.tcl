@@ -59,9 +59,10 @@ namespace eval ::ctsimu {
 			my set openct_output_datatype    "float32"
 			my set openct_abs_paths          0
 			my set openct_uncorrected        0
+			my set openct_circular_allowed   1
 
 			# clFDK config file options:
-			my set create_clfdk_config_file  1
+			my set create_clfdk_config_file  0
 			my set clfdk_output_datatype     "float32"
 
 			# Sample and material manager:
@@ -1044,6 +1045,10 @@ namespace eval ::ctsimu {
 								"frame_average": null,
 								"filename": null,
 								"projections_corrected": false
+							},
+							"bad_pixel_map": {
+								"filename": null,
+								"projections_corrected": false
 							}
 						},
 						"tomogram": null,
@@ -1767,7 +1772,8 @@ namespace eval ::ctsimu {
 					},
 					"hints": null,
 					"units": {
-					    "length": "Millimeter"
+					    "length": "Millimeter",
+					    "angle": "Degree"
 					},
 					"volumeName": "",
 					"projections": {
@@ -1788,7 +1794,11 @@ namespace eval ::ctsimu {
 					"geometry": {
 						"detectorPixel": [],
 						"detectorSize": [],
+						"distanceSourceObject": null,
+						"distanceObjectDetector": null,
 						"mirrorDetectorAxis": "",
+						"skipAngle": null,
+						"totalAngle": null,
 						"objectBoundingBox": {
 							"centerXYZ": [0, 0, 0],
 							"sizeXYZ": [1, 1, 1]
@@ -1803,7 +1813,6 @@ namespace eval ::ctsimu {
 						  "directory": "",
 						  "files": []
 						},
-
 						"darkImage":{
 						  "file":"",
 						  "dataType":"",
@@ -1811,11 +1820,12 @@ namespace eval ::ctsimu {
 						  "skipBytes": 0,
 						  "endianness": "Little"
 						},
-
 						"badPixelMask":{
 						  "file":"",
 						  "dataType":"",
-						  "fileType":""
+						  "fileType":"",
+						  "skipBytes": 0,
+						  "endianness": "Little"
 						}
 					}
 				}
@@ -1908,6 +1918,24 @@ namespace eval ::ctsimu {
 
 				# Bad pixel mask
 				::rl_json::json set geomjson corrections badPixelMask [::rl_json::json new null]
+
+
+				# Check if we want a circular trajectory file.
+				if {[my get openct_circular_allowed] == 1} {
+					if { [$_source is_static] && [$_detector is_static] && [$_stage is_static] } {
+						# change to circular
+						::rl_json::json set geomjson openCTJSON variant [::rl_json::json new string "CircularTrajectoryCBCTScan"]
+						::rl_json::json set geomjson geometry distanceSourceObject [my get cera_R]
+						::rl_json::json set geomjson geometry distanceObjectDetector [my get cera_ODD]
+
+						set startAngle [my get start_angle]
+						set stopAngle  [my get stop_angle]
+						set totalAngle [expr $stopAngle - $startAngle]
+						::rl_json::json set geomjson geometry totalAngle [::rl_json::json new number $totalAngle]
+						::rl_json::json set geomjson geometry skipAngle [::rl_json::json new number $startAngle]
+					}
+				}
+
 			} else {
 				# Deactivate corrections
 				::rl_json::json set geomjson corrections [::rl_json::json new null]
@@ -2030,7 +2058,7 @@ namespace eval ::ctsimu {
 				::rl_json::json set geomjson corrections intensities end+1 [::rl_json::json new number [$_detector get gv_max]]
 			}
 
-			::rl_json::json set geomjson geometry totalAngle $totalAngle
+			::rl_json::json set geomjson geometry totalAngle [::rl_json::json new number $totalAngle]
 
 			::rl_json::json set geomjson geometry detectorSize end+1 [$_detector physical_width]
 			::rl_json::json set geomjson geometry detectorSize end+1 [$_detector physical_height]

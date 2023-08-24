@@ -1929,7 +1929,7 @@ namespace eval ::ctsimu {
 
 					if {[my get n_flats] == 1} {
 						set flat_filename "[my get run_output_basename]_flat$fileExtension"
-						::rl_json::json set geomjson corrections brightImages files end+1 [::rl_json::json new string "$projectionFile"]
+						::rl_json::json set geomjson corrections brightImages files end+1 [::rl_json::json new string "$flat_filename"]
 					} else {
 						set flat_filename_prefix "[my get run_output_basename]_flat_"
 						set projCtrFmt [::ctsimu::generate_projection_counter_format [my get n_flats]]

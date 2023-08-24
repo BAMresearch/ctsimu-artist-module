@@ -49,6 +49,7 @@ namespace eval ::ctsimu {
 
 			# Option to show stage coordinate system in scene:
 			my set show_stage               1
+			my set skip_simulation          0
 
 			# CERA config file options:
 			my set create_cera_config_file  1
@@ -666,39 +667,41 @@ namespace eval ::ctsimu {
 			my create_run_filenames $run $nruns
 			my prepare_postprocessing_configs
 
-			my _set_run_status 1
+            if {[my get skip_simulation] == 0} {
+    			my _set_run_status 1
 
-			if { [my is_running] } {
-				# Create flat field and dark field images.
-				my generate_flats_and_darks
-			}
+    			if { [my is_running] } {
+    				# Create flat field and dark field images.
+    				my generate_flats_and_darks
+    			}
 
-			my set scattering_current_image_step -1
+    			my set scattering_current_image_step -1
 
-			if { [my is_running] } {
-				# Run actual scan.
-				set nProjections [my get n_projections]
-				set projCtrFmt [my get projection_counter_format]
+    			if { [my is_running] } {
+    				# Run actual scan.
+    				set nProjections [my get n_projections]
+    				set projCtrFmt [my get projection_counter_format]
 
-				if {$nProjections > 0} {
-					#aRTist::InitProgress
-					#aRTist::ProgressQuantum $nProjections
+    				if {$nProjections > 0} {
+    					#aRTist::InitProgress
+    					#aRTist::ProgressQuantum $nProjections
 
-					for {set projNr [my get start_projection_number]} {$projNr < $nProjections} {incr projNr} {
-						my set_frame $projNr
+    					for {set projNr [my get start_projection_number]} {$projNr < $nProjections} {incr projNr} {
+    						my set_frame $projNr
 
-						set pnr [expr $projNr+1]
-						set prcnt [expr round((100.0*($projNr+1.0))/$nProjections)]
-						::ctsimu::status_info "Taking projection $pnr/$nProjections... ($prcnt%)"
-						set fileNameSuffix [format $projCtrFmt $projNr]
-						my save_projection_image $projNr $fileNameSuffix
+    						set pnr [expr $projNr+1]
+    						set prcnt [expr round((100.0*($projNr+1.0))/$nProjections)]
+    						::ctsimu::status_info "Taking projection $pnr/$nProjections... ($prcnt%)"
+    						set fileNameSuffix [format $projCtrFmt $projNr]
+    						my save_projection_image $projNr $fileNameSuffix
 
-						if {[my is_running] == 0} {break}
-					}
+    						if {[my is_running] == 0} {break}
+    					}
 
-					#aRTist::ProgressFinished
-				}
-			}
+    					#aRTist::ProgressFinished
+    				}
+    			}
+            }
 
 			# Check if we are still successfully running.
 			# If so, print a "done" message after stopping the simulation.

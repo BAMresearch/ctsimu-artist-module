@@ -63,6 +63,10 @@ proc Init {} {
 		$ctsimu_batchmanager set restart_aRTist_after_each_run [dict get $prefs restartArtistAfterBatchRun]
 	}
 
+	if { [dict exists $prefs skipSimulation] } {
+		$ctsimu_scenario set skip_simulation [dict get $prefs skipSimulation]
+	}
+
 	if { [dict exists $prefs csvJobList] } {
 		$ctsimu_batchmanager set csv_list_to_import [dict get $prefs csvJobList]
 	}
@@ -469,6 +473,7 @@ proc InitGUI { parent } {
 	dataform $generalCfgGroup {
 		{Show stage coordinate system in scene}       showStageInScene     bool   { }
 		{Restart aRTist after each batch run}         restartArtistAfterBatchRun   bool   { }
+		{Skip simulation, only create config files}   skipSimulation     bool   { }
 	}
 	set buttons [ttk::frame $generalCfgGroup.frmButtons]
 	grid $buttons - -sticky snew
@@ -607,6 +612,7 @@ proc fillCurrentParameters {} {
 	# General settings
 	set GUISettings(showStageInScene)     [$ctsimu_scenario get show_stage]
 	set GUISettings(restartArtistAfterBatchRun)  [$ctsimu_batchmanager get restart_aRTist_after_each_run]
+	set GUISettings(skipSimulation)       [$ctsimu_scenario get skip_simulation]
 
 	# Recon settings
 	set GUISettings(cfgFileCERA)          [$ctsimu_scenario get create_cera_config_file]
@@ -632,6 +638,7 @@ proc applyCurrentSettings {} {
 
 	$ctsimu_scenario set show_stage                $GUISettings(showStageInScene)
 	$ctsimu_batchmanager set restart_aRTist_after_each_run $GUISettings(restartArtistAfterBatchRun)
+	$ctsimu_scenario set skip_simulation           $GUISettings(skipSimulation)
 
 	$ctsimu_scenario set create_cera_config_file   $GUISettings(cfgFileCERA)
 	$ctsimu_scenario set cera_output_datatype      $GUISettings(ceraOutputDatatype)
@@ -658,6 +665,7 @@ proc applyCurrentSettings {} {
 	dict set storeSettings dataType      [$ctsimu_scenario get output_datatype]
 
 	dict set storeSettings showStageInScene  [$ctsimu_scenario get show_stage]
+	dict set storeSettings skipSimulation    [$ctsimu_scenario get skip_simulation]
 	dict set storeSettings restartArtistAfterBatchRun [$ctsimu_batchmanager get restart_aRTist_after_each_run]
 	dict set storeSettings waitingForRestart [$ctsimu_batchmanager get waiting_for_restart]
 	dict set storeSettings nextBatchRun      [$ctsimu_batchmanager get next_run]

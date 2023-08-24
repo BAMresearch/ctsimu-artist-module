@@ -103,8 +103,8 @@ proc Init {} {
 		$ctsimu_scenario set openct_uncorrected [dict get $prefs openctUncorrected]
 	}
 
-	if { [dict exists $prefs openctCircularAllowed] } {
-		$ctsimu_scenario set openct_circular_allowed [dict get $prefs openctCircularAllowed]
+	if { [dict exists $prefs openctCircularEnforced] } {
+		$ctsimu_scenario set openct_circular_enforced [dict get $prefs openctCircularEnforced]
 	}
 
 	if { [dict exists $prefs cfgFileCLFDK] } {
@@ -492,7 +492,7 @@ proc InitGUI { parent } {
 		{Create OpenCT config file} cfgFileOpenCT        bool   { }
 		{Use absolute file paths}   openctAbsPaths       bool   { }
 		{Run flat/dark correction in reconstruction software}   openctUncorrected   bool   { }
-		{Use circular format instead of free trajectory if possible}   openctCircularAllowed   bool   { }
+		{Enforce circular format instead of free trajectory}   openctCircularEnforced   bool   { }
 	}
 #		{OpenCT volume data type}   openctOutputDatatype choice { "uint16" "uint16" "float32" "float32" }
 	set buttons [ttk::frame $openctCfgGroup.frmButtons]
@@ -500,7 +500,7 @@ proc InitGUI { parent } {
 
 	set clfdkCfgGroup   [FoldFrame $settings.frmCLFDKCfg  -text "clFDK Reconstruction"  -padding $pad]
 	dataform $clfdkCfgGroup {
-		{Create clFDK config file} cfgFileCLFDK         bool   { }
+		{Create clFDK run script}  cfgFileCLFDK         bool   { }
 		{clFDK volume data type}   clfdkOutputDatatype  choice { "uint16" "uint16" "float32" "float32" }
 	}
 	set buttons [ttk::frame $clfdkCfgGroup.frmButtons]
@@ -622,7 +622,7 @@ proc fillCurrentParameters {} {
 #	set GUISettings(openctOutputDatatype)  [$ctsimu_scenario get openct_output_datatype]
 	set GUISettings(openctAbsPaths)        [$ctsimu_scenario get openct_abs_paths]
 	set GUISettings(openctUncorrected)     [$ctsimu_scenario get openct_uncorrected]
-	set GUISettings(openctCircularAllowed) [$ctsimu_scenario get openct_circular_allowed]
+	set GUISettings(openctCircularEnforced) [$ctsimu_scenario get openct_circular_enforced]
 
 	set GUISettings(cfgFileCLFDK)         [$ctsimu_scenario get create_clfdk_config_file]
 	set GUISettings(clfdkOutputDatatype)  [$ctsimu_scenario get clfdk_output_datatype]
@@ -647,7 +647,7 @@ proc applyCurrentSettings {} {
 #	$ctsimu_scenario set openct_output_datatype    $GUISettings(openctOutputDatatype)
 	$ctsimu_scenario set openct_abs_paths          $GUISettings(openctAbsPaths)
 	$ctsimu_scenario set openct_uncorrected        $GUISettings(openctUncorrected)
-	$ctsimu_scenario set openct_circular_allowed   $GUISettings(openctCircularAllowed)
+	$ctsimu_scenario set openct_circular_enforced   $GUISettings(openctCircularEnforced)
 
 	$ctsimu_scenario set create_clfdk_config_file  $GUISettings(cfgFileCLFDK)
 	$ctsimu_scenario set clfdk_output_datatype     $GUISettings(clfdkOutputDatatype)
@@ -678,7 +678,7 @@ proc applyCurrentSettings {} {
 #	dict set storeSettings openctOutputDatatype [$ctsimu_scenario get openct_output_datatype]
 	dict set storeSettings openctAbsPaths [$ctsimu_scenario get openct_abs_paths]
 	dict set storeSettings openctUncorrected [$ctsimu_scenario get openct_uncorrected]
-	dict set storeSettings openctCircularAllowed [$ctsimu_scenario get openct_circular_allowed]
+	dict set storeSettings openctCircularEnforced [$ctsimu_scenario get openct_circular_enforced]
 
 	dict set storeSettings cfgFileCLFDK [$ctsimu_scenario get create_clfdk_config_file]
 	dict set storeSettings clfdkOutputDatatype [$ctsimu_scenario get clfdk_output_datatype]

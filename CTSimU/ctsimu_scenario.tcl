@@ -60,7 +60,7 @@ namespace eval ::ctsimu {
 			my set openct_output_datatype    "float32"
 			my set openct_abs_paths          0
 			my set openct_uncorrected        0
-			my set openct_circular_allowed   1
+			my set openct_circular_enforced  0
 
 			# clFDK config file options:
 			my set create_clfdk_config_file  0
@@ -1749,9 +1749,7 @@ namespace eval ::ctsimu {
 			set vsu [my get cera_voxelSizeU]
 			set vsv [my get cera_voxelSizeV]
 
-			# A VGI file is currently not necessary, because
-			# openCT files are usually reconstructed inside VGSTUDIO...?
-			#my save_VGI $openCTvginame $openCTvgifile $reconVolumeFilename 0 $vsu $vsv [my get openct_output_datatype]
+			my save_VGI $openCTvginame $openCTvgifile $reconVolumeFilename 0 $vsu $vsv [my get openct_output_datatype]
 
 			set fileType "TIFF"
 			if {[my get output_fileformat] == "raw"} {
@@ -1767,6 +1765,7 @@ namespace eval ::ctsimu {
 
 			set geomjson {
 				{
+                    "version": {"major": 1, "minor": 0},
 					"openCTJSON": {
 					    "versionMajor": 1,
 					    "versionMinor": 0,
@@ -1862,12 +1861,31 @@ namespace eval ::ctsimu {
 			::rl_json::json set geomjson projections images fileType [::rl_json::json new string $fileType]
 			::rl_json::json set geomjson projections images dataType [::rl_json::json new string $dataType]
 
-			foreach projectionFile $projectionFilenames {
-				::rl_json::json set geomjson projections images files end+1 [::rl_json::json new string "$projectionFile"]
-			}
+			if {[my get openct_circular_enforced] == 1} {
+				# If the circular file format variant is enforced, we need to check for the scan direction
+				# and need to reverse the order of projection images in case of clockwise stage rotation.
 
-			foreach P $projectionMatrices {
-				::rl_json::json set geomjson projections matrices end+1 [$P format_json]
+				if { [my get scan_direction] == "CW" } {
+					# Reverse order of projection images
+					for {set i [expr [llength $projectionFilenames]-1]} {$i >= 0} {set i [expr $i-1]} {
+						set projectionFile [lindex $projectionFilenames $i]
+						::rl_json::json set geomjson projections images files end+1 [::rl_json::json new string "$projectionFile"]
+					}
+				} else {
+					# Standard order of projection images
+					foreach projectionFile $projectionFilenames {
+						::rl_json::json set geomjson projections images files end+1 [::rl_json::json new string "$projectionFile"]
+					}
+				}
+			} else {
+				# Free beam trajectory variant.
+				foreach projectionFile $projectionFilenames {
+					::rl_json::json set geomjson projections images files end+1 [::rl_json::json new string "$projectionFile"]
+				}
+
+				foreach P $projectionMatrices {
+					::rl_json::json set geomjson projections matrices end+1 [$P format_json]
+				}
 			}
 
 			::rl_json::json set geomjson geometry detectorSize end+1 [$_detector physical_width]
@@ -1880,6 +1898,15 @@ namespace eval ::ctsimu {
 			set bbSizeZ  [expr [$_detector get rows] * $vsv]
 
 			::rl_json::json set geomjson geometry objectBoundingBox sizeXYZ [::rl_json::json new array [list number $bbSizeXY] [list number $bbSizeXY] [list number $bbSizeZ]]
+
+			::rl_json::json set geomjson geometry distanceSourceObject [my get cera_R]
+			::rl_json::json set geomjson geometry distanceObjectDetector [my get cera_ODD]
+
+			set startAngle [my get start_angle]
+			set stopAngle  [my get stop_angle]
+			set totalAngle [expr $stopAngle - $startAngle]
+			::rl_json::json set geomjson geometry totalAngle [::rl_json::json new number $totalAngle]
+			::rl_json::json set geomjson geometry skipAngle [::rl_json::json new number $startAngle]
 
 			# Corrections
 			if {[my get openct_uncorrected]} {
@@ -1921,171 +1948,17 @@ namespace eval ::ctsimu {
 
 				# Bad pixel mask
 				::rl_json::json set geomjson corrections badPixelMask [::rl_json::json new null]
-
-
-				# Check if we want a circular trajectory file.
-				if {[my get openct_circular_allowed] == 1} {
-					if { [$_source is_static] && [$_detector is_static] && [$_stage is_static] } {
-						# change to circular
-						::rl_json::json set geomjson openCTJSON variant [::rl_json::json new string "CircularTrajectoryCBCTScan"]
-						::rl_json::json set geomjson geometry distanceSourceObject [my get cera_R]
-						::rl_json::json set geomjson geometry distanceObjectDetector [my get cera_ODD]
-
-						set startAngle [my get start_angle]
-						set stopAngle  [my get stop_angle]
-						set totalAngle [expr $stopAngle - $startAngle]
-						::rl_json::json set geomjson geometry totalAngle [::rl_json::json new number $totalAngle]
-						::rl_json::json set geomjson geometry skipAngle [::rl_json::json new number $startAngle]
-					}
-				}
-
 			} else {
 				# Deactivate corrections
 				::rl_json::json set geomjson corrections [::rl_json::json new null]
 			}
 
-			fileutil::writeFile -encoding utf-8 $configFilename [::rl_json::json pretty $geomjson]
-		}
-
-		method save_clFDK_config_file { projectionFilenames projectionMatrices } {
-			# Creates a reconstruction configuration file for clFDK.
-			# clFDK uses the openCT file format, but currently an older version
-			# than version 1.0.0 that is written as the default openCT config file.
-			set reconFolder [my get run_recon_folder]
-			set outputBaseName [my get run_output_basename]
-
-			set configFilename "$reconFolder/$outputBaseName"
-			append configFilename "_recon_clFDK.json"
-
-			set reconVolumeFilename "$outputBaseName"
-			append reconVolumeFilename "_recon_clFDK.img"
-
-			set openCTvgifile "$reconFolder/${outputBaseName}_recon_clFDK.vgi"
-			set openCTvginame "${outputBaseName}_recon_openCT"
-
-			# match voxel size with CERA
-			set vsu [my get cera_voxelSizeU]
-			set vsv [my get cera_voxelSizeV]
-			my save_VGI $openCTvginame $openCTvgifile $reconVolumeFilename 0 $vsu $vsv [my get clfdk_output_datatype]
-
-			set fileType "TIFF"
-			if {[my get output_fileformat] == "raw"} {
-				set fileType "RAW"
+			# Check if we want a circular trajectory file.
+			if {[my get openct_circular_enforced] == 1} {
+				# change to circular
+				::rl_json::json set geomjson openCTJSON variant [::rl_json::json new string "CircularTrajectoryCBCTScan"]
+				::rl_json::json set geomjson projections matrices [::rl_json::json new null]
 			}
-
-			set dataType "UInt16"
-			if {[my get output_datatype] == "32bit"} {
-				set dataType "Float32"
-			}
-
-			set nProjections [llength $projectionFilenames]
-
-			set startAngle [my get start_angle]
-			set stopAngle  [my get stop_angle]
-			set totalAngle [expr $stopAngle - $startAngle]
-
-			set geomjson {
-				{
-					"version": {"major":1, "minor":0},
-					"openCTJSON":     {
-					    "versionMajor": 1,
-					    "versionMinor": 0,
-					    "revisionNumber": 0,
-					    "variant": "FreeTrajectoryCBCTScan"
-					},
-					"units": {
-					    "length": "Millimeter"
-					},
-					"volumeName": "",
-					"projections": {
-						"numProjections": 0,
-						"intensityDomain": true,
-						"images": {
-							"directory": "",
-							"dataType": "",
-							"fileType": "",
-							"files": []},
-						"matrices": []
-						},
-					"geometry": {
-						"totalAngle": null,
-						"skipAngle": 0,
-						"detectorPixel": [],
-						"detectorSize": [],
-						"mirrorDetectorAxis": "",
-						"distanceSourceObject": null,
-						"distanceObjectDetector": null,
-						"objectBoundingBox": []
-						},
-					 "corrections":{
-						"brightImages":{
-						  "directory": "",
-						  "dataType":"",
-						  "fileType":"",
-						  "files":[]
-						},
-
-						"darkImage":{
-						  "file":"",
-						  "dataType":"",
-						  "fileType":""
-						},
-
-						"badPixelMask":{
-						  "file":"",
-						  "dataType":"",
-						  "fileType":""
-						},
-
-						"intensities":[]
-					  }
-				}
-			}
-
-			::rl_json::json set geomjson volumeName [::rl_json::json new string $reconVolumeFilename]
-			::rl_json::json set geomjson projections numProjections $nProjections
-
-			::rl_json::json set geomjson projections images directory [::rl_json::json new string "."]
-			::rl_json::json set geomjson projections images fileType [::rl_json::json new string $fileType]
-			::rl_json::json set geomjson projections images dataType [::rl_json::json new string $dataType]
-
-			foreach projectionFile $projectionFilenames {
-				::rl_json::json set geomjson projections images files end+1 [::rl_json::json new string "[my get dots_to_root]/[my get ff_projection_short_path]/$projectionFile"]
-			}
-
-			foreach P $projectionMatrices {
-				::rl_json::json set geomjson projections matrices end+1 [$P format_json]
-			}
-
-			foreach projectionFile $projectionFilenames {
-				::rl_json::json set geomjson corrections intensities end+1 [::rl_json::json new number [$_detector get gv_max]]
-			}
-
-			::rl_json::json set geomjson geometry totalAngle [::rl_json::json new number $totalAngle]
-
-			::rl_json::json set geomjson geometry detectorSize end+1 [$_detector physical_width]
-			::rl_json::json set geomjson geometry detectorSize end+1 [$_detector physical_height]
-
-			::rl_json::json set geomjson geometry detectorPixel end+1 [$_detector get columns]
-			::rl_json::json set geomjson geometry detectorPixel end+1 [$_detector get rows]
-
-			set bbSizeXY [expr [$_detector get columns] * $vsu]
-			set bbSizeZ  [expr [$_detector get rows] * $vsv]
-
-			# Scale the unit cube to match the bounding box:
-			set S [::ctsimu::matrix new 4 4]
-			$S set_row 0 [list $bbSizeXY 0 0 0]
-			$S set_row 1 [list 0 $bbSizeXY 0 0]
-			$S set_row 2 [list 0 0 $bbSizeZ  0]
-			$S set_row 3 [list 0 0 0 1]
-			# Rotate the bounding box to the stage CS:
-			set R [::ctsimu::basis_transform_matrix $::ctsimu::world [$_stage current_coordinate_system] 1]
-
-			set RS [$R multiply $S]
-			::rl_json::json set geomjson geometry objectBoundingBox [$RS format_json]
-
-			::rl_json::json set geomjson geometry distanceSourceObject [my get cera_R]
-			::rl_json::json set geomjson geometry distanceObjectDetector [my get cera_ODD]
 
 			fileutil::writeFile -encoding utf-8 $configFilename [::rl_json::json pretty $geomjson]
 		}

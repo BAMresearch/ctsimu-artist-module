@@ -988,12 +988,12 @@ namespace eval ::ctsimu {
 			# using the CTSimU Toolbox.
 			set ff_filename [my get run_projection_folder]
 			append ff_filename "/"
-			append ff_filename [my get output_basename]
+			append ff_filename [my get run_output_basename]
 			append ff_filename "_flat.py"
 
 			set ff_content "from ctsimu.toolbox import Toolbox\n"
 			append ff_content "Toolbox(\"correction\", \""
-			append ff_content [my get output_basename]
+			append ff_content [my get run_output_basename]
 			append ff_content "_metadata.json"
 			append ff_content "\", rescaleFactor="
 			append ff_content [ $_detector get ff_rescale_factor]

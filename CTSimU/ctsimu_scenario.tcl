@@ -53,11 +53,20 @@ namespace eval ::ctsimu {
 
 			my set contact_name             ""
 
+			# Settings for quick import
 			my set onload_compute_detector  1
 			my set onload_compute_source    1
 			my set onload_load_samples      1
 			my set onload_scattering_active 1
 			my set onload_multisampling     1
+
+			# What has been done for this scenario?
+			my set loaded_full_simulation   1
+			my set loaded_compute_detector  1
+			my set loaded_compute_source    1
+			my set loaded_samples           1
+			my set loaded_scattering_active 1
+			my set loaded_multisampling     1
 
 			# Recon configs
 			my set recon_config_uncorrected  0
@@ -72,7 +81,7 @@ namespace eval ::ctsimu {
 			my set openct_circular_enforced  0
 
 			# clFDK config file options:
-			my set create_clfdk_run_script  0
+			my set create_clfdk_run_script   0
 
 			# Sample and material manager:
 			set _sample_manager [::ctsimu::samplemanager new]
@@ -154,11 +163,11 @@ namespace eval ::ctsimu {
 		}
 
 		method is_full_simulation { } {
-			if { ([my get onload_compute_detector] == 0) || \
-				 ([my get onload_compute_source] == 0) || \
-				 ([my get onload_load_samples] == 0) || \
-				 ([my get onload_scattering_active] == 0) || \
-				 ([my get onload_multisampling] == 0) } {
+			if { ([my get loaded_compute_detector] == 0) || \
+				 ([my get loaded_compute_source] == 0) || \
+				 ([my get loaded_samples] == 0) || \
+				 ([my get loaded_scattering_active] == 0) || \
+				 ([my get loaded_multisampling] == 0) } {
 				return 0
 			}
 
@@ -175,6 +184,15 @@ namespace eval ::ctsimu {
 			}
 
 			return 0
+		}
+
+		method progress_info { message } {
+			if { [my get loaded_full_simulation] == 0 } {
+				# Prepend warning if this is not a full simulation.
+				set message "\[ Partly loaded scenario! \] $message"
+			}
+
+			::ctsimu::status_info $message
 		}
 
 		method json_loaded_successfully { } {
@@ -577,6 +595,15 @@ namespace eval ::ctsimu {
 				set ::Xdetector(FFCorrRun) 0
 			}
 
+			# What has been loaded?
+			my set loaded_compute_detector  [my get onload_compute_detector]
+			my set loaded_compute_source    [my get onload_compute_source]
+			my set loaded_samples           [my get onload_load_samples]
+			my set loaded_scattering_active [my get onload_scattering_active]
+			my set loaded_multisampling     [my get onload_multisampling]
+
+			my set loaded_full_simulation   [my is_full_simulation ]
+
 			return 1
 		}
 
@@ -667,7 +694,7 @@ namespace eval ::ctsimu {
 			}
 
 			if { [my is_running] == 0 } {
-				::ctsimu::status_info "Ready."
+				my progress_info "Ready."
 			}
 		}
 
@@ -757,7 +784,9 @@ namespace eval ::ctsimu {
 
 							set pnr [expr $projNr+1]
 							set prcnt [expr round((100.0*($projNr+1.0))/$nProjections)]
-							::ctsimu::status_info "Taking projection $pnr/$nProjections... ($prcnt%)"
+
+							my progress_info "Taking projection $pnr/$nProjections... ($prcnt%)"
+
 							set fileNameSuffix [format $projCtrFmt $projNr]
 							my save_projection_image $projNr $fileNameSuffix
 
@@ -781,7 +810,7 @@ namespace eval ::ctsimu {
 			my stop_scan
 
 			if { $display_done_message == 1 } {
-				::ctsimu::status_info "Simulation done."
+				my progress_info "Simulation done."
 			}
 		}
 
@@ -927,7 +956,7 @@ namespace eval ::ctsimu {
 
 				if { [my get n_darks] > 0 } {
 					if {[my is_running] == 0} {return}
-					::ctsimu::status_info "Taking ideal dark field..."
+					my progress_info "Taking ideal dark field..."
 
 					# Turn off flat field correction
 					set stored_ff_correction $::Xdetector(FFCorrRun)
@@ -977,7 +1006,7 @@ namespace eval ::ctsimu {
 
 				if { [my get n_flats] } {
 					if {[my is_running] == 0} {return}
-					::ctsimu::status_info "Taking flat field..."
+					my progress_info "Taking flat field..."
 
 					::PartList::SelectAll
 					::PartList::SetVisibility 0
@@ -998,14 +1027,14 @@ namespace eval ::ctsimu {
 							set projCtrFmt [::ctsimu::generate_projection_counter_format [my get n_flats]]
 							for {set flatImgNr 0} {$flatImgNr < [my get n_flats]} {incr flatImgNr} {
 								set fnr [expr $flatImgNr+1]
-								::ctsimu::status_info "Taking flat field $fnr/[my get n_flats]..."
+								my progress_info "Taking flat field $fnr/[my get n_flats]..."
 								set flatFileNameSuffix "flat_[format $projCtrFmt $flatImgNr]"
 								my save_projection_image 0 $flatFileNameSuffix
 
 								if {[my is_running] == 0} {break}
 							}
 						} elseif {[my get n_flats] == 1} {
-							::ctsimu::status_info "Taking flat field..."
+							my progress_info "Taking flat field..."
 							my save_projection_image 0 "flat"
 						} else {
 							my stop_scan
@@ -1029,14 +1058,14 @@ namespace eval ::ctsimu {
 								set projCtrFmt [::ctsimu::generate_projection_counter_format [my get n_flats]]
 								for {set flatImgNr 0} {$flatImgNr < [my get n_flats]} {incr flatImgNr} {
 									set fnr [expr $flatImgNr+1]
-									::ctsimu::status_info "Taking flat field $fnr/[my get n_flats]..."
+									my progress_info "Taking flat field $fnr/[my get n_flats]..."
 									set flatFileNameSuffix "flat_[format $projCtrFmt $flatImgNr]"
 									my save_projection_image 0 $flatFileNameSuffix
 
 									if {[my is_running] == 0} {break}
 								}
 							} elseif {[my get n_flats] == 1} {
-								::ctsimu::status_info "Taking flat field..."
+								my progress_info "Taking flat field..."
 								my save_projection_image 0 "flat"
 							} else {
 								my stop_scan
@@ -1323,12 +1352,12 @@ namespace eval ::ctsimu {
 			}
 
 			# Simulation parameters:
-			::rl_json::json set metadata simulation full_simulation [::rl_json::json new boolean [my is_full_simulation]]
-			::rl_json::json set metadata simulation compute_detector [::rl_json::json new boolean [my get onload_compute_detector]]
-			::rl_json::json set metadata simulation compute_xray_source [::rl_json::json new boolean [my get onload_compute_source]]
-			::rl_json::json set metadata simulation load_samples [::rl_json::json new boolean [my get onload_load_samples]]
-			::rl_json::json set metadata simulation set_multisampling [::rl_json::json new boolean [my get onload_multisampling]]
-			::rl_json::json set metadata simulation set_scattering [::rl_json::json new boolean [my get onload_scattering_active]]
+			::rl_json::json set metadata simulation full_simulation [::rl_json::json new boolean [my get loaded_full_simulation]]
+			::rl_json::json set metadata simulation compute_detector [::rl_json::json new boolean [my get loaded_compute_detector]]
+			::rl_json::json set metadata simulation compute_xray_source [::rl_json::json new boolean [my get loaded_compute_source]]
+			::rl_json::json set metadata simulation load_samples [::rl_json::json new boolean [my get loaded_samples]]
+			::rl_json::json set metadata simulation set_multisampling [::rl_json::json new boolean [my get loaded_multisampling]]
+			::rl_json::json set metadata simulation set_scattering [::rl_json::json new boolean [my get loaded_scattering_active]]
 
 			::rl_json::json set metadata simulation scattering on [::rl_json::json new boolean [my get scattering_on]]
 
@@ -1387,7 +1416,7 @@ namespace eval ::ctsimu {
 			# Projection matrix for each projection:
 			for {set p 0} {$p < $nproj} {incr p} {
 				set pnr [expr $p+1]
-				::ctsimu::status_info "Calculating projection matrix $pnr/$nproj..."
+				my progress_info "Calculating projection matrix $pnr/$nproj..."
 
 				my set_frame_for_recon $p
 

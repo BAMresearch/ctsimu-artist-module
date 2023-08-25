@@ -121,6 +121,7 @@ The options in the *scenario loading* group let you exclude certain features fro
 
 ### Reconstruction
 <img title="GUI screenshot of the module reconstruction settings" align="right" src="docs/pictures/GUI_reconstruction.png">
+
 The module lets you generate configuration files for third-party reconstruction software. Details about these config files can be set in the *Reconstruction* tab:
 
 + **Volume data type:** data type of the reconstruction's output volume file.

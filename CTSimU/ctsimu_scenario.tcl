@@ -104,6 +104,7 @@ namespace eval ::ctsimu {
 			my set json_file              ""; # full path + name of JSON file
 			my set json_file_name         ""; # JSON filename without path
 			my set json_file_directory    ""; # Path to JSON file
+			my set json_dict              ""; # the currently imported JSON dictionary
 			my set start_angle             0
 			my set stop_angle            360
 			my set projection_counter_format "%04d"
@@ -339,6 +340,7 @@ namespace eval ::ctsimu {
 			::ctsimu::set_json_path [my get json_file_directory]
 
 			set jsonstring [::ctsimu::read_json_file $json_filename]
+			my set json_dict $jsonstring
 
 			# Check file type and file format version.
 			# -------------------------------------------
@@ -1077,7 +1079,12 @@ namespace eval ::ctsimu {
 						"contact": "",
 						"date_created": "",
 						"date_changed": "",
-						"version": {"major": 1, "minor": 0}
+
+						"file_type": "CTSimU Metadata",
+						"file_format_version": {
+							"major": 1,
+							"minor": 2
+						}
 					},
 
 					"output": {
@@ -1115,13 +1122,14 @@ namespace eval ::ctsimu {
 								"projections_corrected": false
 							}
 						},
-						"tomogram": null,
-						"reconstruction": null
+						"tomogram": null
 					},
 
 					"acquisition_geometry": {
 						"path_to_CTSimU_JSON": ""
 					},
+
+					"reconstruction": null,
 
 					"simulation": {
 						"full_simulation": true,
@@ -1138,7 +1146,8 @@ namespace eval ::ctsimu {
 							"on": false,
 							"image_interval": 0,
 							"photons": 0
-						}
+						},
+						"ctsimu_scenario": null
 					}
 				}
 			}
@@ -1170,7 +1179,7 @@ namespace eval ::ctsimu {
 
 
 			# Fill template:
-			::rl_json::json set metadata file name [::rl_json::json new string [my get run_output_basename]]
+			::rl_json::json set metadata file name [::rl_json::json new string "[my get run_output_basename]"]
 
 			set systemTime [clock seconds]
 			set today [clock format $systemTime -format %Y-%m-%d]
@@ -1180,8 +1189,8 @@ namespace eval ::ctsimu {
 
 			::rl_json::json set metadata output system [::rl_json::json new string "aRTist $aRTistVersion, $modulename $moduleversion"]
 			::rl_json::json set metadata output date_measured [::rl_json::json new string $today]
-			::rl_json::json set metadata output projections filename [::rl_json::json new string $projFilename]
-			::rl_json::json set metadata output projections datatype [::rl_json::json new string [my get output_datatype]]
+			::rl_json::json set metadata output projections filename [::rl_json::json new string "$projFilename"]
+			::rl_json::json set metadata output projections datatype [::rl_json::json new string "[my get output_datatype]"]
 
 			if {$headerSizeValid==1} {
 				::rl_json::json set metadata output projections headersize {{"file": 0, "image": 0}}
@@ -1204,13 +1213,13 @@ namespace eval ::ctsimu {
 
 				if { [my get n_darks] == 1 } {
 					append dark_filename_pattern $fileExtension
-					::rl_json::json set metadata output projections dark_field filename [::rl_json::json new string $dark_filename_pattern]
+					::rl_json::json set metadata output projections dark_field filename [::rl_json::json new string "$dark_filename_pattern"]
 				} else {
 					append dark_filename_pattern "_"
 					append dark_filename_pattern [::ctsimu::generate_projection_counter_format [my get n_darks]]; # something like %04d
 					append dark_filename_pattern $fileExtension
 
-					::rl_json::json set metadata output projections dark_field filename [::rl_json::json new string $dark_filename_pattern]
+					::rl_json::json set metadata output projections dark_field filename [::rl_json::json new string "$dark_filename_pattern"]
 				}
 			}
 
@@ -1224,13 +1233,13 @@ namespace eval ::ctsimu {
 
 				if { [my get n_flats] == 1 } {
 					append flat_filename_pattern $fileExtension
-					::rl_json::json set metadata output projections flat_field filename [::rl_json::json new string $flat_filename_pattern]
+					::rl_json::json set metadata output projections flat_field filename [::rl_json::json new string "$flat_filename_pattern"]
 				} else {
 					append flat_filename_pattern "_"
 					append flat_filename_pattern [::ctsimu::generate_projection_counter_format [my get n_flats]]; # something like %04d
 					append flat_filename_pattern $fileExtension
 
-					::rl_json::json set metadata output projections flat_field filename [::rl_json::json new string $flat_filename_pattern]
+					::rl_json::json set metadata output projections flat_field filename [::rl_json::json new string "$flat_filename_pattern"]
 				}
 			}
 
@@ -1260,12 +1269,14 @@ namespace eval ::ctsimu {
 			}
 
 			if { [::ctsimu::aRTist_available] } {
-				::rl_json::json set metadata simulation multisampling source [::rl_json::json new string $::Xsetup(SourceSampling)]
-				::rl_json::json set metadata simulation multisampling detector [::rl_json::json new string $::Xsetup(DetectorSampling)]
+				::rl_json::json set metadata simulation multisampling source [::rl_json::json new string "$::Xsetup(SourceSampling)"]
+				::rl_json::json set metadata simulation multisampling detector [::rl_json::json new string "$::Xsetup(DetectorSampling)"]
 			} else {
-				::rl_json::json set metadata simulation multisampling source [::rl_json::json new string [$_source get multisampling]]
-				::rl_json::json set metadata simulation multisampling detector [::rl_json::json new string [$_detector get multisampling]]
+				::rl_json::json set metadata simulation multisampling source [::rl_json::json new string "[$_source get multisampling]"]
+				::rl_json::json set metadata simulation multisampling detector [::rl_json::json new string "[$_detector get multisampling]"]
 			}
+
+			::rl_json::json set metadata simulation ctsimu_scenario [my get json_dict]
 
 			# Write metadata file:
 			set metadataFilename "[my get run_projection_folder]/[my get run_output_basename]_metadata.json"

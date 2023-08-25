@@ -5,9 +5,11 @@ This submodule provides a general class to handle the drift of an arbitrary para
 
 ### Constructor
 
-* `constructor { native_unit }`
+* `constructor { native_unit { preferred_unit "" } }`
 
     When a drift object is constructed, it must be assigned a valid `native_unit` to enable the JSON parser to convert the drift values from the JSON file, if necessary. See the documentation on [native units](native_units.md) for a complete list of valid strings.
+
+    The preferred unit is given to the drift by the parameter that creates the drift. It is the unit used for the parameter's standard value in the JSON file and taken as a fallback if the drift does not define its own unit.
 
 ### General
 

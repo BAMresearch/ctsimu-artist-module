@@ -17,25 +17,35 @@ The parameters that are typically accessible from the GUI can be set via a scrip
 
 The following properties can be set:
 
-| Property                        | Value                     | Remarks                                                  |
-| :------------------------------ | :------------------------ | :------------------------------------------------------- |
-| `output_basename`               | string                    |                                                          |
-| `output_folder`                 | string                    |                                                          |
-| `output_fileformat`             | `"raw"` or `"tiff"`       |                                                          |
-| `output_datatype`               | `"uint16"` or `"float32"` |                                                          |
-| `start_angle`                   | float                     | Start angle of the scan.                                 |
-| `stop_angle`                    | float                     | Stop angle of the scan.                                  |
-| `n_projections`                 | integer                   | Number of projections in the scan.                       |
-| `include_final_angle`           | `0` or `1`                | Take the last projection when the stop angle is reached? |
-| `start_projection_number`       | integer                   | Projection number at which the simulation should start.  |
-| `scattering_image_interval`     | integer                   | Calculate new scatter image every n projections.         |
-| `show_stage`                    | `0` or `1`                | Show stage in aRTist scene?                              |
-| `restart_aRTist_after_each_run` | `0` or `1`                | Batch manager: restart aRTist after each run?            |
-| `recon_output_datatype`         | `"uint16"` or `"float32"` | Output datatype of the CERA volume.                      |
-| `create_cera_config_file`       | `0` or `1`                | Create a CERA reconstruction config file?                |
-| `create_openct_config_file`     | `0` or `1`                | Create an openCT reconstruction config file?             |
-| `openct_abs_paths`              | `0` or `1`                | Use absolute file paths in openCT config file?           |
-| `create_clfdk_run_script`      | `0` or `1`                | Create a clFDK reconstruction config file?               |
+| Property                         | Value                     | Remarks                                                  |
+| :------------------------------- | :------------------------ | :------------------------------------------------------- |
+| `output_basename`                | string                    |                                                          |
+| `output_folder`                  | string                    |                                                          |
+| `output_fileformat`              | `"raw"` or `"tiff"`       |                                                          |
+| `output_datatype`                | `"uint16"` or `"float32"` |                                                          |
+| `start_angle`                    | float                     | Start angle of the scan.                                 |
+| `stop_angle`                     | float                     | Stop angle of the scan.                                  |
+| `n_projections`                  | integer                   | Number of projections in the scan.                       |
+| `include_final_angle`            | `0` or `1`                | Take the last projection when the stop angle is reached? |
+| `start_projection_number`        | integer                   | Projection number at which the simulation should start.  |
+| `scattering_image_interval`      | integer                   | Calculate new scatter image every n projections.         |
+| `contact_name`                   | string                    | Contact name for the metadata file.                      |
+| `show_stage`                     | `0` or `1`                | Show stage in aRTist scene?                              |
+| `skip_simulation`                | `0` or `1`                | Skip simulation and only create config/metadata files?   |
+| `run_number_always_in_filenames` | `0` or `1`                | Run number in file and folder names, even for single runs. |
+| `restart_aRTist_after_each_run`  | `0` or `1`                | Batch manager: restart aRTist after each run?            |
+| `onload_compute_detector`        | `0` or `1`                | Compute full detector?                                   |
+| `onload_compute_source`          | `0` or `1`                | Compute full X-ray source?                               |
+| `onload_load_samples`            | `0` or `1`                | Load samples from scenario?                              |
+| `onload_scattering_active`       | `0` or `1`                | Set multisampling for scenario?                          |
+| `onload_multisampling`           | `0` or `1`                | Set scattering if required by scenario?                  |
+| `recon_output_datatype`          | `"uint16"` or `"float32"` | Output datatype for the reconstruction volume.           |
+| `recon_config_uncorrected`       | `0` or `1`                | Prepare recon configs for uncorrected projection images? |
+| `create_cera_config_file`        | `0` or `1`                | Create a CERA reconstruction config file?                |
+| `create_openct_config_file`      | `0` or `1`                | Create an OpenCT reconstruction config file?             |
+| `openct_abs_paths`               | `0` or `1`                | Use absolute file paths in OpenCT config file?           |
+| `openct_circular_enforced`       | `0` or `1`                | Enforce the circular trajectory file format variant?     |
+| `create_clfdk_run_script`        | `0` or `1`                | Create a batch file for a clFDK reconstruction?          |
 
 ### Functions for single scenarios
 

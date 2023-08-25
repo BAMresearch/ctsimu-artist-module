@@ -533,7 +533,7 @@ proc InitGUI { parent } {
 	grid $buttons - -sticky snew
 
 
-	set openctCfgGroup   [FoldFrame $recon.frmOpenCTCfg  -text "openCT Reconstruction"  -padding $pad]
+	set openctCfgGroup   [FoldFrame $recon.frmOpenCTCfg  -text "OpenCT Reconstruction"  -padding $pad]
 	dataform $openctCfgGroup {
 		{Create OpenCT config file} cfgFileOpenCT       bool   { }
 		{Use absolute file paths}   openctAbsPaths      bool   { }

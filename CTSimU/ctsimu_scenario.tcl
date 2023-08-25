@@ -75,7 +75,7 @@ namespace eval ::ctsimu {
 			# CERA config file options:
 			my set create_cera_config_file  1
 
-			# openCT config file options:
+			# OpenCT config file options:
 			my set create_openct_config_file 1
 			my set openct_abs_paths          0
 			my set openct_circular_enforced  0
@@ -187,9 +187,11 @@ namespace eval ::ctsimu {
 		}
 
 		method progress_info { message } {
+			# Display progress info, possibly prepend a warning message
+			# if a partial scenario is being simulated.
 			if { [my get loaded_full_simulation] == 0 } {
 				# Prepend warning if this is not a full simulation.
-				set message "\[ Partly loaded scenario! \] $message"
+				set message "\[ Partially loaded scenario! \] $message"
 			}
 
 			::ctsimu::status_info $message
@@ -1392,7 +1394,7 @@ namespace eval ::ctsimu {
 
 		method create_recon_configs { } {
 			# Create config files for the individual reconstruction programs (if required by the scenario).
-			set matrices_openCT {}
+			set matrices_OpenCT {}
 			set matrices_CERA {}
 			set projection_filenames {}
 
@@ -1422,8 +1424,8 @@ namespace eval ::ctsimu {
 
 				# Calculate and store projection matrices:
 				if { $do_create_openct_config_file == 1 } {
-					set P_openCT [my projection_matrix 0 0 "openCT"]
-					lappend matrices_openCT $P_openCT
+					set P_OpenCT [my projection_matrix 0 0 "OpenCT"]
+					lappend matrices_OpenCT $P_OpenCT
 				}
 
 				if { $do_create_cera_config_file == 1 } {
@@ -1447,7 +1449,7 @@ namespace eval ::ctsimu {
 
 			# Create recon config files:
 			if { [my get create_openct_config_file] == 1} {
-				my save_openCT_config_file $projection_filenames $matrices_openCT
+				my save_openCT_config_file $projection_filenames $matrices_OpenCT
 
 				if { [my get create_clfdk_run_script] == 1} {
 					my save_clFDK_script
@@ -1459,7 +1461,7 @@ namespace eval ::ctsimu {
 			}
 
 			# Destroy matrix objects:
-			foreach P $matrices_openCT {
+			foreach P $matrices_OpenCT {
 				$P destroy
 			}
 			foreach P $matrices_CERA {
@@ -1489,7 +1491,7 @@ namespace eval ::ctsimu {
 			#     See notes for details.
 			#
 			# mode : str
-			#     Pre-defined modes. Either "openCT" or "CERA" are supported.
+			#     Pre-defined modes. Either "OpenCT" or "CERA" are supported.
 			#     They override the `volumeCS` and `imageCS`, which can be set
 			#     to `0` when using one of the pre-defined modes.
 			#
@@ -1533,7 +1535,7 @@ namespace eval ::ctsimu {
 			# [$volumeCS v] scale $voxelSize_v
 			# [$volumeCS w] scale $voxelSize_w
 
-			set valid_modes [list "openCT" "CERA"]
+			set valid_modes [list "OpenCT" "CERA"]
 
 			if { $mode != 0 } {
 				# Override image CS:
@@ -1544,15 +1546,15 @@ namespace eval ::ctsimu {
 				set volume [::ctsimu::coordinate_system new "Volume"]
 				$volume reset
 
-				if { $mode == "openCT" } {
-					# openCT places the origin of the image CS at the detector
+				if { $mode == "OpenCT" } {
+					# OpenCT places the origin of the image CS at the detector
 					# center. The constructor places it at (0,0,0) automatically,
 					# so there is nothing to do. Comments for illustration.
 					# [$image center] set_x 0
 					# [$image center] set_y 0
 					# [$image center] set_z 0
 
-					# openCT's image CS is in mm units. We assume that all
+					# OpenCT's image CS is in mm units. We assume that all
 					# other coordinate systems are in mm as well here (at least
 					# when imported from JSON file). No scaling of the basis vectors is necessary.
 					# [$image u] scale 1.0
@@ -1959,24 +1961,24 @@ namespace eval ::ctsimu {
 		}
 
 		method save_openCT_config_file { projectionFilenames projectionMatrices } {
-			# Creates a reconstruction configuration file in the openCT file format.
+			# Creates a reconstruction configuration file in the OpenCT file format.
 			set reconFolder [my get run_recon_folder]
 			set outputBaseName [my get run_output_basename]
 
 			set configFilename "$reconFolder/$outputBaseName"
-			append configFilename "_recon_openCT.json"
+			append configFilename "_recon_OpenCT.json"
 
 			set reconVolumeFilename "$outputBaseName"
-			append reconVolumeFilename "_recon_openCT.img"
+			append reconVolumeFilename "_recon_OpenCT.img"
 
-			set openCTvgifile "$reconFolder/${outputBaseName}_recon_openCT.vgi"
-			set openCTvginame "${outputBaseName}_recon_openCT"
+			set OpenCTvgifile "$reconFolder/${outputBaseName}_recon_OpenCT.vgi"
+			set OpenCTvginame "${outputBaseName}_recon_OpenCT"
 
 			# match voxel size with CERA
 			set vsu [my get cera_voxelSizeU]
 			set vsv [my get cera_voxelSizeV]
 
-			my save_VGI $openCTvginame $openCTvgifile $reconVolumeFilename 0 $vsu $vsv [my get recon_output_datatype]
+			my save_VGI $OpenCTvginame $OpenCTvgifile $reconVolumeFilename 0 $vsu $vsv [my get recon_output_datatype]
 
 			set fileType "TIFF"
 			if {[my get output_fileformat] == "raw"} {
@@ -1993,7 +1995,7 @@ namespace eval ::ctsimu {
 			set geomjson {
 				{
 					"version": {"major": 1, "minor": 0},
-					"openCTJSON": {
+					"OpenCTJSON": {
 						"versionMajor": 1,
 						"versionMinor": 0,
 						"revisionNumber": 0,
@@ -2183,7 +2185,7 @@ namespace eval ::ctsimu {
 			# Check if we want a circular trajectory file.
 			if {[my get openct_circular_enforced] == 1} {
 				# change to circular
-				::rl_json::json set geomjson openCTJSON variant [::rl_json::json new string "CircularTrajectoryCBCTScan"]
+				::rl_json::json set geomjson OpenCTJSON variant [::rl_json::json new string "CircularTrajectoryCBCTScan"]
 				::rl_json::json set geomjson projections matrices [::rl_json::json new null]
 			}
 

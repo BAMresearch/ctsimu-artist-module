@@ -107,10 +107,32 @@ Parameters that can be set up in the *Settings* tab:
 
 + **Show stage coordinate system in scene:** when a scenario is loaded, the sample stage will be added as an object to aRTist's part list and will be displayed in the scene as a coordinate system. The stage's material will be set to `none`, it will therefore not have any influence on the projection image. The stage model displays the current location and orientation of the sample stage in the selected frame. The size of the stage model will be scaled to match 2/3 of the scenario's detector height.
 + **Restart aRTist after each batch run:** to save memory, the batch manager can restart aRTist after each completion of a batch run. The batch simulation will continue after the restart.
++ **Single runs: include run number in file names:** The batch manager allows repeated simulation runs of a single scenario. For each run, a separate folder (with adapted file names) is created. For consistency, even single runs can be forced to include the run number (run001) in their file and folder names. This may allow for better automatic post-processing.
++ **Skip simulation, only create configs and metadata:** This option can be activated if aRTist should not run a simulation of projection images, but instead only create the folder structure, metadata files and reconstruction configuration files.
++ **Metadata contact name:** Metadata files include a field for the contact name, i.e., the person or institution that was in charge of the simulation. This name can be entered here.
+
+The options in the *scenario loading* group let you exclude certain features from the simulation. This can speed up scenario loading and is meant for testing and development purposes. If any of these options is deactivated, a warning is show during the simulation that only a *partially loaded scenario* is being simulated. Additionally, the `full_simulation` property in the metadata file will be set to `false`.
+
++ **Compute full detector:** If deactivated, a simple, ideal detector will be taken instead of computing the full detector characteristics.
++ **Compute full X-ray source:** If deactivated, a simple monochromatic X-ray source will be simulated instead of computing a full spectrum. Note that this may not play well with a custom-made detector. When in doubt, also deactivate the full detector computation.
++ **Load samples:** Import the samples from the scenario file?
++ **Set multisampling:** Set multisampling for X-ray source and detector; either the CTSimU standard values or the values defined in the scenario. If deactivated, a very simple 1x1 multisampling will be used for X-ray source and detector to speed up the simulation.
++ **Set scattering if required:** Activate scattering if required by the scenario. If deactivated, scatter simulation will always be turned off to save simulation time.
+
+### Reconstruction
+<img title="GUI screenshot of the module reconstruction settings" align="right" src="docs/pictures/GUI_reconstruction.png">
+The module lets you generate configuration files for third-party reconstruction software. Details about these config files can be set in the *Reconstruction* tab:
+
++ **Volume data type:** data type of the reconstruction's output volume file.
++ **Use uncorrected projections:** Typically, simulated projection images need to be flat-field corrected (and possibly dark-field corrected) after the simulation, before they are given to the reconstruction software. The [CTSimU Toolbox](https://github.com/BAMresearch/ctsimu-toolbox) provides means to do so, and the module will create a flat field correction Python script specifically as part of the simulation. When this option is activated, the reconstruction configuration will not refer to the corrected projection images created by the toolbox, but instead to the uncorrected images from the simulation. Some reconstruction software provide their own means for flat-field correction, and the module will specifically enable flat-field and dark-field correction in the OpenCT config files. **This option should also be activated if flat-field correction is done in aRTist during the simulation.**
 + **Create CERA config file:** creates a CERA reconstruction configuration file as part of a scan simulation. The configuration file will come with a list of projection matrices for each frame that CERA can use for the reconstruction. However, the reconstruction configuration will also contain parameters for a circular trajectory reconstruction. If these parameters shall be used by CERA, the list of projection matrices should be de-referenced in the config file, i.e. the parameter `ProjectionMatrixFilename` should be commented or removed from the config file.
-	- **CERA volume data type:** data type of the reconstruction's output volume file.
+
+#### OpenCT options
+
 + **Create OpenCT config file:** creates an OpenCT reconstruction configuration file, for example supported by VGSTUDIO.
-	- **OpenCT volume data type:** data type of the reconstruction's output volume file.
++ **Use absolute file paths:** absolute paths will be used to refer to projection images in the config file instead of relative paths.
++ **Enforce circular format instead of free trajectory:** OpenCT comes in two variants: *circular trajectory* and *free trajectory*. By default, the module creates the *free trajectory* format, as this is the most general. However, depending on the reconstruction software and the available licenses, the *circular trajectory* might be useful. Keep in mind that the circular variant is only meant for ideal circular cone-beam CT trajectories, with the rotation axis and cone beam centered on the detector and no tilts.
++ **Create clFDK run script:** Creates a batch file that allows to call BAM clFDK with the OpenCT config file.
 
 ## Tcl API
 

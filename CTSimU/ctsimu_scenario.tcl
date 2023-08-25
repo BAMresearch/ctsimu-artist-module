@@ -59,20 +59,20 @@ namespace eval ::ctsimu {
 			my set onload_scattering_active 1
 			my set onload_multisampling     1
 
+			# Recon configs
+			my set recon_config_uncorrected  0
+			my set recon_output_datatype     "float32"
+
 			# CERA config file options:
 			my set create_cera_config_file  1
-			my set cera_output_datatype     "float32"
 
 			# openCT config file options:
 			my set create_openct_config_file 1
-			my set openct_output_datatype    "float32"
 			my set openct_abs_paths          0
-			my set openct_uncorrected        0
 			my set openct_circular_enforced  0
 
 			# clFDK config file options:
-			my set create_clfdk_config_file  0
-			my set clfdk_output_datatype     "float32"
+			my set create_clfdk_run_script  0
 
 			# Sample and material manager:
 			set _sample_manager [::ctsimu::samplemanager new]
@@ -235,7 +235,7 @@ namespace eval ::ctsimu {
 			# 32bit -> float32
 			# For backwards compatibility, we need to check
 			# if someone still has those in their aRTist settings.
-			if { $setting == {output_datatype} || $setting == {cera_output_datatype} || $setting == {openct_output_datatype} } {
+			if { ( $setting == {output_datatype} ) || ( $setting == {recon_output_datatype} ) } {
 				if { $value == "16bit" } {
 					set value "uint16"
 				} elseif { $value == "32bit" } {
@@ -733,41 +733,41 @@ namespace eval ::ctsimu {
 			my create_run_filenames $run $nruns
 			my prepare_postprocessing_configs
 
-            if {[my get skip_simulation] == 0} {
-    			my _set_run_status 1
+			if {[my get skip_simulation] == 0} {
+				my _set_run_status 1
 
-    			if { [my is_running] } {
-    				# Create flat field and dark field images.
-    				my generate_flats_and_darks
-    			}
+				if { [my is_running] } {
+					# Create flat field and dark field images.
+					my generate_flats_and_darks
+				}
 
-    			my set scattering_current_image_step -1
+				my set scattering_current_image_step -1
 
-    			if { [my is_running] } {
-    				# Run actual scan.
-    				set nProjections [my get n_projections]
-    				set projCtrFmt [my get projection_counter_format]
+				if { [my is_running] } {
+					# Run actual scan.
+					set nProjections [my get n_projections]
+					set projCtrFmt [my get projection_counter_format]
 
-    				if {$nProjections > 0} {
-    					#aRTist::InitProgress
-    					#aRTist::ProgressQuantum $nProjections
+					if {$nProjections > 0} {
+						#aRTist::InitProgress
+						#aRTist::ProgressQuantum $nProjections
 
-    					for {set projNr [my get start_projection_number]} {$projNr < $nProjections} {incr projNr} {
-    						my set_frame $projNr
+						for {set projNr [my get start_projection_number]} {$projNr < $nProjections} {incr projNr} {
+							my set_frame $projNr
 
-    						set pnr [expr $projNr+1]
-    						set prcnt [expr round((100.0*($projNr+1.0))/$nProjections)]
-    						::ctsimu::status_info "Taking projection $pnr/$nProjections... ($prcnt%)"
-    						set fileNameSuffix [format $projCtrFmt $projNr]
-    						my save_projection_image $projNr $fileNameSuffix
+							set pnr [expr $projNr+1]
+							set prcnt [expr round((100.0*($projNr+1.0))/$nProjections)]
+							::ctsimu::status_info "Taking projection $pnr/$nProjections... ($prcnt%)"
+							set fileNameSuffix [format $projCtrFmt $projNr]
+							my save_projection_image $projNr $fileNameSuffix
 
-    						if {[my is_running] == 0} {break}
-    					}
+							if {[my is_running] == 0} {break}
+						}
 
-    					#aRTist::ProgressFinished
-    				}
-    			}
-            }
+						#aRTist::ProgressFinished
+					}
+				}
+			}
 
 			# Check if we are still successfully running.
 			# If so, print a "done" message after stopping the simulation.
@@ -793,20 +793,27 @@ namespace eval ::ctsimu {
 			# Make projection folder and metadata file:
 			file mkdir [my get run_projection_folder]
 
-			# Create metadata file:
-			my create_metadata_file
+			# Calculate general parameters for CERA circular trajectory reconstruction.
+			# We need these for metadata files (voxel size) and recon configs.
+			my set_up_CERA_RDabcuv
 
-			# Create flat fiel correction script
+			# Create metadata files:
+			my create_metadata_file "projections"
+
+			# Create flat field correction script
 			# if flat field images are generated:
 			if { [my get n_flats] > 0 } {
 				my create_flat_field_correction_script
 			}
 
+			# Prepare reconstruction folder and metadata file:
+			file mkdir [my get run_recon_folder]
+			my create_metadata_file "reconstruction"
+
 			# Make reconstruction files for scans with multiple projections,
 			# if activated in the settings.
 			if { ([my get n_projections] > 1) && \
 				 ([my get create_openct_config_file] || [my get create_cera_config_file]) } {
-				file mkdir [my get run_recon_folder]
 				my create_recon_configs
 			}
 		}
@@ -963,6 +970,9 @@ namespace eval ::ctsimu {
 					set ::Xdetector(LRUnsharpness) $savedLRUnsharpness
 					set ::Xdetector(UnsharpnessOn) 0
 					::XDetector::UnsharpnessOverrideSet
+
+					# Restore FF correction setting
+					set ::Xdetector(FFCorrRun) $stored_ff_correction
 				}
 
 				if { [my get n_flats] } {
@@ -1072,8 +1082,9 @@ namespace eval ::ctsimu {
 			fileutil::writeFile -encoding utf-8 $ff_filename $ff_content
 		}
 
-		method create_metadata_file { } {
+		method create_metadata_file { { mode "projections"} } {
 			# Create a metadata JSON file for the simulation.
+			# mode: "projections" or "reconstruction"
 			set metadata {
 				{
 					"file": {
@@ -1126,7 +1137,26 @@ namespace eval ::ctsimu {
 								"projections_corrected": false
 							}
 						},
-						"tomogram": null
+						"tomogram":
+						{
+							"filename":  null,
+							"datatype":  "uint16",
+							"byteorder": "little",
+							"headersize": {
+								"file": 0,
+								"image": 0
+							},
+							"dimensions": {
+								"x": {"value": null, "unit": "px"},
+								"y": {"value": null, "unit": "px"},
+								"z": {"value": null, "unit": "px"}
+							},
+							"voxelsize": {
+								"x": {"value": null, "unit": "mm"},
+								"y": {"value": null, "unit": "mm"},
+								"z": {"value": null, "unit": "mm"}
+							}
+						}
 					},
 
 					"acquisition_geometry": {
@@ -1176,7 +1206,19 @@ namespace eval ::ctsimu {
 				set fileExtension ".raw"
 				set headerSizeValid 1
 			}
-			set projFilename [my get run_output_basename]
+			set projFilename ""
+			if { $mode == "reconstruction" } {
+				# In reconstruction metadata files, the projection images
+				# are in a different folder.
+				append projFilename "[my get dots_to_root]/"
+				if { [my get recon_config_uncorrected] == 0 } {
+					append projFilename "[my get ff_projection_short_path]/"
+				} else {
+					append projFilename "[my get uncorrected_short_path]/"
+				}
+			}
+
+			append projFilename [my get run_output_basename]
 			append projFilename "_"
 			append projFilename [my get projection_counter_format]
 			append projFilename $fileExtension
@@ -1225,6 +1267,12 @@ namespace eval ::ctsimu {
 
 					::rl_json::json set metadata output projections dark_field filename [::rl_json::json new string "$dark_filename_pattern"]
 				}
+
+				if { ([my get recon_config_uncorrected] == 0) && ($mode == "reconstruction") } {
+					# Dark field correction should have been performed by Toolbox
+					# if recon config refers to corrected projection images.
+					::rl_json::json set metadata output projections dark_field projections_corrected [::rl_json::json new boolean 1]
+				}
 			}
 
 			# Flat field:
@@ -1245,14 +1293,34 @@ namespace eval ::ctsimu {
 
 					::rl_json::json set metadata output projections flat_field filename [::rl_json::json new string "$flat_filename_pattern"]
 				}
+
+				if { ([my get recon_config_uncorrected] == 0) && ($mode == "reconstruction") } {
+					# Flat field correction should have been performed by Toolbox
+					# if recon config refers to corrected projection images.
+					::rl_json::json set metadata output projections flat_field projections_corrected [::rl_json::json new boolean 1]
+				}
 			}
 
 			if { [my get ff_correction_on] } {
+				# Flat field correction has already taken place in aRTist.
 				::rl_json::json set metadata output projections flat_field projections_corrected [::rl_json::json new boolean 1]
 			}
 
 			# JSON filename:
 			::rl_json::json set metadata acquisition_geometry path_to_CTSimU_JSON [::rl_json::json new string "../[my get dots_to_root]/[my get json_file_name]"]
+
+			# Tomogram:
+			if { $mode == "reconstruction" } {
+				::rl_json::json set metadata output tomogram datatype [::rl_json::json new string "[my get recon_output_datatype]"]
+				::rl_json::json set metadata output tomogram dimensions x value [::rl_json::json new number [$_detector get columns]]
+				::rl_json::json set metadata output tomogram dimensions y value [::rl_json::json new number [$_detector get columns]]
+				::rl_json::json set metadata output tomogram dimensions z value [::rl_json::json new number [$_detector get rows]]
+				::rl_json::json set metadata output tomogram voxelsize x value  [::rl_json::json new number [my get cera_voxelSizeU]]
+				::rl_json::json set metadata output tomogram voxelsize y value  [::rl_json::json new number [my get cera_voxelSizeU]]
+				::rl_json::json set metadata output tomogram voxelsize z value  [::rl_json::json new number [my get cera_voxelSizeV]]
+			} else {
+				::rl_json::json set metadata output tomogram [::rl_json::json new null]
+			}
 
 			# Simulation parameters:
 			::rl_json::json set metadata simulation full_simulation [::rl_json::json new boolean [my is_full_simulation]]
@@ -1283,7 +1351,13 @@ namespace eval ::ctsimu {
 			::rl_json::json set metadata simulation ctsimu_scenario [my get json_dict]
 
 			# Write metadata file:
-			set metadataFilename "[my get run_projection_folder]/[my get run_output_basename]_metadata.json"
+			if { $mode == "reconstruction" } {
+				set metadataFilename "[my get run_recon_folder]/[my get run_output_basename]_recon_metadata.json"
+			} else {
+				set metadataFilename "[my get run_projection_folder]/[my get run_output_basename]_metadata.json"
+			}
+
+
 			fileutil::writeFile -encoding utf-8 $metadataFilename [::rl_json::json pretty $metadata]
 		}
 
@@ -1300,22 +1374,30 @@ namespace eval ::ctsimu {
 			# of projection matrices can be cancelled.
 			my _set_run_status 1
 
-			my set_up_CERA_RDabcuv; # also necessary for openCT
+			set do_create_openct_config_file [my get create_openct_config_file]
+			set do_create_cera_config_file   [my get create_cera_config_file]
+
+			set nproj [my get n_projections]
+
+			set pfiletype ".tif"
+			if {[my get output_fileformat] == "raw"} {
+				set pfiletype ".raw"
+			}
 
 			# Projection matrix for each projection:
-			for {set p 0} {$p < [my get n_projections]} {incr p} {
+			for {set p 0} {$p < $nproj} {incr p} {
 				set pnr [expr $p+1]
-				::ctsimu::status_info "Calculating projection matrix $pnr/[my get n_projections]..."
+				::ctsimu::status_info "Calculating projection matrix $pnr/$nproj..."
 
 				my set_frame_for_recon $p
 
 				# Calculate and store projection matrices:
-				if { ([my get create_openct_config_file] == 1) || ([my get create_clfdk_config_file] == 1)} {
+				if { $do_create_openct_config_file == 1 } {
 					set P_openCT [my projection_matrix 0 0 "openCT"]
 					lappend matrices_openCT $P_openCT
 				}
 
-				if { [my get create_cera_config_file] == 1} {
+				if { $do_create_cera_config_file == 1 } {
 					set P_CERA [my projection_matrix 0 0 "CERA"]
 					lappend matrices_CERA $P_CERA
 				}
@@ -1324,11 +1406,7 @@ namespace eval ::ctsimu {
 				set fileNameSuffix [format $projCtrFmt $p]
 				set currFile "$outputBaseName"
 				append currFile "_$fileNameSuffix"
-				if {[my get output_fileformat] == "raw"} {
-					append currFile ".raw"
-				} else {
-					append currFile ".tif"
-				}
+				append currFile "$pfiletype"
 				lappend projection_filenames $currFile
 
 				update
@@ -1341,19 +1419,14 @@ namespace eval ::ctsimu {
 			# Create recon config files:
 			if { [my get create_openct_config_file] == 1} {
 				my save_openCT_config_file $projection_filenames $matrices_openCT
+
+				if { [my get create_clfdk_run_script] == 1} {
+					my save_clFDK_script
+				}
 			}
 
 			if { [my get create_cera_config_file] == 1} {
 				my save_CERA_config_file $matrices_CERA
-			}
-
-			if { [my get create_clfdk_config_file] == 1} {
-				my save_clFDK_script
-
-				if { [my get create_openct_config_file] == 0} {
-					# We still need the openCT JSON file for clFDK.
-					my save_openCT_config_file $projection_filenames $matrices_openCT
-				}
 			}
 
 			# Destroy matrix objects:
@@ -1851,7 +1924,7 @@ namespace eval ::ctsimu {
 			set batFileContent "CHCP 65001\n"
 			set batFileContent "clfdk \"$outputBaseName"
 			append batFileContent "_recon_openCT.json\" \"$outputBaseName"
-			append batFileContent "_recon_openCT\" iformat json dtype [my get clfdk_output_datatype]"
+			append batFileContent "_recon_openCT\" iformat json dtype [my get recon_output_datatype]"
 
 			fileutil::writeFile -encoding utf-8 $batFilename $batFileContent
 		}
@@ -1874,7 +1947,7 @@ namespace eval ::ctsimu {
 			set vsu [my get cera_voxelSizeU]
 			set vsv [my get cera_voxelSizeV]
 
-			my save_VGI $openCTvginame $openCTvgifile $reconVolumeFilename 0 $vsu $vsv [my get openct_output_datatype]
+			my save_VGI $openCTvginame $openCTvgifile $reconVolumeFilename 0 $vsu $vsv [my get recon_output_datatype]
 
 			set fileType "TIFF"
 			if {[my get output_fileformat] == "raw"} {
@@ -1890,17 +1963,17 @@ namespace eval ::ctsimu {
 
 			set geomjson {
 				{
-                    "version": {"major": 1, "minor": 0},
+					"version": {"major": 1, "minor": 0},
 					"openCTJSON": {
-					    "versionMajor": 1,
-					    "versionMinor": 0,
-					    "revisionNumber": 0,
-					    "variant": "FreeTrajectoryCBCTScan"
+						"versionMajor": 1,
+						"versionMinor": 0,
+						"revisionNumber": 0,
+						"variant": "FreeTrajectoryCBCTScan"
 					},
 					"hints": null,
 					"units": {
-					    "length": "Millimeter",
-					    "angle": "Degree"
+						"length": "Millimeter",
+						"angle": "Degree"
 					},
 					"volumeName": "",
 					"projections": {
@@ -1976,7 +2049,7 @@ namespace eval ::ctsimu {
 				set projPath "[my get dots_to_root]"
 			}
 
-			if {[my get openct_uncorrected]} {
+			if {[my get recon_config_uncorrected]} {
 				append projPath "/[my get uncorrected_short_path]"
 			} else {
 				append projPath "/[my get ff_projection_short_path]"
@@ -2034,7 +2107,7 @@ namespace eval ::ctsimu {
 			::rl_json::json set geomjson geometry skipAngle [::rl_json::json new number $startAngle]
 
 			# Corrections
-			if {[my get openct_uncorrected]} {
+			if {[my get recon_config_uncorrected]} {
 				# Dark field:
 				if {[my get n_darks] > 0} {
 					::rl_json::json set geomjson corrections darkImage fileType [::rl_json::json new string $fileType]
@@ -2145,6 +2218,10 @@ text = $name}
 			set reconFolder [my get run_recon_folder]
 			set outputBaseName [my get run_output_basename]
 			set ffProjShortPath [my get ff_projection_short_path]
+			if {[my get recon_config_uncorrected] == 1} {
+				set ffProjShortPath [my get uncorrected_short_path]
+			}
+
 			set dotsToRoot [my get dots_to_root]
 
 			set projTableFilename $outputBaseName
@@ -2187,8 +2264,7 @@ MidpointZ = 0 # $midpointZ
 VoxelSizeX = $voxelsizeU
 VoxelSizeY = $voxelsizeU
 VoxelSizeZ = $voxelsizeV
-# Datatype = $ceraOutputDataType
-OutputDatatype = $ceraOutputDataType
+OutputDatatype = $reconOutputDatatype
 
 [CustomKeys]
 NumProjections = $N
@@ -2241,10 +2317,10 @@ GlobalI0Value = $globalI0
 				set scanDirection "CCW"
 			}
 
-			if { [my get cera_output_datatype] == "uint16" } {
-				set ceraOutputDataType "uint16"
+			if { [my get recon_output_datatype] == "uint16" } {
+				set reconOutputDatatype "uint16"
 			} else {
-				set ceraOutputDataType "float"
+				set reconOutputDatatype "float"
 			}
 
 			# Cropping doesn't work this way and might not even be necessary?
@@ -2279,7 +2355,7 @@ GlobalI0Value = $globalI0
 			set CERAvginame "${outputBaseName}_recon_cera"
 			set vsu [my get cera_voxelSizeU]
 			set vsv [my get cera_voxelSizeV]
-			my save_VGI $CERAvginame $CERAvgifile $CERAoutfile 0 $vsu $vsv [my get cera_output_datatype]
+			my save_VGI $CERAvginame $CERAvgifile $CERAoutfile 0 $vsu $vsv [my get recon_output_datatype]
 
 			set SOD  [my get cera_R]
 			set SDD  [my get cera_D]

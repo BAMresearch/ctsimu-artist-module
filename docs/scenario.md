@@ -126,10 +126,8 @@ The following table gives an overview of the currently used keys and their meani
 | `n_frames`                      | Total number of frames in scan.                                     |
 | `environment_material`          | Material id for the environment.                                    |
 | `create_cera_config_file`       | If a reconstruction configuration file for SIEMENS CERA shall be created for the simulated projection images. |
-| `cera_output_datatype`          | Data type of the CERA reconstruction volume: `uint16` or `float32`. |
+| `recon_output_datatype`         | Data type of the CERA reconstruction volume: `uint16` or `float32`. |
+| `recon_config_uncorrected`      | Use uncorrected projection images and leave correction to reconstruction software? (`0` or `1`) |
 | `create_openct_config_file`     | If a reconstruction configuration file in the openCT format shall be created. |
-| `openct_output_datatype`        | Data type of the OpenCT reconstruction volume: `uint16` or `float32`. Currently not used. |
 | `openct_abs_paths`              | Use absolute file paths in openCT config file? (`0` or `1`)         |
-| `openct_uncorrected`            | Use uncorrected projection images and leave correction to reconstruction software? (`0` or `1`) |
-| `create_clfdk_config_file`      | If a reconstruction configuration file for BAM clFDK shall be created for the simulated projection images. |
-| `clfdk_output_datatype`         | Data type of the clFDK reconstruction volume: `uint16` or `float32`. |
+| `create_clfdk_run_script`       | If a run script for BAM clFDK shall be created for the simulated projection images. Only with openCT configuration activated. |

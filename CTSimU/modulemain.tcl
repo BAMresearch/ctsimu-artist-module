@@ -107,28 +107,24 @@ proc Init {} {
 		$ctsimu_batchmanager set waiting_for_restart [dict get $prefs waitingForRestart]
 	}
 
-	if { [dict exists $prefs cfgFileCERA] } {
-		$ctsimu_scenario set create_cera_config_file [dict get $prefs cfgFileCERA]
+	if { [dict exists $prefs reconOutputDatatype] } {
+		$ctsimu_scenario set recon_output_datatype [dict get $prefs reconOutputDatatype]
 	}
 
-	if { [dict exists $prefs ceraOutputDatatype] } {
-		$ctsimu_scenario set cera_output_datatype [dict get $prefs ceraOutputDatatype]
+	if { [dict exists $prefs reconConfigUncorrected] } {
+		$ctsimu_scenario set recon_config_uncorrected [dict get $prefs reconConfigUncorrected]
+	}
+
+	if { [dict exists $prefs cfgFileCERA] } {
+		$ctsimu_scenario set create_cera_config_file [dict get $prefs cfgFileCERA]
 	}
 
 	if { [dict exists $prefs cfgFileOpenCT] } {
 		$ctsimu_scenario set create_openct_config_file [dict get $prefs cfgFileOpenCT]
 	}
 
-#	if { [dict exists $prefs openctOutputDatatype] } {
-#		$ctsimu_scenario set openct_output_datatype [dict get $prefs openctOutputDatatype]
-#	}
-
 	if { [dict exists $prefs openctAbsPaths] } {
 		$ctsimu_scenario set openct_abs_paths [dict get $prefs openctAbsPaths]
-	}
-
-	if { [dict exists $prefs openctUncorrected] } {
-		$ctsimu_scenario set openct_uncorrected [dict get $prefs openctUncorrected]
 	}
 
 	if { [dict exists $prefs openctCircularEnforced] } {
@@ -136,11 +132,7 @@ proc Init {} {
 	}
 
 	if { [dict exists $prefs cfgFileCLFDK] } {
-		$ctsimu_scenario set create_clfdk_config_file [dict get $prefs cfgFileCLFDK]
-	}
-
-	if { [dict exists $prefs clfdkOutputDatatype] } {
-		$ctsimu_scenario set clfdk_output_datatype [dict get $prefs clfdkOutputDatatype]
+		$ctsimu_scenario set create_clfdk_run_script [dict get $prefs cfgFileCLFDK]
 	}
 
 	# Feed the imported settings (so far) to the GUI:
@@ -524,10 +516,18 @@ proc InitGUI { parent } {
 	foreach item [winfo children $settings] { grid $item -sticky snew }
 
 
+	set reconCfgGroup   [FoldFrame $recon.frmReconCfg  -text "Reconstruction config files"  -padding $pad]
+	dataform $reconCfgGroup {
+		{Volume data type}             reconOutputDatatype   choice { "uint16" "uint16" "float32" "float32" }
+		{Use uncorrected projections}  reconConfigUncorrected   bool   { }
+	}
+	set buttons [ttk::frame $reconCfgGroup.frmButtons]
+	grid $buttons - -sticky snew
+
+
 	set ceraCfgGroup   [FoldFrame $recon.frmCeraCfg  -text "CERA Reconstruction"  -padding $pad]
 	dataform $ceraCfgGroup {
-		{Create CERA config file}   cfgFileCERA          bool   { }
-		{CERA volume data type}     ceraOutputDatatype   choice { "uint16" "uint16" "float32" "float32" }
+		{Create CERA config file}   cfgFileCERA         bool   { }
 	}
 	set buttons [ttk::frame $ceraCfgGroup.frmButtons]
 	grid $buttons - -sticky snew
@@ -535,12 +535,10 @@ proc InitGUI { parent } {
 
 	set openctCfgGroup   [FoldFrame $recon.frmOpenCTCfg  -text "openCT Reconstruction"  -padding $pad]
 	dataform $openctCfgGroup {
-		{Create OpenCT config file} cfgFileOpenCT        bool   { }
-		{Use absolute file paths}   openctAbsPaths       bool   { }
-		{Run flat/dark correction in reconstruction software}   openctUncorrected   bool   { }
+		{Create OpenCT config file} cfgFileOpenCT       bool   { }
+		{Use absolute file paths}   openctAbsPaths      bool   { }
 		{Enforce circular format instead of free trajectory}   openctCircularEnforced   bool   { }
-		{Create clFDK run script}  cfgFileCLFDK         bool   { }
-		{clFDK volume data type}   clfdkOutputDatatype  choice { "uint16" "uint16" "float32" "float32" }
+		{Create clFDK run script}   cfgFileCLFDK        bool   { }
 	}
 	set buttons [ttk::frame $openctCfgGroup.frmButtons]
 	grid $buttons - -sticky snew
@@ -664,17 +662,15 @@ proc fillCurrentParameters {} {
 	set GUISettings(onloadScatteringActive) [$ctsimu_scenario get onload_scattering_active]
 
 	# Recon settings
-	set GUISettings(cfgFileCERA)           [$ctsimu_scenario get create_cera_config_file]
-	set GUISettings(ceraOutputDatatype)    [$ctsimu_scenario get cera_output_datatype]
+	set GUISettings(cfgFileCERA)            [$ctsimu_scenario get create_cera_config_file]
+	set GUISettings(reconOutputDatatype)    [$ctsimu_scenario get recon_output_datatype]
+	set GUISettings(reconConfigUncorrected) [$ctsimu_scenario get recon_config_uncorrected]
 
-	set GUISettings(cfgFileOpenCT)         [$ctsimu_scenario get create_openct_config_file]
-#	set GUISettings(openctOutputDatatype)  [$ctsimu_scenario get openct_output_datatype]
-	set GUISettings(openctAbsPaths)        [$ctsimu_scenario get openct_abs_paths]
-	set GUISettings(openctUncorrected)     [$ctsimu_scenario get openct_uncorrected]
+	set GUISettings(cfgFileOpenCT)          [$ctsimu_scenario get create_openct_config_file]
+	set GUISettings(openctAbsPaths)         [$ctsimu_scenario get openct_abs_paths]
 	set GUISettings(openctCircularEnforced) [$ctsimu_scenario get openct_circular_enforced]
 
-	set GUISettings(cfgFileCLFDK)         [$ctsimu_scenario get create_clfdk_config_file]
-	set GUISettings(clfdkOutputDatatype)  [$ctsimu_scenario get clfdk_output_datatype]
+	set GUISettings(cfgFileCLFDK)           [$ctsimu_scenario get create_clfdk_run_script]
 }
 
 proc applyCurrentSettings {} {
@@ -698,16 +694,14 @@ proc applyCurrentSettings {} {
 	$ctsimu_scenario set onload_scattering_active  $GUISettings(onloadScatteringActive)
 
 	$ctsimu_scenario set create_cera_config_file   $GUISettings(cfgFileCERA)
-	$ctsimu_scenario set cera_output_datatype      $GUISettings(ceraOutputDatatype)
+	$ctsimu_scenario set recon_output_datatype     $GUISettings(reconOutputDatatype)
+	$ctsimu_scenario set recon_config_uncorrected  $GUISettings(reconConfigUncorrected)
 
 	$ctsimu_scenario set create_openct_config_file $GUISettings(cfgFileOpenCT)
-#	$ctsimu_scenario set openct_output_datatype    $GUISettings(openctOutputDatatype)
 	$ctsimu_scenario set openct_abs_paths          $GUISettings(openctAbsPaths)
-	$ctsimu_scenario set openct_uncorrected        $GUISettings(openctUncorrected)
-	$ctsimu_scenario set openct_circular_enforced   $GUISettings(openctCircularEnforced)
+	$ctsimu_scenario set openct_circular_enforced  $GUISettings(openctCircularEnforced)
 
-	$ctsimu_scenario set create_clfdk_config_file  $GUISettings(cfgFileCLFDK)
-	$ctsimu_scenario set clfdk_output_datatype     $GUISettings(clfdkOutputDatatype)
+	$ctsimu_scenario set create_clfdk_run_script   $GUISettings(cfgFileCLFDK)
 
 	$ctsimu_scenario set output_fileformat         $GUISettings(fileFormat)
 	$ctsimu_scenario set output_datatype           $GUISettings(dataType)
@@ -737,16 +731,14 @@ proc applyCurrentSettings {} {
 	dict set storeSettings onloadScatteringActive [$ctsimu_scenario get onload_scattering_active]
 
 	dict set storeSettings cfgFileCERA        [$ctsimu_scenario get create_cera_config_file]
-	dict set storeSettings ceraOutputDatatype [$ctsimu_scenario get cera_output_datatype]
+	dict set storeSettings reconOutputDatatype [$ctsimu_scenario get recon_output_datatype]
+	dict set storeSettings reconConfigUncorrected [$ctsimu_scenario get recon_config_uncorrected]
 
 	dict set storeSettings cfgFileOpenCT [$ctsimu_scenario get create_openct_config_file]
-#	dict set storeSettings openctOutputDatatype [$ctsimu_scenario get openct_output_datatype]
 	dict set storeSettings openctAbsPaths [$ctsimu_scenario get openct_abs_paths]
-	dict set storeSettings openctUncorrected [$ctsimu_scenario get openct_uncorrected]
 	dict set storeSettings openctCircularEnforced [$ctsimu_scenario get openct_circular_enforced]
 
-	dict set storeSettings cfgFileCLFDK [$ctsimu_scenario get create_clfdk_config_file]
-	dict set storeSettings clfdkOutputDatatype [$ctsimu_scenario get clfdk_output_datatype]
+	dict set storeSettings cfgFileCLFDK [$ctsimu_scenario get create_clfdk_run_script]
 
 	# Save the settings dict in preferences file:
 	Preferences::Set CTSimU Settings $storeSettings

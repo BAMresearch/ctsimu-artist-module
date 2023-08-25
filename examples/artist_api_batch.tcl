@@ -21,10 +21,9 @@ if { [::Modules::Available "CTSimU"] } {
 
 	# Activate the creation of reconstruction config files
 	# and set the volume output datatype:
+	${ctsimu}::setProperty recon_output_datatype     "float32"
 	${ctsimu}::setProperty create_cera_config_file   1
-	${ctsimu}::setProperty cera_output_datatype      "float32"
 	${ctsimu}::setProperty create_openct_config_file 1
-	${ctsimu}::setProperty openct_output_datatype    "float32"
 
 	# Example 1:
 	# Import a batch list from a CSV file:

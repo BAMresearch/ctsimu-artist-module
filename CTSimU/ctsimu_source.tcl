@@ -278,12 +278,12 @@ namespace eval ::ctsimu {
 			}
 
 			# Intensity map
-			my set_parameter_from_key intensity_map_file      $sourceprops {spot intensity_map file}
-			my set_parameter_value    intensity_map_datatype  $sourceprops {spot intensity_map type} "float32"
-			my set_parameter_value    intensity_map_dim_x     $sourceprops {spot intensity_map dim_x} 0
-			my set_parameter_value    intensity_map_dim_y     $sourceprops {spot intensity_map dim_y} 0
-			my set_parameter_value    intensity_map_dim_z     $sourceprops {spot intensity_map dim_z} 0
-			my set_parameter_value    intensity_map_endian    $sourceprops {spot intensity_map endian} "little"
+			my set_parameter_from_key intensity_map_file        $sourceprops {spot intensity_map file}
+			my set_parameter_value    intensity_map_datatype    $sourceprops {spot intensity_map type} "float32"
+			my set_parameter_value    intensity_map_dim_x       $sourceprops {spot intensity_map dim_x} 0
+			my set_parameter_value    intensity_map_dim_y       $sourceprops {spot intensity_map dim_y} 0
+			my set_parameter_value    intensity_map_dim_z       $sourceprops {spot intensity_map dim_z} 0
+			my set_parameter_value    intensity_map_endian      $sourceprops {spot intensity_map endian} "little"
 			my set_parameter_value    intensity_map_headersize  $sourceprops {spot intensity_map headersize} 0
 
 			# Spectrum

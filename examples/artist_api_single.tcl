@@ -30,8 +30,8 @@ if { [::Modules::Available "CTSimU"] } {
 	${ctsimu}::setProperty include_final_angle         0
 	${ctsimu}::setProperty start_projection_number     9
 	${ctsimu}::setProperty scattering_image_interval   3
+	${ctsimu}::setProperty recon_output_datatype   "uint16"
 	${ctsimu}::setProperty create_cera_config_file     0
-	${ctsimu}::setProperty cera_output_datatype   "uint16"
 	${ctsimu}::setProperty create_openct_config_file   0
 	${ctsimu}::setProperty openct_output_datatype "uint16"
 

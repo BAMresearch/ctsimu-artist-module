@@ -51,9 +51,12 @@ CTSimU defines a [JSON-based file format](https://bamresearch.github.io/ctsimu-s
 
 ### Getters
 
-* `native_unit` — Get the parameter's native unit.
-* `standard_value` — Get the parameter's standard value (unaffected by any drifts).
-* `current_value` — Get the parameter's current value. Should be used after `set_frame`.
+* `native_unit` — Get the parameter's native unit, as used internally by aRTist.
+* `preferred_unit` — Get the parameter's preferred unit (as defined in the JSON file).
+* `preferred_uncertainty_unit` — Get the parameter's preferred uncertainty unit (as defined in the JSON file).
+* `standard_value` — Get the parameter's standard value (in native unit, unaffected by any drifts).
+* `current_value` — Get the parameter's current value  (in native unit). Should be used after `set_frame`.
+* `uncertainty` — Get the parameter's uncertainty value.
 * `maximum_value { nFrames { only_drifts_known_to_reconstruction 0 } }` — Get the maximum value during the evolution of `nFrames`, given drifts.
 * `minimum_value { nFrames { only_drifts_known_to_reconstruction 0 } }` — Get the minimum value during the evolution of `nFrames`, given drifts.
 * `changed` — Has the parameter changed since the last acknowledged change? (See setter function `acknowledge_change`). Returns `1` if true, `0` if not.
@@ -62,5 +65,8 @@ CTSimU defines a [JSON-based file format](https://bamresearch.github.io/ctsimu-s
 ### Setters
 
 * `set_native_unit { native_unit }` — Set the parameter's native unit.
+* `set_preferred_unit { preferred_unit }` — Set the parameter's preferred unit.
+* `set_preferred_uncertainty_unit { preferred_uncertainty_unit }` — Set the parameter's preferred uncertainty unit.
 * `set_standard_value { value }` — Set the parameter's standard value. Automatically sets the current value to the standard value.
+* `set_uncertainty { value }` — Set the parameter's standard uncertainty.
 * `acknowledge_change { { new_change_state 0} }` — Acknowledge a change of the parameter due to a drift. After the acknowledgment, the function `changed` will return the `new_change_state` value (standard: `0`).

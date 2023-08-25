@@ -9,7 +9,10 @@ source -encoding utf-8 [file join $BasePath ctsimu_drift.tcl]
 namespace eval ::ctsimu {
 	::oo::class create parameter {
 		variable _standard_value; # value without drifts
+		variable _uncertainty
 		variable _native_unit
+		variable _preferred_unit; # unit from/for the JSON scenario file
+		variable _preferred_uncertainty_unit
 		variable _drifts;         # list of drift objects
 		variable _current_value;  # value at current frame (obeying drifts)
 		variable _value_has_changed; # parameter value changed since last frame?
@@ -28,8 +31,11 @@ namespace eval ::ctsimu {
 			# is overwritten by the value given in the JSON file.
 			my set_standard_value $standard
 			my set_native_unit    $native_unit
+			my set_preferred_unit $native_unit
+
 			set _drifts           [list]
 			set _value_has_changed 1
+
 		}
 
 		destructor {
@@ -72,15 +78,30 @@ namespace eval ::ctsimu {
 			return $_native_unit
 		}
 
+		method preferred_unit { } {
+			# Get the parameter's preferred unit (as defined in the JSON file).
+			return $_preferred_unit
+		}
+
+		method preferred_uncertainty_unit { } {
+			# Get the parameter's preferred uncertainty unit (as defined in the JSON file).
+			return $_preferred_uncertainty_unit
+		}
+
 		method standard_value { } {
-			# Get the parameter's standard value (unaffected by drifts).
+			# Get the parameter's standard value (in native unit, unaffected by drifts).
 			return $_standard_value
 		}
 
 		method current_value { } {
-			# Get the parameter's current value.
+			# Get the parameter's current value (in native unit).
 			# Should be used after `set_frame`.
 			return $_current_value
+		}
+
+		method uncertainty { } {
+			# Get the parameter's uncertainty value.
+			return $_uncertainty
 		}
 
 		method maximum_value { nFrames { only_drifts_known_to_reconstruction 0 } } {
@@ -141,10 +162,19 @@ namespace eval ::ctsimu {
 
 		# Setters
 		# -------------------------
-
 		method set_native_unit { native_unit } {
 			# Set the parameter's native unit.
 			set _native_unit $native_unit
+		}
+
+		method set_preferred_unit { preferred_unit } {
+			# Set the parameter's preferred unit.
+			set _preferred_unit $preferred_unit
+		}
+
+		method set_preferred_uncertainty_unit { preferred_uncertainty_unit } {
+			# Set the parameter's preferred uncertainty unit.
+			set _preferred_uncertainty_unit $preferred_uncertainty_unit
 		}
 
 		method set_standard_value { value } {
@@ -152,6 +182,11 @@ namespace eval ::ctsimu {
 			# Automatically sets the current value to the standard value.
 			set _standard_value $value
 			set _current_value $value
+		}
+
+		method set_uncertainty { value } {
+			# Set the parameter's standard uncertainty.
+			set _uncertainty $value
 		}
 
 		method acknowledge_change { { new_change_state 0} } {
@@ -217,7 +252,7 @@ namespace eval ::ctsimu {
 			# Generates a ctsimu::drift object
 			# (from a JSON object that defines a drift)
 			# and adds it to the parameter's internal list of drifts to handle.
-			set d [ctsimu::drift new $_native_unit]
+			set d [ctsimu::drift new $_native_unit $_preferred_unit]
 			$d set_from_json $json_drift_obj
 			lappend _drifts $d
 		}
@@ -263,6 +298,28 @@ namespace eval ::ctsimu {
 				}
 
 				set _current_value $_standard_value
+
+				# Unit:
+				set _preferred_unit [::ctsimu::get_value $json_parameter_object {unit} $_native_unit]
+
+				# Uncertainty:
+				if { [::ctsimu::json_exists_and_not_null $json_parameter_object uncertainty]} {
+					set unc [::ctsimu::json_extract $json_parameter_object uncertainty]
+					set jsonType [::ctsimu::json_type $unc]
+
+					if { $jsonType == "object" } {
+						# Since file format 1.0, uncertainties are value/unit dicts:
+						my set_uncertainty [::ctsimu::json_convert_to_native_unit $_native_unit $unc [my preferred_unit]]
+						my set_preferred_uncertainty_unit [::ctsimu::get_value $json_parameter_object {uncertainty unit} $_preferred_unit]
+					} elseif { $jsonType == "number" } {
+						# Before file format 1.0, "uncertainty" and "uncertainty_unit" where
+						# separate properties of a parameter:
+						my set_preferred_uncertainty_unit [::ctsimu::get_value $json_parameter_object uncertainty_unit $_preferred_unit]
+						my set_uncertainty [::ctsimu::convert_to_native_unit [my preferred_uncertainty_unit] $_native_unit $unc]
+					} else {
+						my set_uncertainty 0
+					}
+				}
 
 				# Drifts:
 				if { [::ctsimu::json_exists_and_not_null $json_parameter_object drifts] } {

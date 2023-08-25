@@ -23,12 +23,19 @@ namespace eval ::ctsimu {
 
 		# Physical (internal) unit for all list values:
 		variable _native_unit
+		variable _preferred_unit; # unit from/for the JSON scenario file
 
-		constructor { native_unit } {
+		constructor { native_unit { preferred_unit "" } } {
 			my reset
 			set _interpolation 1
 
 			my set_native_unit $native_unit
+
+			if { $preferred_unit != "" } {
+				my set_preferred_unit $preferred_unit
+			} else {
+				my set_preferred_unit $native_unit
+			}
 		}
 
 		method reset { } {
@@ -61,6 +68,11 @@ namespace eval ::ctsimu {
 			return $_native_unit
 		}
 
+		method preferred_unit { } {
+			# Get the drift's preferred unit.
+			return $_preferred_unit
+		}
+
 		# Setters
 		# -------------------------
 		method set_known_to_reconstruction { known } {
@@ -85,14 +97,18 @@ namespace eval ::ctsimu {
 			}
 		}
 
+		method set_preferred_unit { preferred_unit } {
+			# Set the drift's preferred unit.
+			set _preferred_unit $preferred_unit
+		}
+
 		method set_from_json { json_object } {
 			# Sets the drift from a given JSON drift object.
 			my reset
 
 			# Get JSON unit
-			set jsonUnit [my native_unit]
 			if { [::ctsimu::json_exists_and_not_null $json_object {unit}] } {
-				set jsonUnit [::ctsimu::get_value $json_object {unit} [my native_unit]]
+				my set_preferred_unit [::ctsimu::get_value $json_object {unit} [my native_unit]]
 			}
 
 			# Known to reconstruction
@@ -105,22 +121,22 @@ namespace eval ::ctsimu {
 				set jsonValueType [::ctsimu::json_type $json_object value]
 
 				if {$jsonValueType == "number"} {
-					::ctsimu::info "Drift value is a number."
+					#::ctsimu::info "Drift value is a number."
 					set jsonValue [::ctsimu::get_value $json_object {value}]
-					lappend _trajectory [::ctsimu::convert_to_native_unit $jsonUnit $_native_unit $jsonValue]
+					lappend _trajectory [::ctsimu::convert_to_native_unit [my preferred_unit] $_native_unit $jsonValue]
 					return 1
 				} elseif {$jsonValueType == "array"} {
-					::ctsimu::info "Drift value is an array."
+					#::ctsimu::info "Drift value is an array."
 					set jsonValueArray [::ctsimu::json_extract $json_object {value}]
 					::rl_json::json foreach value $jsonValueArray {
-						lappend _trajectory [::ctsimu::convert_to_native_unit $jsonUnit $_native_unit $value]
+						lappend _trajectory [::ctsimu::convert_to_native_unit [my preferred_unit] $_native_unit $value]
 					}
 					return 1
 				}
 			} elseif { [::ctsimu::json_exists_and_not_null $json_object file] } {
 				set jsonValueType [::ctsimu::json_type $json_object file]
 				if {$jsonValueType == "string"} {
-					::ctsimu::info "Drift values from a file."
+					#::ctsimu::info "Drift values from a file."
 					set csvFilename [::ctsimu::get_value $json_object {file}]
 					set values [::ctsimu::read_csv_file $csvFilename]
 					set firstColumn [dict get $values 0]
@@ -128,8 +144,8 @@ namespace eval ::ctsimu {
 						lappend _trajectory $v
 					}
 
-					::ctsimu::info "Imported drift trajectory:"
-					::ctsimu::info $_trajectory
+					#::ctsimu::info "Imported drift trajectory:"
+					#::ctsimu::info $_trajectory
 					return 1
 				}
 			}

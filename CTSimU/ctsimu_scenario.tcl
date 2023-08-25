@@ -47,9 +47,16 @@ namespace eval ::ctsimu {
 			my set output_basename          "proj_"
 			my set output_folder            ""
 
-			# Option to show stage coordinate system in scene:
 			my set show_stage               1
 			my set skip_simulation          0
+
+			my set contact_name             ""
+
+			my set onload_compute_detector  1
+			my set onload_compute_source    1
+			my set onload_load_samples      1
+			my set onload_scattering_active 1
+			my set onload_multisampling     1
 
 			# CERA config file options:
 			my set create_cera_config_file  1
@@ -142,6 +149,18 @@ namespace eval ::ctsimu {
 
 		method is_running { } {
 			return $_running
+		}
+
+		method is_full_simulation { } {
+			if { ([my get onload_compute_detector] == 0) || \
+				 ([my get onload_compute_source] == 0) || \
+				 ([my get onload_load_samples] == 0) || \
+				 ([my get onload_scattering_active] == 0) || \
+				 ([my get onload_multisampling] == 0) } {
+				return 0
+			}
+
+			return 1
 		}
 
 		method json_loaded_successfully { } {
@@ -422,6 +441,28 @@ namespace eval ::ctsimu {
 			$_detector set_from_json $jsonstring [$_stage current_coordinate_system]
 			::ctsimu::info "Detector hash: [$_detector hash]"
 
+			# Quick load settings
+			# -------------------
+			if { [my get onload_compute_source] == 0 } {
+				# Set X-ray source to monochromatic
+				$_source set spectrum_monochromatic 1
+			}
+			if { [my get onload_compute_detector] == 0 } {
+				# Set a simpler detector
+				if { [$_detector get gray_value_mode] != "imin_imax" } {
+					$_detector set gray_value_mode "imin_imax"
+					$_detector set imin 0
+					$_detector set imax 60000
+				}
+
+				# Ideal detector
+				$_detector set type "ideal"
+				$_detector set scintillator_material_id "null"
+				$_detector set scintillator_thickness 0
+				$_detector set unsharpness_mode "off"
+				$_detector set noise_mode "off"
+			}
+
 			# Place objects in scene
 			# ------------------------
 			set stageCS [$_stage current_coordinate_system]
@@ -460,9 +501,11 @@ namespace eval ::ctsimu {
 				$_sample_manager add_sample $stage_copy
 			}
 
-			$_sample_manager set_from_json $jsonstring $stageCS
-			$_sample_manager set_frame $stageCS [my get current_frame] [my get n_frames]
+			if {[my get onload_load_samples] == 1} {
+				$_sample_manager set_from_json $jsonstring $stageCS
+			}
 
+			$_sample_manager set_frame $stageCS [my get current_frame] [my get n_frames]
 			$_sample_manager load_meshes $stageCS $_material_manager
 
 			# Multisampling
@@ -484,9 +527,17 @@ namespace eval ::ctsimu {
 			$_detector set_parameter_from_key multisampling $jsonstring {simulation aRTist multisampling_detector}
 			$_source set_parameter_from_key multisampling $jsonstring {simulation aRTist multisampling_spot}
 
+			# Limited scenario loading?
+			if { [my get onload_multisampling] == 0} {
+				$_detector set multisampling "1x1"
+				$_source set multisampling "point"
+			}
+
 			# Scattering
 			# -----------------
-			my set scattering_on [::ctsimu::get_value_in_native_unit "bool" $jsonstring {acquisition scattering} 0]
+			if {[my get onload_scattering_active] == 1} {
+				my set scattering_on [::ctsimu::get_value_in_native_unit "bool" $jsonstring {acquisition scattering} 0]
+			}
 			my set scattering_image_interval [::ctsimu::get_value $jsonstring {simulation aRTist scattering_image_interval value} [my get scattering_image_interval]]
 			my set scattering_mcray_photons [::ctsimu::get_value $jsonstring {simulation aRTist scattering_mcray_photons value} [my get scattering_mcray_photons]]
 
@@ -1006,8 +1057,7 @@ namespace eval ::ctsimu {
 			# Create a metadata JSON file for the simulation.
 			set metadata {
 				{
-					"file":
-					{
+					"file": {
 						"name": "",
 						"description": "",
 
@@ -1017,12 +1067,10 @@ namespace eval ::ctsimu {
 						"version": {"major": 1, "minor": 0}
 					},
 
-					"output":
-					{
+					"output": {
 						"system": "",
 						"date_measured": "",
-						"projections":
-						{
+						"projections": {
 							"filename":   "",
 							"datatype":   "",
 							"byteorder":  "little",
@@ -1055,10 +1103,28 @@ namespace eval ::ctsimu {
 							}
 						},
 						"tomogram": null,
-						"reconstruction": null,
-						"acquisitionGeometry":
-						{
-							"path_to_CTSimU_JSON": ""
+						"reconstruction": null
+					},
+
+					"acquisition_geometry": {
+						"path_to_CTSimU_JSON": ""
+					},
+
+					"simulation": {
+						"full_simulation": true,
+						"compute_detector": true,
+						"compute_xray_source": true,
+						"load_samples": true,
+						"set_multisampling": true,
+						"set_scattering": true,
+						"multisampling": {
+							"source": null,
+							"detector": null
+						},
+						"scattering": {
+							"on": false,
+							"image_interval": 0,
+							"photons": 0
 						}
 					}
 				}
@@ -1097,6 +1163,7 @@ namespace eval ::ctsimu {
 			set today [clock format $systemTime -format %Y-%m-%d]
 			::rl_json::json set metadata file date_created [::rl_json::json new string $today]
 			::rl_json::json set metadata file date_changed [::rl_json::json new string $today]
+			::rl_json::json set metadata file contact [::rl_json::json new string "[my get contact_name]"]
 
 			::rl_json::json set metadata output system [::rl_json::json new string "aRTist $aRTistVersion, $modulename $moduleversion"]
 			::rl_json::json set metadata output date_measured [::rl_json::json new string $today]
@@ -1159,7 +1226,33 @@ namespace eval ::ctsimu {
 			}
 
 			# JSON filename:
-			::rl_json::json set metadata output acquisitionGeometry path_to_CTSimU_JSON [::rl_json::json new string [my get json_file_name]]
+			::rl_json::json set metadata acquisition_geometry path_to_CTSimU_JSON [::rl_json::json new string "../[my get dots_to_root]/[my get json_file_name]"]
+
+			# Simulation parameters:
+			::rl_json::json set metadata simulation full_simulation [::rl_json::json new boolean [my is_full_simulation]]
+			::rl_json::json set metadata simulation compute_detector [::rl_json::json new boolean [my get onload_compute_detector]]
+			::rl_json::json set metadata simulation compute_xray_source [::rl_json::json new boolean [my get onload_compute_source]]
+			::rl_json::json set metadata simulation load_samples [::rl_json::json new boolean [my get onload_load_samples]]
+			::rl_json::json set metadata simulation set_multisampling [::rl_json::json new boolean [my get onload_multisampling]]
+			::rl_json::json set metadata simulation set_scattering [::rl_json::json new boolean [my get onload_scattering_active]]
+
+			::rl_json::json set metadata simulation scattering on [::rl_json::json new boolean [my get scattering_on]]
+
+			if {[my get scattering_on] == 1} {
+				::rl_json::json set metadata simulation scattering image_interval [::rl_json::json new number [my get scattering_image_interval]]
+				::rl_json::json set metadata simulation scattering photons [::rl_json::json new number [my get scattering_mcray_photons]]
+			} else {
+				::rl_json::json set metadata simulation scattering image_interval [::rl_json::json new null]
+				::rl_json::json set metadata simulation scattering photons [::rl_json::json new null]
+			}
+
+			if { [::ctsimu::aRTist_available] } {
+				::rl_json::json set metadata simulation multisampling source [::rl_json::json new string $::Xsetup(SourceSampling)]
+				::rl_json::json set metadata simulation multisampling detector [::rl_json::json new string $::Xsetup(DetectorSampling)]
+			} else {
+				::rl_json::json set metadata simulation multisampling source [::rl_json::json new string [$_source get multisampling]]
+				::rl_json::json set metadata simulation multisampling detector [::rl_json::json new string [$_detector get multisampling]]
+			}
 
 			# Write metadata file:
 			set metadataFilename "[my get run_projection_folder]/[my get run_output_basename]_metadata.json"

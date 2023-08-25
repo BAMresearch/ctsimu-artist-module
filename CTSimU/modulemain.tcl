@@ -67,6 +67,30 @@ proc Init {} {
 		$ctsimu_scenario set skip_simulation [dict get $prefs skipSimulation]
 	}
 
+	if { [dict exists $prefs contactName] } {
+		$ctsimu_scenario set contact_name [dict get $prefs contactName]
+	}
+
+	if { [dict exists $prefs onloadComputeDetector] } {
+		$ctsimu_scenario set onload_compute_detector [dict get $prefs onloadComputeDetector]
+	}
+
+	if { [dict exists $prefs onloadComputeSource] } {
+		$ctsimu_scenario set onload_compute_source [dict get $prefs onloadComputeSource]
+	}
+
+	if { [dict exists $prefs onloadLoadSamples] } {
+		$ctsimu_scenario set onload_load_samples [dict get $prefs onloadLoadSamples]
+	}
+
+	if { [dict exists $prefs onloadMultisampling] } {
+		$ctsimu_scenario set onload_multisampling [dict get $prefs onloadMultisampling]
+	}
+
+	if { [dict exists $prefs onloadScatteringActive] } {
+		$ctsimu_scenario set onload_scattering_active [dict get $prefs onloadScatteringActive]
+	}
+
 	if { [dict exists $prefs csvJobList] } {
 		$ctsimu_batchmanager set csv_list_to_import [dict get $prefs csvJobList]
 	}
@@ -394,6 +418,7 @@ proc InitGUI { parent } {
 	set model     [ttk::frame $note.frmModel -padding $pad]
 	set batch     [ttk::frame $note.frmBatch -padding $pad]
 	set settings  [ttk::frame $note.frmSettings -padding $pad]
+	set recon     [ttk::frame $note.frmRecon -padding $pad]
 
 	set general   [FoldFrame $model.frmGeneral -text "General"     -padding $pad]
 	dataform $general {
@@ -471,15 +496,30 @@ proc InitGUI { parent } {
 
 	set generalCfgGroup   [FoldFrame $settings.frmGeneralCfg  -text "General"  -padding $pad]
 	dataform $generalCfgGroup {
-		{Show stage coordinate system in scene}       showStageInScene     bool   { }
-		{Restart aRTist after each batch run}         restartArtistAfterBatchRun   bool   { }
-		{Skip simulation, only create config files}   skipSimulation     bool   { }
+		{Show stage coordinate system in scene}              showStageInScene     bool   { }
+		{Restart aRTist after each batch run}                restartArtistAfterBatchRun   bool   { }
+		{Skip simulation, only create configs and metadata}  skipSimulation     bool   { }
+		{Metadata contact name}                              contactName        string   {}
 	}
 	set buttons [ttk::frame $generalCfgGroup.frmButtons]
 	grid $buttons - -sticky snew
 
 
-	set ceraCfgGroup   [FoldFrame $settings.frmCeraCfg  -text "CERA Reconstruction"  -padding $pad]
+	set limitedCfgGroup   [FoldFrame $settings.frmLimitedCfg  -text "Scenario loading"  -padding $pad]
+	dataform $limitedCfgGroup {
+		{Compute full detector}       onloadComputeDetector    bool   { }
+		{Compute full X-ray source}   onloadComputeSource      bool   { }
+		{Load samples}                onloadLoadSamples        bool   { }
+		{Set multisampling}           onloadMultisampling      bool   { }
+		{Set scattering if required}  onloadScatteringActive   bool   { }
+	}
+	set buttons [ttk::frame $limitedCfgGroup.frmButtons]
+	grid $buttons - -sticky snew
+
+	foreach item [winfo children $settings] { grid $item -sticky snew }
+
+
+	set ceraCfgGroup   [FoldFrame $recon.frmCeraCfg  -text "CERA Reconstruction"  -padding $pad]
 	dataform $ceraCfgGroup {
 		{Create CERA config file}   cfgFileCERA          bool   { }
 		{CERA volume data type}     ceraOutputDatatype   choice { "uint16" "uint16" "float32" "float32" }
@@ -487,31 +527,26 @@ proc InitGUI { parent } {
 	set buttons [ttk::frame $ceraCfgGroup.frmButtons]
 	grid $buttons - -sticky snew
 
-	set openctCfgGroup   [FoldFrame $settings.frmOpenCTCfg  -text "openCT Reconstruction"  -padding $pad]
+
+	set openctCfgGroup   [FoldFrame $recon.frmOpenCTCfg  -text "openCT Reconstruction"  -padding $pad]
 	dataform $openctCfgGroup {
 		{Create OpenCT config file} cfgFileOpenCT        bool   { }
 		{Use absolute file paths}   openctAbsPaths       bool   { }
 		{Run flat/dark correction in reconstruction software}   openctUncorrected   bool   { }
 		{Enforce circular format instead of free trajectory}   openctCircularEnforced   bool   { }
-	}
-#		{OpenCT volume data type}   openctOutputDatatype choice { "uint16" "uint16" "float32" "float32" }
-	set buttons [ttk::frame $openctCfgGroup.frmButtons]
-	grid $buttons - -sticky snew
-
-	set clfdkCfgGroup   [FoldFrame $settings.frmCLFDKCfg  -text "clFDK Reconstruction"  -padding $pad]
-	dataform $clfdkCfgGroup {
 		{Create clFDK run script}  cfgFileCLFDK         bool   { }
 		{clFDK volume data type}   clfdkOutputDatatype  choice { "uint16" "uint16" "float32" "float32" }
 	}
-	set buttons [ttk::frame $clfdkCfgGroup.frmButtons]
+	set buttons [ttk::frame $openctCfgGroup.frmButtons]
 	grid $buttons - -sticky snew
 
-	foreach item [winfo children $settings] { grid $item -sticky snew }
+	foreach item [winfo children $recon] { grid $item -sticky snew }
 
 
 	$note add $model    -text "CT Setup" -sticky snew
 	$note add $batch    -text "Batch Processing" -sticky snew
 	$note add $settings -text "Settings" -sticky snew
+	$note add $recon    -text "Reconstruction" -sticky snew
 
 	set buttons [ttk::frame $main.frmButtons]
 	#ttk::button $buttons.btnOk -text "OK" -command ${ns}::GUIok
@@ -613,10 +648,18 @@ proc fillCurrentParameters {} {
 	set GUISettings(showStageInScene)     [$ctsimu_scenario get show_stage]
 	set GUISettings(restartArtistAfterBatchRun)  [$ctsimu_batchmanager get restart_aRTist_after_each_run]
 	set GUISettings(skipSimulation)       [$ctsimu_scenario get skip_simulation]
+	set GUISettings(contactName)          [$ctsimu_scenario get contact_name]
+
+	# Limited scenario loading
+	set GUISettings(onloadComputeDetector)  [$ctsimu_scenario get onload_compute_detector]
+	set GUISettings(onloadComputeSource)    [$ctsimu_scenario get onload_compute_source]
+	set GUISettings(onloadLoadSamples)      [$ctsimu_scenario get onload_load_samples]
+	set GUISettings(onloadMultisampling)    [$ctsimu_scenario get onload_multisampling]
+	set GUISettings(onloadScatteringActive) [$ctsimu_scenario get onload_scattering_active]
 
 	# Recon settings
-	set GUISettings(cfgFileCERA)          [$ctsimu_scenario get create_cera_config_file]
-	set GUISettings(ceraOutputDatatype)   [$ctsimu_scenario get cera_output_datatype]
+	set GUISettings(cfgFileCERA)           [$ctsimu_scenario get create_cera_config_file]
+	set GUISettings(ceraOutputDatatype)    [$ctsimu_scenario get cera_output_datatype]
 
 	set GUISettings(cfgFileOpenCT)         [$ctsimu_scenario get create_openct_config_file]
 #	set GUISettings(openctOutputDatatype)  [$ctsimu_scenario get openct_output_datatype]
@@ -639,6 +682,13 @@ proc applyCurrentSettings {} {
 	$ctsimu_scenario set show_stage                $GUISettings(showStageInScene)
 	$ctsimu_batchmanager set restart_aRTist_after_each_run $GUISettings(restartArtistAfterBatchRun)
 	$ctsimu_scenario set skip_simulation           $GUISettings(skipSimulation)
+	$ctsimu_scenario set contact_name              $GUISettings(contactName)
+
+	$ctsimu_scenario set onload_compute_detector   $GUISettings(onloadComputeDetector)
+	$ctsimu_scenario set onload_compute_source     $GUISettings(onloadComputeSource)
+	$ctsimu_scenario set onload_load_samples       $GUISettings(onloadLoadSamples)
+	$ctsimu_scenario set onload_multisampling      $GUISettings(onloadMultisampling)
+	$ctsimu_scenario set onload_scattering_active  $GUISettings(onloadScatteringActive)
 
 	$ctsimu_scenario set create_cera_config_file   $GUISettings(cfgFileCERA)
 	$ctsimu_scenario set cera_output_datatype      $GUISettings(ceraOutputDatatype)
@@ -666,10 +716,17 @@ proc applyCurrentSettings {} {
 
 	dict set storeSettings showStageInScene  [$ctsimu_scenario get show_stage]
 	dict set storeSettings skipSimulation    [$ctsimu_scenario get skip_simulation]
+	dict set storeSettings contactName       [$ctsimu_scenario get contact_name]
 	dict set storeSettings restartArtistAfterBatchRun [$ctsimu_batchmanager get restart_aRTist_after_each_run]
 	dict set storeSettings waitingForRestart [$ctsimu_batchmanager get waiting_for_restart]
 	dict set storeSettings nextBatchRun      [$ctsimu_batchmanager get next_run]
 	dict set storeSettings csvJobList        [$ctsimu_batchmanager csv_joblist 1]
+
+	dict set storeSettings onloadComputeDetector  [$ctsimu_scenario get onload_compute_detector]
+	dict set storeSettings onloadComputeSource    [$ctsimu_scenario get onload_compute_source]
+	dict set storeSettings onloadLoadSamples      [$ctsimu_scenario get onload_load_samples]
+	dict set storeSettings onloadMultisampling    [$ctsimu_scenario get onload_multisampling]
+	dict set storeSettings onloadScatteringActive [$ctsimu_scenario get onload_scattering_active]
 
 	dict set storeSettings cfgFileCERA        [$ctsimu_scenario get create_cera_config_file]
 	dict set storeSettings ceraOutputDatatype [$ctsimu_scenario get cera_output_datatype]

@@ -11,6 +11,7 @@ The main class for a complete CT scan scenario. This class keeps everything toge
 ### Current simulation status:
 
 * `is_running` — Is the simulation currently running? (`0` or `1`)
+* `is_full_simulation` — Was the full scenario simulated (`1`) or a quick, limited version (`0`)?
 * `batch_is_running` — Is the batch queue currently running? (`0` or `1`)
 * `json_loaded_successfully` — Scenario loaded successfully? (`0` or `1`)
 

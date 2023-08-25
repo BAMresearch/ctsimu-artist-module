@@ -272,6 +272,11 @@ namespace eval ::ctsimu {
 				my set spot_size_v [expr 2.355*[my get spot_sigma_v]]
 			}
 
+			# Set source multisampling to "point" if no spot size:
+			if { (( [my get spot_sigma_u] <= 0) && ([my get spot_sigma_v] <= 0)) || (([my get spot_size_u] <= 0) && ([my get spot_size_v] <= 0)) } {
+				my set multisampling "point"
+			}
+
 			# Intensity map
 			my set_parameter_from_key intensity_map_file      $sourceprops {spot intensity_map file}
 			my set_parameter_value    intensity_map_datatype  $sourceprops {spot intensity_map type} "float32"
@@ -297,6 +302,7 @@ namespace eval ::ctsimu {
 		method set_in_aRTist { } {
 			# Sets up the X-ray source in aRTist: if necessary,
 			# generates the X-ray spectrum and spot image.
+			# `full_source_computation`: skip full computation if set to false.
 			if { [::ctsimu::aRTist_available] } {
 				# Current:
 				set ::Xsource(Exposure) [my get current]
@@ -420,13 +426,14 @@ namespace eval ::ctsimu {
 
 					::ctsimu::info "Spot size: x=$spotSizeX, y=$spotSizeY, sigma_x=$sigmaX, sigma_y=$sigmaY"
 
-					if { ($sigmaX <= 0) || ($sigmaY <= 0) || ($spotSizeX <= 0) || ($spotSizeY <= 0) } {
+					if { (($sigmaX <= 0) && ($sigmaY <= 0)) || (($spotSizeX <= 0) && ($spotSizeY <= 0)) } {
 						# Point source
 						set ::Xsource_private(SpotWidth) 0
 						set ::Xsource_private(SpotHeight) 0
 						set ::Xsetup_private(SGSx) 0
 						set ::Xsetup_private(SGSy) 0
-						set ::Xsetup(SourceSampling) point
+
+						set ::Xsetup(SourceSampling) "point"
 
 						::XSource::SelectSpotType
 					} else {

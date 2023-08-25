@@ -10,6 +10,7 @@ The following list specifies all currently used native units:
 | `"mm"`      | Unit of length.                                                         |
 | `"rad"`     | Angular unit (radians).                                                 |
 | `"deg"`     | Angular unit (degrees).                                                 |
+| `"deg/s"`   | Angular velocity (degrees per second).                                  |
 | `"s"`       | Unit of time.                                                           |
 | `"mA"`      | Unit of current.                                                        |
 | `"kV"`      | Unit of voltage.                                                        |

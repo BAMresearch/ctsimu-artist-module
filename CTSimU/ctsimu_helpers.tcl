@@ -543,6 +543,24 @@ namespace eval ::ctsimu {
 		::ctsimu::fail "Not a valid unit of voltage: \'$unit\'"
 	}
 
+	proc in_deg_per_s { value unit } {
+		# Converts an angular velocity to deg/s.
+		if {$value != "null"} {
+			switch $unit {
+				"rad/s"   {return [expr double($value) * 180.0 / $::ctsimu::pi]}
+				"rad/min" {return [expr double($value) * 180.0 / (60.0 * $::ctsimu::pi)]}
+				"rad/h"   {return [expr double($value) * 180.0 / (3600.0 * $::ctsimu::pi)]}
+				"deg/s"   {return $value}
+				"deg/min" {return [expr double($value) / 60.0]}
+				"deg/h"   {return [expr double($value) / 3600.0]}
+			}
+		} else {
+			return "null"
+		}
+
+		::ctsimu::fail "Not a valid unit for an angular velocity: \'$unit\'"
+	}
+
 	proc in_g_per_cm3 { value unit } {
 		# Converts a mass density to g/cm³.
 		if {$value != "null"} {
@@ -613,6 +631,8 @@ namespace eval ::ctsimu {
 				return [::ctsimu::in_s $value $given_unit]
 			} elseif { $native_unit == "deg" } {
 				return [::ctsimu::in_deg $value $given_unit]
+			} elseif { $native_unit == "deg/s" } {
+				return [::ctsimu::in_deg_per_s $value $given_unit]
 			} elseif { $native_unit == "rad" } {
 				return [::ctsimu::in_rad $value $given_unit]
 			} elseif { $native_unit == "mA" } {

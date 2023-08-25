@@ -69,10 +69,11 @@ Unit conversion functions take a JSON object that must contain a `value` and a `
 * `in_s { value unit }` — Converts a time to seconds.
 * `in_mA { value unit }` — Converts a current to mA.
 * `in_kV { value unit }` — Converts a voltage to kV.
+* `in_deg_per_s { value unit }` — Converts an angular velocity to deg/s.
 * `in_g_per_cm3 { value unit }` — Converts a mass density to g/cm³.
 * `in_lp_per_mm { value unit }` — Converts a resolution to lp/mm.
 * `from_bool { value }` — Converts `true` to `1` and `false` to `0`.
 * `convert_SNR_FWHM { SNR_or_FWHM intensity }` — Converts between SNR and Gaussian FWHM for a given intensity (i.e., more generally, the given distribution's mean value).
-* `convert_to_native_unit { given_unit native_unit value }` — Checks which native unit is requested, converts JSON `value` accordingly. Possible native units are `"mm"`, `"rad"`, `"deg"`, `"s"`, `"mA"`, `"kV"`, `"g/cm^3"`, `"bool"` and `"string"`.
+* `convert_to_native_unit { given_unit native_unit value }` — Checks which native unit is requested, converts JSON `value` accordingly. Possible native units are `"mm"`, `"rad"`, `"deg"`, `"deg/s"`, `"s"`, `"mA"`, `"kV"`, `"g/cm^3"`, `"bool"` and `"string"`.
 * `json_convert_to_native_unit { native_unit value_and_unit { fallback_json_unit ""} }` — Like the previous function `convert_to_native_unit`, but takes a JSON object `value_and_unit` that must contain a `value` and an associated `unit` (the "given unit"). Checks which native unit is requested, converts JSON `value` accordingly. `fallback_json_unit` is used if the unit is not specified in the `value_and_unit` JSON object.
 * `get_value_in_native_unit { native_unit dictionary keys {fail_value 0} }` — Takes a sequence of JSON `keys` from the given `dictionary` where a JSON object with a value/unit pair must be located. Returns the value of this JSON object in the requested `native_unit`. Returns the `fail_value` (standard is `0`) if the key sequence cannot be found or the value is set to `null`.

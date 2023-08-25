@@ -49,6 +49,7 @@ namespace eval ::ctsimu {
 
 			my set show_stage               1
 			my set skip_simulation          0
+			my set run_number_always_in_filenames 0
 
 			my set contact_name             ""
 
@@ -163,6 +164,18 @@ namespace eval ::ctsimu {
 			return 1
 		}
 
+		method is_run_number_in_filenames { nruns } {
+			if {$nruns > 1} {
+				return 1
+			}
+
+			if {[my get run_number_always_in_filenames] == 1} {
+				return 1
+			}
+
+			return 0
+		}
+
 		method json_loaded_successfully { } {
 			return $_json_loaded_successfully
 		}
@@ -275,7 +288,7 @@ namespace eval ::ctsimu {
 			set s_run_recon_folder [my get output_folder]
 			append s_run_recon_folder "/reconstruction"
 
-			if { $nruns > 1 } {
+			if { [my is_run_number_in_filenames $nruns] == 1 } {
 				# Multiple runs. We need to add the run number
 				# to the names of files and folders.
 				set s_run "run[format "%03d" $run]"
@@ -294,7 +307,7 @@ namespace eval ::ctsimu {
 
 			# dots_to_root is the relative path prefix
 			# to get from the projection folder to the project's root:
-			if { $nruns > 1 } {
+			if { [my is_run_number_in_filenames $nruns] == 1 } {
 				my set dots_to_root "../.."
 				my set ff_projection_short_path "projections/$s_run/corrected"
 				my set uncorrected_short_path "projections/$s_run"

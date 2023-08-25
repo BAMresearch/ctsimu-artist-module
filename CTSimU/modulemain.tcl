@@ -63,6 +63,10 @@ proc Init {} {
 		$ctsimu_batchmanager set restart_aRTist_after_each_run [dict get $prefs restartArtistAfterBatchRun]
 	}
 
+	if { [dict exists $prefs runNumberAlwaysInFilenames] } {
+		$ctsimu_scenario set run_number_always_in_filenames [dict get $prefs runNumberAlwaysInFilenames]
+	}
+
 	if { [dict exists $prefs skipSimulation] } {
 		$ctsimu_scenario set skip_simulation [dict get $prefs skipSimulation]
 	}
@@ -498,6 +502,7 @@ proc InitGUI { parent } {
 	dataform $generalCfgGroup {
 		{Show stage coordinate system in scene}              showStageInScene     bool   { }
 		{Restart aRTist after each batch run}                restartArtistAfterBatchRun   bool   { }
+		{Single runs: include run number in file names}      runNumberAlwaysInFilenames   bool   { }
 		{Skip simulation, only create configs and metadata}  skipSimulation     bool   { }
 		{Metadata contact name}                              contactName        string   {}
 	}
@@ -647,6 +652,7 @@ proc fillCurrentParameters {} {
 	# General settings
 	set GUISettings(showStageInScene)     [$ctsimu_scenario get show_stage]
 	set GUISettings(restartArtistAfterBatchRun)  [$ctsimu_batchmanager get restart_aRTist_after_each_run]
+	set GUISettings(runNumberAlwaysInFilenames)  [$ctsimu_scenario get run_number_always_in_filenames]
 	set GUISettings(skipSimulation)       [$ctsimu_scenario get skip_simulation]
 	set GUISettings(contactName)          [$ctsimu_scenario get contact_name]
 
@@ -681,6 +687,7 @@ proc applyCurrentSettings {} {
 
 	$ctsimu_scenario set show_stage                $GUISettings(showStageInScene)
 	$ctsimu_batchmanager set restart_aRTist_after_each_run $GUISettings(restartArtistAfterBatchRun)
+	$ctsimu_scenario set run_number_always_in_filenames    $GUISettings(runNumberAlwaysInFilenames)
 	$ctsimu_scenario set skip_simulation           $GUISettings(skipSimulation)
 	$ctsimu_scenario set contact_name              $GUISettings(contactName)
 
@@ -715,6 +722,7 @@ proc applyCurrentSettings {} {
 	dict set storeSettings dataType      [$ctsimu_scenario get output_datatype]
 
 	dict set storeSettings showStageInScene  [$ctsimu_scenario get show_stage]
+	dict set storeSettings runNumberAlwaysInFilenames  [$ctsimu_scenario get run_number_always_in_filenames]
 	dict set storeSettings skipSimulation    [$ctsimu_scenario get skip_simulation]
 	dict set storeSettings contactName       [$ctsimu_scenario get contact_name]
 	dict set storeSettings restartArtistAfterBatchRun [$ctsimu_batchmanager get restart_aRTist_after_each_run]

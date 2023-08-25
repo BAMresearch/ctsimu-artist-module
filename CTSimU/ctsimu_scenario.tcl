@@ -922,6 +922,10 @@ namespace eval ::ctsimu {
 					if {[my is_running] == 0} {return}
 					::ctsimu::status_info "Taking ideal dark field..."
 
+					# Turn off flat field correction
+					set stored_ff_correction $::Xdetector(FFCorrRun)
+					set ::Xdetector(FFCorrRun) 0
+
 					# Take dark field image(s):
 					set savedXrayCurrent   $::Xsource(Exposure)
 					set savedNoiseFactorOn $::Xdetector(NoiseFactorOn)

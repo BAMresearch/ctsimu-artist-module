@@ -1137,12 +1137,11 @@ namespace eval ::ctsimu {
 						"system": "",
 						"date_measured": "",
 						"projections": {
+							"number": 1,
 							"filename":   "",
 							"datatype":   "",
 							"byteorder":  "little",
 							"headersize": null,
-
-							"number": 1,
 							"dimensions": {
 								"x": {"value": 1000, "unit": "px"},
 								"y": {"value": 1000, "unit": "px"}
@@ -1166,7 +1165,8 @@ namespace eval ::ctsimu {
 							"bad_pixel_map": {
 								"filename": null,
 								"projections_corrected": false
-							}
+							},
+							"max_intensity": 60000
 						},
 						"tomogram":
 						{
@@ -1279,6 +1279,7 @@ namespace eval ::ctsimu {
 			::rl_json::json set metadata output projections dimensions y value [::rl_json::json new number [$_detector get rows]]
 			::rl_json::json set metadata output projections pixelsize x value [::rl_json::json new number [$_detector get pitch_u]]
 			::rl_json::json set metadata output projections pixelsize y value [::rl_json::json new number [$_detector get pitch_v]]
+			::rl_json::json set metadata output projections max_intensity [::rl_json::json new number [$_detector get gv_max]]
 
 			# Dark field:
 			if {[my get n_darks] > 0} {
@@ -1729,7 +1730,7 @@ namespace eval ::ctsimu {
 			set psu [$_detector get pitch_u]
 			set psv [$_detector get pitch_v]
 
-			set startAngle [my get start_angle]
+			set startAngle 0; #[my get start_angle]
 
 			# CERA's detector CS has its origin in the lower left corner instead of the center.
 			# Let's move there:
@@ -2354,10 +2355,6 @@ GlobalI0Value = $globalI0
 				set reconOutputDatatype "float"
 			}
 
-			# Cropping doesn't work this way and might not even be necessary?
-			# Going back to full volume for the moment...
-			#set nSize [lmap x [vec3Div $size $voxelsize] {expr {int(ceil($x))}}]
-			#lassign $nSize nSizeX nSizeY nSizeZ
 			set nSizeX $nu
 			set nSizeY $nu
 			set nSizeZ $nv

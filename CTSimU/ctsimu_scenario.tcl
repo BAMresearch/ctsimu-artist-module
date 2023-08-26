@@ -1979,7 +1979,7 @@ namespace eval ::ctsimu {
 			set vsu [my get cera_voxelSizeU]
 			set vsv [my get cera_voxelSizeV]
 
-			my save_VGI $OpenCTvginame $OpenCTvgifile $reconVolumeFilename 0 $vsu $vsv [my get recon_output_datatype]
+			my save_VGI $OpenCTvginame $OpenCTvgifile $reconVolumeFilename $vsu $vsv [my get recon_output_datatype]
 
 			set fileType "TIFF"
 			if {[my get output_fileformat] == "raw"} {
@@ -2193,7 +2193,7 @@ namespace eval ::ctsimu {
 			fileutil::writeFile -encoding utf-8 $configFilename [::rl_json::json pretty $geomjson]
 		}
 
-		method save_VGI { name filename volumeFilename zMirror voxelsizeU voxelsizeV outputDataType } {
+		method save_VGI { name filename volumeFilename voxelsizeU voxelsizeV outputDataType } {
 			# Prepares a VGI file for the reconstruction volume such that it can be loaded with VGSTUDIO.
 			set vgiTemplate {\{volume1\}
 [representation]
@@ -2383,7 +2383,7 @@ GlobalI0Value = $globalI0
 			set CERAvginame "${outputBaseName}_recon_cera"
 			set vsu [my get cera_voxelSizeU]
 			set vsv [my get cera_voxelSizeV]
-			my save_VGI $CERAvginame $CERAvgifile $CERAoutfile 0 $vsu $vsv [my get recon_output_datatype]
+			my save_VGI $CERAvginame $CERAvgifile $CERAoutfile $vsu $vsv [my get recon_output_datatype]
 
 			set SOD  [my get cera_R]
 			set SDD  [my get cera_D]

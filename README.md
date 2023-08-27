@@ -315,6 +315,30 @@ Note: the aRTist package file (`.artp`) should not be part of the git repository
 
 ## Version History
 
+### 1.2.2
++ New options:
+	- Option to skip the simulation and only create metadata and reconstruction configurations.
+	- Quick scenario loading: certain time-consuming computations can be deactivated when a scenario is loaded. A warning is displayed during the simulation of a partly loaded scenario and the metadata file includes information about which features have been excluded from the simulation.
+	- Option to always include the run number in file names, even for single runs.
+	- Contact name for metadata files can be specified in settings.
+	- Reconstruction config files can be generated for uncorrected projection images (instead of corrected ones that are assumed to be corrected by the CTSimU toolbox). This is especially useful in combination with VGSTUDIO and OpenCT, where the flat-field correction is done by the reconstruction software in this case.
++ OpenCT config files:
+	- Option to use absolute paths in config files instead of relative paths.
+	- Correction images (bright, dark) are included in OpenCT config if JSON loader is instructed to create a config file for uncorrected projections.
+	- Circular trajectory variant of the file format can be enforced. Only meant for ideal circular trajectories (see README in the main git repository).
+	- Updated to full OpenCT file format version 1.0.0, but still includes legacy keys for compatibility.
++ Extended metadata files:
+	- Two metadata files are created: one for projections, one for reconstruction.
+	- Reconstruction metadata includes information about the tomogram volume to be reconstructed.
+	- All metadata files include some aRTist-specific simulation information and the complete scenario JSON that has been simulated.
++ Bug fixes:
+	- Run number is now included in flat-field correction filenames (for multiple runs, or when this behavior is enforced in the settings).
+	- Flat-field correction is turned off while taking the dark image. (Only applicable for scenarios where flat-field correction is done by aRTist during the simulation.)
+	- Projection matrices: if no image/volume coordinate system is given, a default one is created automatically.
+	- Drifts imply their parent parameter's unit if they don't have their own unit specified in the scenario (as required by the CTSimU file format).
++ Minor changes (only relevant for developers):
+	- Prepared native unit for angular velocity (deg/s) to be on the same level as the toolbox. Angular velocities still do not play any role in a CTSimU simulation in aRTist.
+
 ### 1.2.1
 + Bug fix: projection counter error for more than one ideal flat field.
 

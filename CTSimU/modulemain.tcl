@@ -518,8 +518,8 @@ proc InitGUI { parent } {
 
 	set reconCfgGroup   [FoldFrame $recon.frmReconCfg  -text "Reconstruction config files"  -padding $pad]
 	dataform $reconCfgGroup {
+		{Use uncorrected projections for reconstruction}  reconConfigUncorrected   bool   { }
 		{Volume data type}             reconOutputDatatype   choice { "uint16" "uint16" "float32" "float32" }
-		{Use uncorrected projections}  reconConfigUncorrected   bool   { }
 	}
 	set buttons [ttk::frame $reconCfgGroup.frmButtons]
 	grid $buttons - -sticky snew

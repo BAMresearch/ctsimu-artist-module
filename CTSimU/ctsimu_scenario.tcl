@@ -1395,7 +1395,7 @@ namespace eval ::ctsimu {
 
 		method create_recon_configs { } {
 			# Create config files for the individual reconstruction programs (if required by the scenario).
-			set matrices_OpenCT {}
+			set matrices_openCT {}
 			set matrices_CERA {}
 			set projection_filenames {}
 
@@ -1425,8 +1425,8 @@ namespace eval ::ctsimu {
 
 				# Calculate and store projection matrices:
 				if { $do_create_openct_config_file == 1 } {
-					set P_OpenCT [my projection_matrix 0 0 "OpenCT"]
-					lappend matrices_OpenCT $P_OpenCT
+					set P_openCT [my projection_matrix 0 0 "OpenCT"]
+					lappend matrices_openCT $P_openCT
 				}
 
 				if { $do_create_cera_config_file == 1 } {
@@ -1450,7 +1450,7 @@ namespace eval ::ctsimu {
 
 			# Create recon config files:
 			if { [my get create_openct_config_file] == 1} {
-				my save_openCT_config_file $projection_filenames $matrices_OpenCT
+				my save_openCT_config_file $projection_filenames $matrices_openCT
 
 				if { [my get create_clfdk_run_script] == 1} {
 					my save_clFDK_script
@@ -1462,7 +1462,7 @@ namespace eval ::ctsimu {
 			}
 
 			# Destroy matrix objects:
-			foreach P $matrices_OpenCT {
+			foreach P $matrices_openCT {
 				$P destroy
 			}
 			foreach P $matrices_CERA {
@@ -1967,19 +1967,19 @@ namespace eval ::ctsimu {
 			set outputBaseName [my get run_output_basename]
 
 			set configFilename "$reconFolder/$outputBaseName"
-			append configFilename "_recon_OpenCT.json"
+			append configFilename "_recon_openCT.json"
 
 			set reconVolumeFilename "$outputBaseName"
-			append reconVolumeFilename "_recon_OpenCT.img"
+			append reconVolumeFilename "_recon_openCT.img"
 
-			set OpenCTvgifile "$reconFolder/${outputBaseName}_recon_OpenCT.vgi"
-			set OpenCTvginame "${outputBaseName}_recon_OpenCT"
+			set openCTvgifile "$reconFolder/${outputBaseName}_recon_openCT.vgi"
+			set openCTvginame "${outputBaseName}_recon_openCT"
 
 			# match voxel size with CERA
 			set vsu [my get cera_voxelSizeU]
 			set vsv [my get cera_voxelSizeV]
 
-			my save_VGI $OpenCTvginame $OpenCTvgifile $reconVolumeFilename $vsu $vsv [my get recon_output_datatype]
+			my save_VGI $openCTvginame $openCTvgifile $reconVolumeFilename $vsu $vsv [my get recon_output_datatype]
 
 			set fileType "TIFF"
 			if {[my get output_fileformat] == "raw"} {
@@ -2029,8 +2029,8 @@ namespace eval ::ctsimu {
 						"distanceSourceObject": null,
 						"distanceObjectDetector": null,
 						"mirrorDetectorAxis": "",
-						"skipAngle": null,
-						"totalAngle": null,
+						"skipAngle": 0,
+						"totalAngle": 360,
 						"objectBoundingBox": {
 							"centerXYZ": [0, 0, 0],
 							"sizeXYZ": [1, 1, 1]
@@ -2136,7 +2136,6 @@ namespace eval ::ctsimu {
 			set stopAngle  [my get stop_angle]
 			set totalAngle [expr $stopAngle - $startAngle]
 			::rl_json::json set geomjson geometry totalAngle [::rl_json::json new number $totalAngle]
-			::rl_json::json set geomjson geometry skipAngle [::rl_json::json new number $startAngle]
 
 			# Corrections
 			if {[my get recon_config_uncorrected]} {

@@ -114,6 +114,8 @@ namespace eval ::ctsimu {
 			my set json_file_name         ""; # JSON filename without path
 			my set json_file_directory    ""; # Path to JSON file
 			my set json_dict              ""; # the currently imported JSON dictionary
+
+			my set description            ""; # scenario description
 			my set start_angle             0
 			my set stop_angle            360
 			my set projection_counter_format "%04d"
@@ -415,6 +417,10 @@ namespace eval ::ctsimu {
 			append folder "/"
 			append folder [my get output_basename]
 			my set output_folder $folder
+
+			# Scenario description
+			# -------------------------
+			my set description [::ctsimu::get_value $jsonstring {file description}]
 
 			# Acquisition Parameters
 			# -------------------------
@@ -1137,11 +1143,16 @@ namespace eval ::ctsimu {
 						"system": "",
 						"date_measured": "",
 						"projections": {
-							"number": 1,
 							"filename":   "",
+							"number": 1,
+							"frame_average": null,
+							"max_intensity": 60000,
 							"datatype":   "",
 							"byteorder":  "little",
-							"headersize": null,
+							"headersize": {
+								"file": 0,
+								"image": 0
+							},
 							"dimensions": {
 								"x": {"value": 1000, "unit": "px"},
 								"y": {"value": 1000, "unit": "px"}
@@ -1165,8 +1176,7 @@ namespace eval ::ctsimu {
 							"bad_pixel_map": {
 								"filename": null,
 								"projections_corrected": false
-							},
-							"max_intensity": 60000
+							}
 						},
 						"tomogram":
 						{
@@ -1194,7 +1204,10 @@ namespace eval ::ctsimu {
 						"path_to_CTSimU_JSON": ""
 					},
 
-					"reconstruction": null,
+					"reconstruction": {
+						"software": null,
+						"settings": { }
+					},
 
 					"simulation": {
 						"full_simulation": true,
@@ -1263,6 +1276,7 @@ namespace eval ::ctsimu {
 			::rl_json::json set metadata file date_created [::rl_json::json new string $today]
 			::rl_json::json set metadata file date_changed [::rl_json::json new string $today]
 			::rl_json::json set metadata file contact [::rl_json::json new string "[my get contact_name]"]
+			::rl_json::json set metadata file description [::rl_json::json new string "[my get description]"]
 
 			::rl_json::json set metadata output system [::rl_json::json new string "aRTist $aRTistVersion, $modulename $moduleversion"]
 			::rl_json::json set metadata output date_measured [::rl_json::json new string $today]
@@ -1275,6 +1289,7 @@ namespace eval ::ctsimu {
 
 			# Projection number and size:
 			::rl_json::json set metadata output projections number [::rl_json::json new number [my get n_projections]]
+			::rl_json::json set metadata output projections frame_average [::rl_json::json new number [my get frame_average]]
 			::rl_json::json set metadata output projections dimensions x value [::rl_json::json new number [$_detector get columns]]
 			::rl_json::json set metadata output projections dimensions y value [::rl_json::json new number [$_detector get rows]]
 			::rl_json::json set metadata output projections pixelsize x value [::rl_json::json new number [$_detector get pitch_u]]

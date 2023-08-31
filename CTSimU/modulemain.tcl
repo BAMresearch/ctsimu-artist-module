@@ -71,6 +71,10 @@ proc Init {} {
 		$ctsimu_scenario set skip_simulation [dict get $prefs skipSimulation]
 	}
 
+	if { [dict exists $prefs postProcessingScript] } {
+		$ctsimu_scenario set post_processing_script [dict get $prefs postProcessingScript]
+	}
+
 	if { [dict exists $prefs contactName] } {
 		$ctsimu_scenario set contact_name [dict get $prefs contactName]
 	}
@@ -496,6 +500,7 @@ proc InitGUI { parent } {
 		{Restart aRTist after each batch run}                restartArtistAfterBatchRun   bool   { }
 		{Single runs: include run number in file names}      runNumberAlwaysInFilenames   bool   { }
 		{Skip simulation, only create configs and metadata}  skipSimulation     bool   { }
+		{Create post-processing Python script}               postProcessingScript     bool   { }
 		{Metadata contact name}                              contactName        string   {}
 	}
 	set buttons [ttk::frame $generalCfgGroup.frmButtons]
@@ -652,6 +657,7 @@ proc fillCurrentParameters {} {
 	set GUISettings(restartArtistAfterBatchRun)  [$ctsimu_batchmanager get restart_aRTist_after_each_run]
 	set GUISettings(runNumberAlwaysInFilenames)  [$ctsimu_scenario get run_number_always_in_filenames]
 	set GUISettings(skipSimulation)       [$ctsimu_scenario get skip_simulation]
+	set GUISettings(postProcessingScript) [$ctsimu_scenario get post_processing_script]
 	set GUISettings(contactName)          [$ctsimu_scenario get contact_name]
 
 	# Limited scenario loading
@@ -685,6 +691,7 @@ proc applyCurrentSettings {} {
 	$ctsimu_batchmanager set restart_aRTist_after_each_run $GUISettings(restartArtistAfterBatchRun)
 	$ctsimu_scenario set run_number_always_in_filenames    $GUISettings(runNumberAlwaysInFilenames)
 	$ctsimu_scenario set skip_simulation           $GUISettings(skipSimulation)
+	$ctsimu_scenario set post_processing_script    $GUISettings(postProcessingScript)
 	$ctsimu_scenario set contact_name              $GUISettings(contactName)
 
 	$ctsimu_scenario set onload_compute_detector   $GUISettings(onloadComputeDetector)
@@ -715,14 +722,15 @@ proc applyCurrentSettings {} {
 	dict set storeSettings fileFormat    [$ctsimu_scenario get output_fileformat]
 	dict set storeSettings dataType      [$ctsimu_scenario get output_datatype]
 
-	dict set storeSettings showStageInScene  [$ctsimu_scenario get show_stage]
+	dict set storeSettings showStageInScene     [$ctsimu_scenario get show_stage]
 	dict set storeSettings runNumberAlwaysInFilenames  [$ctsimu_scenario get run_number_always_in_filenames]
-	dict set storeSettings skipSimulation    [$ctsimu_scenario get skip_simulation]
-	dict set storeSettings contactName       [$ctsimu_scenario get contact_name]
+	dict set storeSettings skipSimulation       [$ctsimu_scenario get skip_simulation]
+	dict set storeSettings postProcessingScript [$ctsimu_scenario get post_processing_script]
+	dict set storeSettings contactName          [$ctsimu_scenario get contact_name]
 	dict set storeSettings restartArtistAfterBatchRun [$ctsimu_batchmanager get restart_aRTist_after_each_run]
-	dict set storeSettings waitingForRestart [$ctsimu_batchmanager get waiting_for_restart]
-	dict set storeSettings nextBatchRun      [$ctsimu_batchmanager get next_run]
-	dict set storeSettings csvJobList        [$ctsimu_batchmanager csv_joblist 1]
+	dict set storeSettings waitingForRestart    [$ctsimu_batchmanager get waiting_for_restart]
+	dict set storeSettings nextBatchRun         [$ctsimu_batchmanager get next_run]
+	dict set storeSettings csvJobList           [$ctsimu_batchmanager csv_joblist 1]
 
 	dict set storeSettings onloadComputeDetector  [$ctsimu_scenario get onload_compute_detector]
 	dict set storeSettings onloadComputeSource    [$ctsimu_scenario get onload_compute_source]

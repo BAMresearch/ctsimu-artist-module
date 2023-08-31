@@ -68,6 +68,9 @@ namespace eval ::ctsimu {
 			my set loaded_scattering_active 1
 			my set loaded_multisampling     1
 
+			# Python post-processing script
+			my set post_processing_script   1
+
 			# Recon configs
 			my set recon_config_uncorrected  0
 			my set recon_output_datatype     "float32"
@@ -830,6 +833,11 @@ namespace eval ::ctsimu {
 			# Make projection folder and metadata file:
 			file mkdir [my get run_projection_folder]
 
+			# Python post-processing script
+			if { [my get post_processing_script] } {
+				my create_post_processing_python_script
+			}
+
 			# Calculate general parameters for CERA circular trajectory reconstruction.
 			# We need these for metadata files (voxel size) and recon configs.
 			my set_up_CERA_RDabcuv
@@ -1119,6 +1127,101 @@ namespace eval ::ctsimu {
 			fileutil::writeFile -encoding utf-8 $ff_filename $ff_content
 		}
 
+		method create_post_processing_python_script { } {
+			set openct_variant "free"
+			if { [my get openct_circular_enforced] } {
+				set openct_variant "circular"
+			}
+
+			set openct_abs "False"
+			if { [my get openct_abs_paths] == 1 } {
+				set openct_abs "True"
+			}
+
+			set ffcorrection "True"
+			if { [my get ff_correction_on] } {
+				# Flat field correction has already taken place in aRTist.
+				set ffcorrection "False"
+			}
+
+			set post_processing_template {# -*- coding: UTF-8 -*-
+"""
+Run post-processing for all subfolders of the
+script's current working directory (`"."`).
+
+You can copy this script to any folder to
+run the post-processing in all subfolders.
+
+The Toolbox will search for metadata files and,
+if activated, will:
+	- run the necessary flat-field corrections,
+	- create reconstruction config files, and
+	- standardize scenario files, i.e., update them to
+      the currently known valid CTSimU file format version.
+
+File overwrite is deactivated by default, so feel
+free to run this script multiple times during a live-running
+simulation batch. Only new projection files will be corrected,
+and only newly-available reconstruction config files will be created.
+
+For details, see full documentation of `ctsimu.toolbox.Toolbox`.
+
+Requires CTSimU Toolbox version 1.6 or later.
+
+Parameters
+----------
+correction : bool
+    Run flat-field correction where applicable?
+
+rescaleFactor : float
+    Rescale factor after flat-field division.
+    If `None`, the value will be imported from
+    key `max_intensity` in metadata file,
+    or set to `60000` if this fails.
+
+recon_config : bool
+    Create reconstruction config files?
+
+openct_variant : str
+    When reconstruction config files are created,
+    the variant of the OpenCT config file.
+
+    Possible values: `"free"`, `"circular"`
+
+openct_abspaths : bool
+    Use absolute paths in OpenCT config file?
+
+standardize : bool
+    Standardize CTSimU scenario files to the
+    file format version currently supported by the toolbox.
+
+    The previous version of the file will be kept in a
+    copy called `"*.json.old"`
+
+overwrite : bool
+    Overwrite existing output files?
+    Does not apply to standardization: the old scenario backup
+    files will never be overwritten, so don't worry.
+"""
+
+from ctsimu.toolbox import Toolbox
+Toolbox(
+    "post-processing",
+    ".",
+    correction=$ffcorrection,
+    recon_config=True,
+        cera=True,
+        openct=True,
+            openct_variant='$openct_variant',
+            openct_abspaths=$openct_abs,
+    standardize=False,
+    overwrite=False
+)}
+
+			set pp_path "[my get output_folder]/post_processing.py"
+			fileutil::writeFile $pp_path [subst -nocommands $post_processing_template]
+		}
+
 		method create_metadata_file { { mode "projections"} } {
 			# Create a metadata JSON file for the simulation.
 			# mode: "projections" or "reconstruction"
@@ -1301,7 +1404,15 @@ namespace eval ::ctsimu {
 				::rl_json::json set metadata output projections dark_field number [::rl_json::json new number [my get n_darks]]
 				::rl_json::json set metadata output projections dark_field frame_average [::rl_json::json new number [my get n_darks_avg]]
 
-				set dark_filename_pattern [my get run_output_basename]
+				set dark_filename_pattern ""
+				if { $mode == "reconstruction" } {
+					# In reconstruction metadata files, the projection images
+					# are in a different folder.
+					append dark_filename_pattern "[my get dots_to_root]/"
+					append dark_filename_pattern "[my get uncorrected_short_path]/"
+				}
+
+				append dark_filename_pattern [my get run_output_basename]
 				append dark_filename_pattern "_dark"
 
 				if { [my get n_darks] == 1 } {
@@ -1327,7 +1438,15 @@ namespace eval ::ctsimu {
 				::rl_json::json set metadata output projections flat_field number [::rl_json::json new number [my get n_flats]]
 				::rl_json::json set metadata output projections flat_field frame_average [::rl_json::json new number [my get n_flats_avg]]
 
-				set flat_filename_pattern [my get run_output_basename]
+				set flat_filename_pattern ""
+				if { $mode == "reconstruction" } {
+					# In reconstruction metadata files, the projection images
+					# are in a different folder.
+					append flat_filename_pattern "[my get dots_to_root]/"
+					append flat_filename_pattern "[my get uncorrected_short_path]/"
+				}
+
+				append flat_filename_pattern [my get run_output_basename]
 				append flat_filename_pattern "_flat"
 
 				if { [my get n_flats] == 1 } {

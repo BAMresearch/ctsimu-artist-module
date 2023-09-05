@@ -1205,8 +1205,7 @@ overwrite : bool
 """
 
 from ctsimu.toolbox import Toolbox
-Toolbox(
-    "post-processing",
+Toolbox("post-processing",
     ".",
     correction=$ffcorrection,
     recon_config=True,
@@ -1775,59 +1774,37 @@ Toolbox(
 			set vfoc [expr [ [$source_from_image center] y] / $scale_image_v]
 			set SDD  [expr abs([ [$source_from_image center] z])]
 
-			# Scale matrix: volume units -> world units
+			# Scale matrix: volume units -> world units,
+			# and move origin to source (the origin of the camera CS)
 			set A [::ctsimu::matrix new 4 0]
-			$A add_row [list $scale_volume_u 0 0 0]
-			$A add_row [list 0 $scale_volume_v 0 0]
-			$A add_row [list 0 0 $scale_volume_w 0]
-			$A add_row [list 0 0 0 1]
+			$A add_row [list $scale_volume_u 0 0 $xfoc]
+			$A add_row [list 0 $scale_volume_v 0 $yfoc]
+			$A add_row [list 0 0 $scale_volume_w $zfoc]
 			#puts "A:"
 			#puts [$A print]
-
-			# Move origin to source (the origin of the camera CS)
-			set F [::ctsimu::matrix new 4 0]
-			$F add_row [list 1 0 0 $xfoc]
-			$F add_row [list 0 1 0 $yfoc]
-			$F add_row [list 0 0 1 $zfoc]
-			#puts "F:"
-			#puts [$F print]
 
 			# Rotations:
 			set R [::ctsimu::basis_transform_matrix $volume $image]
 			#puts "R:"
 			#puts [$R print]
 
-			# Projection onto detector and scaling (world units -> volume units):
+			# Projection onto detector and scaling (world units -> image units),
+			# and shift in detector CS: ufoc, vfoc
 			set S [::ctsimu::matrix new 3 0]
-			$S add_row [list [expr -$SDD/$scale_image_u] 0 0]
-			$S add_row [list 0 [expr -$SDD/$scale_image_v] 0]
-			$S add_row [list 0 0 [expr -1.0/$scale_image_w]]
+			$S add_row [list [expr $SDD/$scale_image_u] 0 [expr $ufoc/$scale_image_w]]
+			$S add_row [list 0 [expr $SDD/$scale_image_v] [expr $vfoc/$scale_image_w]]
+			$S add_row [list 0 0 [expr 1.0/$scale_image_w]]
 			#puts "S:"
 			#puts [$S print]
 
-			# Shift in detector CS: (ufoc and vfoc must be in scaled units)
-			set T [::ctsimu::matrix new 3 0]
-			$T add_row [list 1 0 $ufoc]
-			$T add_row [list 0 1 $vfoc]
-			$T add_row [list 0 0 1]
-			#puts "T:"
-			#puts [$T print]
-			#puts "-----------"
-
 			# Multiply matrices into projection matrix P:
-			set FA   [$F multiply $A]
-			set RFA  [$R multiply $FA]
-			set SRFA [$S multiply $RFA]
-			set P    [$T multiply $SRFA]
+			set RA   [$R multiply $A]
+			set P    [$S multiply $RA]
 
 			$A destroy
-			$F destroy
 			$R destroy
 			$S destroy
-			$T destroy
-			$FA destroy
-			$RFA destroy
-			$SRFA destroy
+			$RA destroy
 
 			$image destroy
 			$volume destroy

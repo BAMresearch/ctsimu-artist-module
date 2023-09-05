@@ -315,6 +315,11 @@ Note: the aRTist package file (`.artp`) should not be part of the git repository
 
 ## Version History
 
+### 1.2.3
++ Option to create post-processing Python scripts for combined flat-field correction and creation of reconstruction configuration files.
++ Updated to metadata file format version 1.2.
++ Projection matrices: code simplification, minor speedup.
+
 ### 1.2.2
 + New options:
 	- Option to skip the simulation and only create metadata and reconstruction configurations.

@@ -851,15 +851,16 @@ namespace eval ::ctsimu {
 				my create_flat_field_correction_script
 			}
 
-			# Prepare reconstruction folder and metadata file:
-			file mkdir [my get run_recon_folder]
-			my create_metadata_file "reconstruction"
-
 			# Make reconstruction files for scans with multiple projections,
 			# if activated in the settings.
-			if { ([my get n_projections] > 1) && \
-				 ([my get create_openct_config_file] || [my get create_cera_config_file]) } {
-				my create_recon_configs
+			if { ([my get n_projections] > 1) } {
+				# Prepare reconstruction folder and metadata file:
+				file mkdir [my get run_recon_folder]
+				my create_metadata_file "reconstruction"
+
+				if { ([my get create_openct_config_file] || [my get create_cera_config_file]) } {
+					my create_recon_configs
+				}
 			}
 		}
 

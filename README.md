@@ -316,7 +316,7 @@ Note: the aRTist package file (`.artp`) should not be part of the git repository
 ## Version History
 
 ### 1.2.3
-+ Option to create post-processing Python scripts for combined flat-field correction and creation of reconstruction configuration files.
++ Option to create post-processing Python scripts for combined flat-field correction and creation of reconstruction configuration files using the CTSimU toolbox.
 + Updated to metadata file format version 1.2.
 + Projection matrices: code simplification, minor speedup.
 

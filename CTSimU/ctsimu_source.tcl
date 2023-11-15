@@ -241,7 +241,7 @@ namespace eval ::ctsimu {
 			# Target
 			my set_parameter_value    target_material_id     $sourceprops {target material_id} "null"
 			my set_parameter_from_key target_thickness       $sourceprops {target thickness} 10
-			my set_parameter_value    target_type            $sourceprops {type} "reflection"
+			my set_parameter_value    target_type            $sourceprops {target type} "reflection"
 			my set_parameter_from_key target_angle_incidence $sourceprops {target angle incidence} 45
 			my set_parameter_from_key target_angle_emission  $sourceprops {target angle emission} 45
 

@@ -25,11 +25,11 @@ cp ../aRTpackage ./CTSimU/
 sed -i "s/VERSION/$VERSION/g" ./CTSimU/aRTpackage
 
 # Zip the CTSimU folder to create the aRTist module:
-zip -r "CTSimU-$VERSION.artp" "CTSimU"
+zip a -r "CTSimU-$VERSION.artp" "CTSimU"
 
 # Copy to root directory:
 cp CTSimU*.artp ../
 
 # Go to root and delete temporary build directory:
 cd ..
-rm -R build
+#rm -R build
